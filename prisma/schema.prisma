@@ -1,0 +1,23 @@
+generator client {
+  provider   = "prisma-client-js"
+  engineType = "binary"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Booking {
+  id           Int      @id @default(autoincrement())
+  trainer      String
+  packageName  String
+  amount       Int
+
+  customerName String   @default("Unknown")
+  mobile       String   @default("NA")
+  city         String   @default("NA")
+
+  status       String   @default("PENDING")
+  createdAt    DateTime @default(now())
+}
