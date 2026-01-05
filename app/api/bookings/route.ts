@@ -1,36 +1,25 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/app/lib/prisma";
 
-// GET all bookings
+/**
+ * IMPORTANT:
+ * This prevents Vercel from executing this route during build time
+ */
+export const dynamic = "force-dynamic";
+
 export async function GET() {
-  const bookings = await prisma.booking.findMany({
-    orderBy: { createdAt: "desc" },
-  });
-  return NextResponse.json(bookings);
-}
-
-// PATCH booking status
-export async function PATCH(req: Request) {
   try {
-    const body = await req.json();
-    const { id, status } = body;
-
-    if (!id || !status) {
-      return NextResponse.json(
-        { error: "Missing id or status" },
-        { status: 400 }
-      );
-    }
-
-    const updated = await prisma.booking.update({
-      where: { id },
-      data: { status },
+    const bookings = await prisma.booking.findMany({
+      orderBy: {
+        createdAt: "desc",
+      },
     });
 
-    return NextResponse.json(updated);
-  } catch (err) {
+    return NextResponse.json(bookings);
+  } catch (error) {
+    console.error("API /bookings error:", error);
     return NextResponse.json(
-      { error: "Failed to update status" },
+      { error: "Failed to fetch bookings" },
       { status: 500 }
     );
   }
