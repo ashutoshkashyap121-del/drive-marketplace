@@ -1,14 +1,18 @@
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
 
-export const runtime = "nodejs"; // ✅ CRITICAL
-export const dynamic = "force-dynamic"; // ✅ CRITICAL
-export const revalidate = 0; // ✅ CRITICAL
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
-const prisma = new PrismaClient();
+async function getPrisma() {
+  const { PrismaClient } = await import("@prisma/client");
+  return new PrismaClient();
+}
 
 export async function GET() {
   try {
+    const prisma = await getPrisma();
+
     const bookings = await prisma.booking.findMany({
       orderBy: { createdAt: "desc" },
     });
@@ -22,6 +26,7 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
+    const prisma = await getPrisma();
     const body = await req.json();
 
     const booking = await prisma.booking.create({
