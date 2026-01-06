@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 
-export const dynamic = "force-dynamic"; // 🔴 VERY IMPORTANT
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 const prisma = new PrismaClient();
 
@@ -12,8 +13,23 @@ export async function GET() {
     });
 
     return NextResponse.json(bookings);
-  } catch (error) {
-    console.error("API /bookings error:", error);
+  } catch (err) {
+    console.error("GET /api/bookings failed", err);
     return NextResponse.json([], { status: 200 });
+  }
+}
+
+export async function POST(req: Request) {
+  try {
+    const body = await req.json();
+
+    const booking = await prisma.booking.create({
+      data: body,
+    });
+
+    return NextResponse.json(booking);
+  } catch (err) {
+    console.error("POST /api/bookings failed", err);
+    return NextResponse.json({ ok: false }, { status: 200 });
   }
 }
