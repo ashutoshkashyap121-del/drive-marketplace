@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
+export const runtime = "nodejs";        // ✅ REQUIRED
+export const dynamic = "force-dynamic"; // ✅ REQUIRED
 
 const prisma = new PrismaClient();
 
@@ -13,8 +13,8 @@ export async function GET() {
     });
 
     return NextResponse.json(bookings);
-  } catch (err) {
-    console.error("GET /api/bookings failed", err);
+  } catch (error) {
+    console.error("GET /api/bookings error", error);
     return NextResponse.json([], { status: 200 });
   }
 }
@@ -28,8 +28,8 @@ export async function POST(req: Request) {
     });
 
     return NextResponse.json(booking);
-  } catch (err) {
-    console.error("POST /api/bookings failed", err);
+  } catch (error) {
+    console.error("POST /api/bookings error", error);
     return NextResponse.json({ ok: false }, { status: 200 });
   }
 }
