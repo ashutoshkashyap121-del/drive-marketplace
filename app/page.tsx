@@ -3,59 +3,46 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-export default function Home() {
+export default function HomePage() {
   const router = useRouter();
   const [city, setCity] = useState("");
-  const [vehicle, setVehicle] = useState("");
 
-  const handleSubmit = () => {
-    if (!city || !vehicle) return;
-    router.push(`/trainers?city=${city}&vehicle=${vehicle}`);
-  };
+  function handleSearch() {
+    if (!city) return;
+    router.push(`/trainers?city=${city}`);
+  }
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="bg-white p-6 rounded-lg shadow-md w-full max-w-md">
-        <h1 className="text-2xl font-bold mb-2 text-center">
+    <main className="min-h-screen flex items-center justify-center bg-gray-100">
+      <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
+        <h1 className="text-2xl font-bold text-center mb-2">
           Learn Driving with Verified Trainers
         </h1>
-        <p className="text-gray-600 text-center mb-6">
-          Book bike or car driving training near you
+
+        <p className="text-center text-gray-600 mb-6">
+          Book car driving training near you
         </p>
 
-        <div className="mb-4">
-          <label className="block text-sm font-medium mb-1">City</label>
-          <select
-            className="w-full border rounded px-3 py-2"
-            value={city}
-            onChange={(e) => setCity(e.target.value)}
-          >
-            <option value="">Select City</option>
-            <option value="bangalore">Bangalore</option>
-            <option value="delhi-ncr">Delhi NCR</option>
-            <option value="mumbai">Mumbai</option>
-          </select>
-        </div>
-
-        <div className="mb-6">
-          <label className="block text-sm font-medium mb-1">Vehicle</label>
-          <select
-            className="w-full border rounded px-3 py-2"
-            value={vehicle}
-            onChange={(e) => setVehicle(e.target.value)}
-          >
-            <option value="">Select Vehicle</option>
-            <option value="car">Car</option>
-            <option value="bike">Bike</option>
-          </select>
-        </div>
+        <label className="block text-sm font-medium mb-1">City</label>
+        <select
+          className="w-full border rounded-lg px-3 py-2 mb-4"
+          value={city}
+          onChange={(e) => setCity(e.target.value)}
+        >
+          <option value="">Select City</option>
+          <option value="Delhi">Delhi</option>
+          <option value="Noida">Noida</option>
+          <option value="Gurgaon">Gurgaon</option>
+        </select>
 
         <button
-          onClick={handleSubmit}
-          className="w-full bg-black text-white py-2 rounded disabled:opacity-50"
-          disabled={!city || !vehicle}
+          onClick={handleSearch}
+          disabled={!city}
+          className={`w-full py-3 rounded-lg font-semibold text-white ${
+            city ? "bg-blue-600 hover:bg-blue-700" : "bg-gray-400"
+          }`}
         >
-          Book Driving Training
+          Find Trainers
         </button>
       </div>
     </main>
