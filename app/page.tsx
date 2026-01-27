@@ -14,18 +14,18 @@ export default function HomePage() {
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
-        <h1 className="text-2xl font-bold text-center mb-2">
+      <div className="bg-white p-6 rounded-xl shadow-md w-full max-w-sm">
+        <h1 className="text-xl font-bold mb-2 text-center">
           Learn Driving with Verified Trainers
         </h1>
 
-        <p className="text-center text-gray-600 mb-6">
-          Book car driving training near you
+        <p className="text-sm text-gray-600 mb-4 text-center">
+          Book bike or car driving training near you
         </p>
 
-        <label className="block text-sm font-medium mb-1">City</label>
+        <label className="text-sm font-medium">City</label>
         <select
-          className="w-full border rounded-lg px-3 py-2 mb-4"
+          className="w-full border rounded-lg px-3 py-2 mt-1 mb-4"
           value={city}
           onChange={(e) => setCity(e.target.value)}
         >
@@ -38,11 +38,9 @@ export default function HomePage() {
         <button
           onClick={handleSearch}
           disabled={!city}
-          className={`w-full py-3 rounded-lg font-semibold text-white ${
-            city ? "bg-blue-600 hover:bg-blue-700" : "bg-gray-400"
-          }`}
+          className="w-full bg-blue-600 text-white py-2 rounded-lg disabled:bg-gray-400"
         >
-          Find Trainers
+          Book Driving Training
         </button>
       </div>
     </main>
