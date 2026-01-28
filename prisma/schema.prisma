@@ -1,23 +1,85 @@
+// ================================
+// PRISMA SCHEMA — DRIVE MARKETPLACE
+// STEP 1A: TRAINER ONBOARDING
+// Supports:
+// - Cars + Bikes + Scooters
+// - Independent Trainers + Driving Schools
+// ================================
+
 generator client {
-  provider   = "prisma-client-js"
-  engineType = "binary"
+  provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  provider = "postgresql" // Neon / cloud ready
+  url      = env("DATABASE_URL")
 }
 
+// ================================
+// ENUMS
+// ================================
+
+enum VehicleType {
+  CAR
+  BIKE
+  SCOOTER
+}
+
+enum TrainerType {
+  INDEPENDENT
+  DRIVING_SCHOOL
+}
+
+enum TrainerStatus {
+  PENDING
+  APPROVED
+  SUSPENDED
+}
+
+// ================================
+// TRAINER MODEL
+// ================================
+
+model Trainer {
+  id             Int      @id @default(autoincrement())
+  name           String
+  mobile         String   @unique
+  city           String
+  experience     Int
+  licenseNumber  String
+  approved       Boolean  @default(false)
+  createdAt      DateTime @default(now())
+
+  vehicles       Vehicle[]
+}
+
+// ================================
+// BOOKING MODEL (LINKED TO TRAINER)
+// ================================
+
 model Booking {
-  id           Int      @id @default(autoincrement())
-  trainer      String
-  packageName  String
-  amount       Int
+  id            Int      @id @default(autoincrement())
+  trainerId     Int
+  trainerName   String
+  packageName   String
+  amount        Int
 
-  customerName String   @default("Unknown")
-  mobile       String   @default("NA")
-  city         String   @default("NA")
+  customerName  String
+  mobile        String
+  city          String
+  address       String
 
-  status       String   @default("PENDING")
-  createdAt    DateTime @default(now())
+  createdAt     DateTime @default(now())
+}
+
+model Vehicle {
+  id            Int      @id @default(autoincrement())
+  trainerId     Int
+  type          String   // car | bike (future)
+  vehicleNumber String
+  dualControl   Boolean  // REQUIRED for car training
+  insured       Boolean
+  createdAt     DateTime @default(now())
+
+  trainer       Trainer  @relation(fields: [trainerId], references: [id])
 }

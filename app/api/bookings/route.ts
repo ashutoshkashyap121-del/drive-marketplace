@@ -1,41 +1,40 @@
 import { NextResponse } from "next/server";
+import { PrismaClient } from "@prisma/client";
 
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
-
-async function getPrisma() {
-  const { PrismaClient } = await import("@prisma/client");
-  return new PrismaClient();
-}
-
-export async function GET() {
-  try {
-    const prisma = await getPrisma();
-
-    const bookings = await prisma.booking.findMany({
-      orderBy: { createdAt: "desc" },
-    });
-
-    return NextResponse.json(bookings);
-  } catch (error) {
-    console.error("GET /api/bookings error:", error);
-    return NextResponse.json([], { status: 200 });
-  }
-}
+const prisma = new PrismaClient();
 
 export async function POST(req: Request) {
   try {
-    const prisma = await getPrisma();
     const body = await req.json();
 
+    if (
+      !body.trainerId ||
+      !body.trainerName ||
+      body.amount === undefined
+    ) {
+      return NextResponse.json(
+        { error: "Missing booking fields" },
+        { status: 400 }
+      );
+    }
+
     const booking = await prisma.booking.create({
-      data: body,
+      data: {
+        trainerId: Number(body.trainerId),
+        trainerName: body.trainerName,
+        packageName: body.packageName || "Standard",
+        amount: Number(body.amount),
+
+        customerName: body.customerName,
+        mobile: body.mobile,
+        city: body.city,
+        address: body.address,
+      },
     });
 
-    return NextResponse.json(booking);
+    return NextResponse.json({ id: booking.id }, { status: 201 });
   } catch (error) {
-    console.error("POST /api/bookings error:", error);
-    return NextResponse.json({ ok: false }, { status: 200 });
+    console.error("BOOKING ERROR:", error);
+    return NextResponse.json({ error: "Booking failed" }, { status: 500 });
   }
 }
