@@ -9,25 +9,25 @@ export default function HomePage() {
 
   return (
     <main className="min-h-screen flex items-center justify-center">
-      <div className="bg-white p-6 rounded shadow w-96">
+      <div className="p-6 border rounded-lg">
         <h1 className="text-xl font-bold mb-4">
           Learn Driving with Verified Trainers
         </h1>
 
         <select
+          className="border p-2 w-full mb-4"
           value={city}
           onChange={(e) => setCity(e.target.value)}
-          className="border p-2 w-full mb-4"
         >
           <option value="">Select City</option>
           <option value="Delhi">Delhi</option>
-          <option value="Noida">Noida</option>
+          <option value="Bangalore">Bangalore</option>
         </select>
 
         <button
           disabled={!city}
           onClick={() => router.push(`/trainers?city=${city}`)}
-          className="bg-blue-600 text-white p-2 w-full rounded disabled:opacity-50"
+          className="bg-blue-600 text-white px-4 py-2 rounded w-full"
         >
           Book Driving Training
         </button>

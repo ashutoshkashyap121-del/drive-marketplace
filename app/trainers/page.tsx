@@ -1,63 +1,40 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-
-type Trainer = {
-  id: number;
-  name: string;
-  city: string;
-  experience: number;
-  vehicles: any[];
-};
+import { useEffect, useState } from "react";
 
 export default function TrainersPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const city = searchParams.get("city");
 
-  const [trainers, setTrainers] = useState<Trainer[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [trainers, setTrainers] = useState<any[]>([]);
 
   useEffect(() => {
     if (!city) return;
-
     fetch(`/api/trainers?city=${city}`)
       .then(res => res.json())
-      .then(data => {
-        setTrainers(data);
-        setLoading(false);
-      });
+      .then(setTrainers);
   }, [city]);
 
-  if (!city) return <div className="p-8">Select a city</div>;
-  if (loading) return <div className="p-8">Loading trainers...</div>;
-  if (trainers.length === 0)
-    return <div className="p-8">No trainers available in your city.</div>;
+  if (!city) return <div>Select city</div>;
 
   return (
-    <main className="max-w-4xl mx-auto p-8">
-      <h1 className="text-2xl font-bold mb-6">Driving Trainers</h1>
+    <main className="p-6">
+      <h1 className="text-xl font-bold mb-4">Driving Trainers</h1>
 
       {trainers.map(trainer => (
-        <div key={trainer.id} className="border rounded-lg p-6 mb-4">
-          <h2 className="text-xl font-semibold">{trainer.name}</h2>
-
-          <p className="text-gray-700">
-            {trainer.city} • {trainer.experience} yrs experience
-          </p>
-
-          <p className="text-gray-600">
-            Vehicles: {trainer.vehicles.length || "None"}
-          </p>
+        <div key={trainer.id} className="border p-4 mb-4">
+          <p className="font-semibold">{trainer.name}</p>
+          <p>{trainer.experience} yrs experience</p>
 
           <button
+            className="text-blue-600 mt-2"
             onClick={() =>
               router.push(
                 `/book?trainerId=${trainer.id}&trainerName=${trainer.name}&amount=5000`
               )
             }
-            className="mt-4 text-blue-600 font-medium"
           >
             Book Now →
           </button>
