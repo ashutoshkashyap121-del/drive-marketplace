@@ -7,40 +7,27 @@ export default function HomePage() {
   const router = useRouter();
   const [city, setCity] = useState("");
 
-  function handleSearch() {
-    if (!city) return;
-    router.push(`/trainers?city=${city}`);
-  }
-
   return (
-    <main className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="bg-white p-8 rounded-xl shadow-md w-full max-w-md">
-        <h1 className="text-2xl font-bold text-center mb-2">
+    <main className="min-h-screen flex items-center justify-center">
+      <div className="bg-white p-6 rounded shadow w-96">
+        <h1 className="text-xl font-bold mb-4">
           Learn Driving with Verified Trainers
         </h1>
 
-        <p className="text-center text-gray-600 mb-6">
-          Book bike or car driving training near you
-        </p>
-
-        <label className="block text-sm font-medium mb-1">City</label>
         <select
-          className="w-full border rounded-lg px-3 py-2 mb-4"
           value={city}
           onChange={(e) => setCity(e.target.value)}
+          className="border p-2 w-full mb-4"
         >
           <option value="">Select City</option>
           <option value="Delhi">Delhi</option>
           <option value="Noida">Noida</option>
-          <option value="Gurgaon">Gurgaon</option>
         </select>
 
         <button
-          onClick={handleSearch}
           disabled={!city}
-          className={`w-full py-2 rounded-lg text-white ${
-            city ? "bg-blue-600 hover:bg-blue-700" : "bg-gray-400"
-          }`}
+          onClick={() => router.push(`/trainers?city=${city}`)}
+          className="bg-blue-600 text-white p-2 w-full rounded disabled:opacity-50"
         >
           Book Driving Training
         </button>
