@@ -1,39 +1,43 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 export default function HomePage() {
   const router = useRouter();
   const [city, setCity] = useState("");
 
+  function handleSearch() {
+    if (!city) return;
+    router.push(`/trainers?city=${city}`);
+  }
+
   return (
-    <main className="min-h-screen flex items-center justify-center">
-      <div className="p-6 border rounded-lg w-96">
-        <h1 className="text-xl font-bold mb-2">
+    <main className="min-h-screen flex items-center justify-center bg-gray-100">
+      <div className="bg-white p-8 rounded-xl shadow-md w-full max-w-md space-y-6">
+        <h1 className="text-2xl font-bold text-center">
           Learn Driving with Verified Trainers
         </h1>
 
-        <p className="text-sm text-gray-600 mb-4">
-          Book driving training near you
-        </p>
-
-        <select
-          className="border p-2 w-full mb-4"
-          value={city}
-          onChange={(e) => setCity(e.target.value)}
-        >
-          <option value="">Select City</option>
-          <option value="Delhi">Delhi</option>
-          <option value="Bangalore">Bangalore</option>
-        </select>
+        <div>
+          <label className="block text-sm font-medium mb-1">City</label>
+          <select
+            value={city}
+            onChange={(e) => setCity(e.target.value)}
+            className="w-full border rounded-lg px-3 py-2"
+          >
+            <option value="">Select City</option>
+            <option value="Delhi">Delhi</option>
+            <option value="Noida">Noida</option>
+            <option value="Gurgaon">Gurgaon</option>
+          </select>
+        </div>
 
         <button
-          disabled={!city}
-          onClick={() => router.push(`/trainers?city=${city}`)}
-          className="bg-blue-600 text-white px-4 py-2 rounded w-full disabled:bg-gray-400"
+          onClick={handleSearch}
+          className="w-full bg-blue-600 text-white py-3 rounded-lg"
         >
-          View Trainers
+          Find Trainers
         </button>
       </div>
     </main>
