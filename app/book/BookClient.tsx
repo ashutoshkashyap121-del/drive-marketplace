@@ -4,121 +4,100 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useState } from "react";
 
 export default function BookClient() {
+  const params = useSearchParams();
   const router = useRouter();
-  const searchParams = useSearchParams();
 
-  const trainerId = searchParams.get("trainerId");
-  const trainerName = searchParams.get("trainerName");
-  const amount = Number(searchParams.get("amount") || 0);
+  const trainerId = params.get("trainerId") || "";
+  const trainerName = params.get("trainerName") || "";
+  const city = params.get("city") || "";
+  const amount = Number(params.get("amount") || 0);
 
-  const [customerName, setCustomerName] = useState("");
+  const [name, setName] = useState("");
   const [mobile, setMobile] = useState("");
-  const [city, setCity] = useState("");
   const [address, setAddress] = useState("");
   const [consent, setConsent] = useState(false);
-  const [loading, setLoading] = useState(false);
 
-  const isFormValid =
-    customerName &&
+  const isValid =
+    name.trim().length > 0 &&
     mobile.length === 10 &&
-    city &&
-    address &&
+    address.trim().length > 0 &&
     consent;
 
   async function confirmBooking() {
-    if (!isFormValid) return;
+    if (!isValid) return;
 
-    try {
-      setLoading(true);
+    const res = await fetch("/api/bookings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        trainerId,
+        trainerName,
+        amount,
+        customerName: name,
+        mobile,
+        city,
+        address,
+      }),
+    });
 
-      const res = await fetch("/api/bookings", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          trainerId,
-          trainerName,
-          packageName: "Standard",
-          amount,
-          customerName,
-          mobile,
-          city,
-          address,
-        }),
-      });
-
-      if (!res.ok) {
-        throw new Error("Booking failed");
-      }
-
-      const data = await res.json();
-      router.push(`/success?id=${data.id}`);
-    } catch (err) {
-      alert("Booking failed. Check server logs.");
-    } finally {
-      setLoading(false);
-    }
+    const data = await res.json();
+    router.push(`/success?id=${data.id}`);
   }
 
   return (
-    <main className="min-h-screen flex justify-center items-center bg-gray-100">
-      <div className="bg-white p-6 rounded-xl w-full max-w-md space-y-4">
+    <main className="min-h-screen bg-gray-50 px-4 flex items-center justify-center">
+      <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md space-y-4">
 
         <h1 className="text-xl font-semibold text-center">
           Confirm Your Booking
         </h1>
 
-        <div className="border p-4 rounded">
+        {/* Booking summary */}
+        <div className="bg-blue-50 rounded-xl p-4 text-sm">
           <p><b>Trainer:</b> {trainerName}</p>
-          <p><b>Amount:</b> ₹{amount}</p>
+          <p><b>City:</b> {city}</p>
+          <p className="mt-2 text-lg font-bold text-blue-700">₹{amount}</p>
         </div>
 
         <input
           placeholder="Your Name"
-          className="border w-full p-2"
-          value={customerName}
-          onChange={e => setCustomerName(e.target.value)}
+          className="w-full border rounded-xl px-4 py-3"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
         />
 
         <input
-          placeholder="Mobile"
-          className="border w-full p-2"
+          placeholder="Mobile Number"
+          className="w-full border rounded-xl px-4 py-3"
           value={mobile}
-          onChange={e => setMobile(e.target.value.replace(/\D/g, "").slice(0, 10))}
+          inputMode="numeric"
+          onChange={(e) =>
+            setMobile(e.target.value.replace(/\D/g, "").slice(0, 10))
+          }
         />
-
-        <select
-          className="border w-full p-2"
-          value={city}
-          onChange={e => setCity(e.target.value)}
-        >
-          <option value="">Select City</option>
-          <option>Delhi</option>
-          <option>Noida</option>
-          <option>Gurgaon</option>
-        </select>
 
         <textarea
           placeholder="Pickup Address"
-          className="border w-full p-2"
+          className="w-full border rounded-xl px-4 py-3"
           value={address}
-          onChange={e => setAddress(e.target.value)}
+          onChange={(e) => setAddress(e.target.value)}
         />
 
-        <label className="text-sm flex gap-2">
+        <label className="flex gap-2 text-xs text-gray-600">
           <input
             type="checkbox"
             checked={consent}
-            onChange={e => setConsent(e.target.checked)}
+            onChange={(e) => setConsent(e.target.checked)}
           />
-          I agree to terms
+          I confirm I am 18+, legally eligible to learn driving, and accept risks.
         </label>
 
         <button
-          disabled={!isFormValid || loading}
           onClick={confirmBooking}
-          className="w-full bg-blue-600 text-white py-2 rounded disabled:bg-gray-400"
+          disabled={!isValid}
+          className="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold disabled:opacity-40"
         >
-          {loading ? "Booking..." : "Confirm Booking"}
+          Confirm Booking
         </button>
       </div>
     </main>
