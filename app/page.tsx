@@ -1,61 +1,58 @@
 "use client";
 
-import Image from "next/image";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 export default function HomePage() {
   const router = useRouter();
+
   const [city, setCity] = useState("");
   const [vehicle, setVehicle] = useState("");
 
-  const canProceed = city && vehicle;
+  function handleSearch() {
+    if (!city || !vehicle) return;
+    router.push(`/trainers?city=${city}&vehicle=${vehicle}`);
+  }
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-blue-50 to-white flex items-center justify-center px-4">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-6">
+    <main className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-indigo-50 px-4">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-6 space-y-6">
 
         {/* Logo */}
-        <div className="flex justify-center mb-4">
-          <Image
+        <div className="flex justify-center">
+          <img
             src="/logo.png"
             alt="LearnDrive"
-            width={120}
-            height={40}
-            priority
+            className="h-16"
           />
         </div>
 
         {/* Headline */}
-        <h1 className="text-xl font-semibold text-center text-gray-900">
-          Learn Driving from Verified Trainers
-        </h1>
+        <div className="text-center space-y-2">
+          <h1 className="text-xl font-semibold text-gray-900">
+            Learn Driving from Verified Trainers
+          </h1>
+          <p className="text-sm text-gray-600">
+            Book professional car or bike driving training near you
+          </p>
+        </div>
 
-        <p className="text-sm text-gray-600 text-center mt-1">
-          Book professional car or bike driving training near you
-        </p>
-
-    <div className="flex justify-center gap-4 mt-3 text-xs text-gray-600">
-  <span className="flex items-center gap-1">
-    ✅ Verified Trainers
-  </span>
-  <span className="flex items-center gap-1">
-    🕒 Flexible Timings
-  </span>
-  <span className="flex items-center gap-1">
-    🛡 Safe Areas
-  </span>
-</div>
+        {/* Trust badges */}
+        <div className="flex justify-center gap-4 text-xs text-gray-600">
+          <span>✔ Verified Trainers</span>
+          <span>✔ Flexible Timings</span>
+          <span>✔ Safe Areas</span>
+        </div>
 
         {/* City */}
-        <div className="mt-6">
+        <div className="space-y-1">
           <label className="text-sm font-medium text-gray-700">
             City
           </label>
           <select
-            className="w-full mt-1 border rounded-xl px-4 py-3"
             value={city}
             onChange={(e) => setCity(e.target.value)}
+            className="w-full border rounded-xl px-4 py-3 bg-white"
           >
             <option value="">Select your city</option>
             <option value="Delhi">Delhi NCR</option>
@@ -65,14 +62,14 @@ export default function HomePage() {
         </div>
 
         {/* Vehicle */}
-        <div className="mt-4">
+        <div className="space-y-1">
           <label className="text-sm font-medium text-gray-700">
             Vehicle Type
           </label>
           <select
-            className="w-full mt-1 border rounded-xl px-4 py-3"
             value={vehicle}
             onChange={(e) => setVehicle(e.target.value)}
+            className="w-full border rounded-xl px-4 py-3 bg-white"
           >
             <option value="">Select vehicle</option>
             <option value="CAR">Car</option>
@@ -82,26 +79,25 @@ export default function HomePage() {
 
         {/* CTA */}
         <button
-          disabled={!canProceed}
-          onClick={() =>
-            router.push(`/trainers?city=${city}&vehicle=${vehicle}`)
-          }
-          className="w-full mt-6 bg-blue-600 text-white py-3 rounded-xl text-lg font-semibold disabled:opacity-40 active:scale-95 transition"
+          onClick={handleSearch}
+          disabled={!city || !vehicle}
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-semibold disabled:opacity-40 transition"
         >
           Find Trainers
         </button>
 
         {/* Disclaimer */}
-        <p className="text-xs text-gray-500 mt-3 text-center">
-          By continuing, you confirm that you are 18+ and legally eligible to
-          learn driving.
+        <p className="text-[11px] text-center text-gray-500 leading-snug">
+          By continuing, you confirm that you are <b>18+</b> and legally
+          eligible to learn driving.
         </p>
 
-        {/* Footer */}
-        <div className="mt-5 text-xs text-gray-500 text-center">
-          <a href="/terms" className="underline mr-3">Terms</a>
-          <a href="/privacy" className="underline">Privacy</a>
+        {/* Footer links */}
+        <div className="flex justify-center gap-4 text-xs text-gray-500">
+          <a href="/terms" className="hover:underline">Terms</a>
+          <a href="/privacy" className="hover:underline">Privacy</a>
         </div>
+
       </div>
     </main>
   );

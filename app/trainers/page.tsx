@@ -12,11 +12,11 @@ type Trainer = {
 };
 
 export default function TrainersPage() {
-  const params = useSearchParams();
+  const searchParams = useSearchParams();
   const router = useRouter();
 
-  const city = params.get("city");
-  const vehicle = params.get("vehicle");
+  const city = searchParams.get("city");
+  const vehicle = searchParams.get("vehicle");
 
   const [trainers, setTrainers] = useState<Trainer[]>([]);
   const [loading, setLoading] = useState(true);
@@ -32,38 +32,44 @@ export default function TrainersPage() {
       });
   }, [city, vehicle]);
 
-  if (!city) return <div className="p-6">City not selected</div>;
-  if (loading) return <div className="p-6">Loading trainers…</div>;
+  if (!city) return <div className="p-6">Please select a city</div>;
+  if (loading) return <div className="p-6">Loading trainers...</div>;
   if (trainers.length === 0)
-    return <div className="p-6">No trainers available in {city}</div>;
+    return <div className="p-6">No trainers available in your city.</div>;
 
   return (
     <main className="min-h-screen bg-gray-50 px-4 py-6">
-      <h1 className="text-xl font-semibold text-center mb-4 text-gray-900">
-        Trainers in {city}
-      </h1>
+      <div className="max-w-4xl mx-auto space-y-6">
 
-      <div className="max-w-md mx-auto space-y-4">
+        <h1 className="text-xl font-semibold text-gray-900">
+          Available Trainers in {city}
+        </h1>
+
         {trainers.map(trainer => (
           <div
             key={trainer.id}
-            className="bg-white rounded-2xl shadow p-4"
+            className="bg-white rounded-2xl shadow-sm p-5 space-y-3"
           >
-            <h2 className="text-lg font-semibold text-gray-900">
-              {trainer.name}
-            </h2>
+            <div className="flex justify-between items-center">
+              <h2 className="text-lg font-semibold">
+                {trainer.name}
+              </h2>
+              <span className="text-sm text-gray-500">
+                {trainer.experience}+ yrs
+              </span>
+            </div>
 
-            <p className="text-sm text-gray-600 mt-1">
-              {trainer.experience}+ yrs experience
+            <p className="text-sm text-gray-600">
+              City: {trainer.city}
             </p>
 
             <button
               onClick={() =>
                 router.push(
-                  `/book?trainerId=${trainer.id}&trainerName=${trainer.name}&city=${city}&amount=5000`
+                  `/book?trainerId=${trainer.id}&trainerName=${trainer.name}&city=${trainer.city}&amount=5000`
                 )
               }
-              className="mt-4 w-full bg-green-600 text-white py-2 rounded-xl font-medium active:scale-95 transition"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-semibold transition"
             >
               Book Training
             </button>
