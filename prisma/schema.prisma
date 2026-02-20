@@ -1,28 +1,15 @@
-// ================================
-// PRISMA SCHEMA — DRIVE MARKETPLACE
-// STEP 1A: TRAINER ONBOARDING
-// Supports:
-// - Cars + Bikes + Scooters
-// - Independent Trainers + Driving Schools
-// ================================
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql" // Neon / cloud ready
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
-
-// ================================
-// ENUMS
-// ================================
 
 enum VehicleType {
   CAR
   BIKE
-  SCOOTER
 }
 
 enum TrainerType {
@@ -33,53 +20,81 @@ enum TrainerType {
 enum TrainerStatus {
   PENDING
   APPROVED
+  REJECTED
   SUSPENDED
 }
 
-// ================================
-// TRAINER MODEL
-// ================================
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  REFUNDED
+}
 
 model Trainer {
-  id             Int      @id @default(autoincrement())
+  id             Int           @id @default(autoincrement())
   name           String
-  mobile         String   @unique
+  mobile         String        @unique
   city           String
   experience     Int
   licenseNumber  String
-  approved       Boolean  @default(false)
-  createdAt      DateTime @default(now())
+  trainerType    TrainerType
+  status         TrainerStatus @default(PENDING)
+  rating         Float?        @default(0)
+  basePrice      Int?
+  verifiedSchool Boolean       @default(false) // ✅ CAR training safety gate
+  createdAt      DateTime      @default(now())
 
   vehicles       Vehicle[]
+  bookings       Booking[]
+
+  @@index([city])
+  @@index([status])
 }
 
-// ================================
-// BOOKING MODEL (LINKED TO TRAINER)
-// ================================
+model Vehicle {
+  id            Int         @id @default(autoincrement())
+  trainerId     Int
+  type          VehicleType
+  vehicleNumber String
+  dualControl   Boolean
+  insured       Boolean
+  createdAt     DateTime    @default(now())
+
+  trainer       Trainer     @relation(fields: [trainerId], references: [id])
+
+  @@index([trainerId])
+}
 
 model Booking {
-  id            Int      @id @default(autoincrement())
+  id            Int           @id @default(autoincrement())
   trainerId     Int
-  trainerName   String
   packageName   String
   amount        Int
+
+  platformFee   Int?          // ✅ revenue tracking
+  trainerPayout Int?          // ✅ margin calculation
 
   customerName  String
   mobile        String
   city          String
   address       String
 
-  createdAt     DateTime @default(now())
-}
+  status        BookingStatus @default(PENDING)
+  paymentStatus PaymentStatus @default(PENDING)
 
-model Vehicle {
-  id            Int      @id @default(autoincrement())
-  trainerId     Int
-  type          String   // car | bike (future)
-  vehicleNumber String
-  dualControl   Boolean  // REQUIRED for car training
-  insured       Boolean
-  createdAt     DateTime @default(now())
+  bookingDate   DateTime?
+  createdAt     DateTime      @default(now())
 
-  trainer       Trainer  @relation(fields: [trainerId], references: [id])
+  trainer       Trainer       @relation(fields: [trainerId], references: [id])
+
+  @@index([trainerId])
+  @@index([status])
+  @@index([paymentStatus])
 }

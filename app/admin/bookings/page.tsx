@@ -4,118 +4,123 @@ import { useEffect, useState } from "react";
 
 type Booking = {
   id: number;
-  trainer: string;
   packageName: string;
   amount: number;
   customerName: string;
   mobile: string;
   city: string;
   status: string;
+  paymentStatus: string;
   createdAt: string;
+  trainer: {
+    id: number;
+    name: string;
+    city: string;
+  };
 };
 
 export default function AdminBookingsPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
-  const [filter, setFilter] = useState("ALL");
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [updatingId, setUpdatingId] = useState<number | null>(null);
 
   const fetchBookings = async () => {
-    const res = await fetch("/api/bookings");
-    const data = await res.json();
-    setBookings(data);
+    try {
+      const res = await fetch("/api/admin/bookings");
+      const data = await res.json();
+      setBookings(data);
+    } catch (error) {
+      console.error("FETCH BOOKINGS ERROR:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
     fetchBookings();
   }, []);
 
-  const updateStatus = async (id: number, status: string) => {
-    setLoading(true);
-    await fetch("/api/bookings", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, status }),
-    });
-    await fetchBookings();
-    setLoading(false);
+  const updateStatus = async (id: number, newStatus: string) => {
+    try {
+      setUpdatingId(id);
+
+      await fetch("/api/admin/bookings/update", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ id, status: newStatus }),
+      });
+
+      await fetchBookings();
+    } catch (error) {
+      console.error("UPDATE STATUS ERROR:", error);
+    } finally {
+      setUpdatingId(null);
+    }
   };
 
-  const today = new Date().toDateString();
-
-  const filteredBookings = bookings.filter((b) => {
-    if (filter === "ALL") return true;
-    if (filter === "TODAY")
-      return new Date(b.createdAt).toDateString() === today;
-    return b.status === filter;
-  });
+  if (loading) {
+    return <div className="p-6">Loading bookings...</div>;
+  }
 
   return (
-    <div style={{ padding: 30 }}>
-      <h2>📋 All Bookings</h2>
+    <main className="p-6 bg-gray-50 min-h-screen">
+      <h1 className="text-2xl font-bold mb-6">All Bookings</h1>
 
-      {/* FILTERS */}
-      <div style={{ marginBottom: 16 }}>
-        <button onClick={() => setFilter("ALL")}>All</button>{" "}
-        <button onClick={() => setFilter("TODAY")}>Today</button>{" "}
-        <button onClick={() => setFilter("PENDING")}>Pending</button>{" "}
-        <button onClick={() => setFilter("CONFIRMED")}>Confirmed</button>{" "}
-        <button onClick={() => setFilter("CANCELLED")}>Cancelled</button>
-      </div>
+      {bookings.length === 0 && (
+        <div className="text-gray-600">No bookings yet.</div>
+      )}
 
-      {filteredBookings.map((b) => (
-        <div
-          key={b.id}
-          style={{
-            border: "1px solid #ddd",
-            borderRadius: 8,
-            padding: 16,
-            marginBottom: 16,
-          }}
-        >
-          <b>Trainer:</b> {b.trainer}<br />
-          <b>Package:</b> {b.packageName}<br />
-          <b>Amount:</b> ₹{b.amount}
-
-          <hr />
-
-          <b>Customer:</b> {b.customerName}<br />
-          <b>Mobile:</b> {b.mobile}<br />
-          <b>City:</b> {b.city}<br />
-
-          <b>Status:</b>{" "}
-          <span
-            style={{
-              fontWeight: "bold",
-              color:
-                b.status === "CONFIRMED"
-                  ? "green"
-                  : b.status === "CANCELLED"
-                  ? "red"
-                  : "orange",
-            }}
+      <div className="space-y-4">
+        {bookings.map((b) => (
+          <div
+            key={b.id}
+            className="bg-white p-5 rounded-xl shadow-sm border"
           >
-            {b.status}
-          </span>
+            <div className="flex justify-between items-center">
+              <div>
+                <div className="font-semibold text-lg">
+                  {b.customerName} ({b.mobile})
+                </div>
+                <div className="text-sm text-gray-600">
+                  Trainer: {b.trainer?.name}
+                </div>
+              </div>
 
-          <br />
-          <small>{new Date(b.createdAt).toLocaleString()}</small>
+              <div className="text-sm text-gray-500">
+                {new Date(b.createdAt).toLocaleDateString()}
+              </div>
+            </div>
 
-          <div style={{ marginTop: 10 }}>
-            <button
-              disabled={loading || b.status === "CONFIRMED"}
-              onClick={() => updateStatus(b.id, "CONFIRMED")}
-            >
-              ✅ Confirm
-            </button>{" "}
-            <button
-              disabled={loading || b.status === "CANCELLED"}
-              onClick={() => updateStatus(b.id, "CANCELLED")}
-            >
-              ❌ Cancel
-            </button>
+            <div className="mt-3 text-sm">
+              <div>Package: {b.packageName}</div>
+              <div>Amount: ₹ {b.amount}</div>
+              <div>City: {b.city}</div>
+              <div>Status: {b.status}</div>
+              <div>Payment: {b.paymentStatus}</div>
+            </div>
+
+            <div className="mt-4 flex gap-3">
+              <button
+                disabled={updatingId === b.id}
+                onClick={() => updateStatus(b.id, "CONFIRMED")}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+              >
+                Confirm
+              </button>
+
+              <button
+                disabled={updatingId === b.id}
+                onClick={() => updateStatus(b.id, "CANCELLED")}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
-        </div>
-      ))}
-    </div>
+        ))}
+      </div>
+    </main>
   );
 }
