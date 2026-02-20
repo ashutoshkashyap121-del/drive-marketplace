@@ -1,66 +1,40 @@
-export const dynamic = "force-dynamic";
-export const runtime = "nodejs";
+import { NextRequest, NextResponse } from "next/server";
+import prisma from "@/lib/prisma";
 
-import { NextResponse } from "next/server";
-import { prisma } from "../../lib/prisma";
-
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
+    const { trainerId, customerName, mobile, city, address, pincode, bookingDate } = body;
 
-    const trainerId = Number(body.trainerId);
+    if (!trainerId || !customerName || !mobile || !city || !address || !bookingDate) {
+      return NextResponse.json({ error: "All fields are required" }, { status: 400 });
+    }
 
-    // 1️⃣ Get trainer
     const trainer = await prisma.trainer.findUnique({
-      where: { id: trainerId },
-      include: { vehicles: true },
+      where: { id: parseInt(trainerId) },
     });
 
-    if (!trainer) {
-      return NextResponse.json(
-        { error: "Trainer not found" },
-        { status: 404 }
-      );
+    if (!trainer || trainer.status !== "APPROVED") {
+      return NextResponse.json({ error: "Trainer not available" }, { status: 404 });
     }
 
-    // 2️⃣ Must be an APPROVED trainer
-    if (trainer.status !== "APPROVED") {
-      return NextResponse.json(
-        { error: "This trainer is not currently available" },
-        { status: 400 }
-      );
-    }
-
-    const amount = Number(body.amount);
-
-    // 3️⃣ Revenue split: 20% platform fee, 80% trainer payout
-    const platformFee = Math.round(amount * 0.2);
-    const trainerPayout = amount - platformFee;
-
-    // 4️⃣ Create booking
     const booking = await prisma.booking.create({
       data: {
-        trainerId,
-        packageName: body.packageName || "Standard Training",
-        amount,
-        platformFee,
-        trainerPayout,
-        customerName: body.customerName,
-        mobile: body.mobile,
-        city: body.city,
-        address: body.address,
-        status: "PENDING",
-        paymentStatus: "PENDING",
+        trainerId: parseInt(trainerId),
+        customerName,
+        mobile,
+        city,
+        address,
+        pincode: pincode || null,
+        bookingDate: new Date(bookingDate),
+        packageName: "Standard Session",
+        amount: trainer.basePrice ?? 0,
       },
     });
 
-    return NextResponse.json({ id: booking.id });
-
+    return NextResponse.json({ success: true, booking }, { status: 201 });
   } catch (error) {
-    console.error("BOOKING ERROR:", error);
-    return NextResponse.json(
-      { error: "Booking failed" },
-      { status: 500 }
-    );
+    console.error("Booking error:", error);
+    return NextResponse.json({ error: "Failed to create booking" }, { status: 500 });
   }
 }

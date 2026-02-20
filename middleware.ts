@@ -4,16 +4,16 @@ import type { NextRequest } from "next/server";
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // Allow admin login page always
+  // Allow admin login page
   if (pathname === "/admin") {
     return NextResponse.next();
   }
 
-  // Protect admin bookings
-  if (pathname.startsWith("/admin/bookings")) {
-    const isAdmin = req.cookies.get("admin_auth")?.value;
+  // Protect all /admin routes except login
+  if (pathname.startsWith("/admin")) {
+    const session = req.cookies.get("admin_session")?.value;
 
-    if (isAdmin !== "true") {
+    if (!session) {
       return NextResponse.redirect(new URL("/admin", req.url));
     }
   }

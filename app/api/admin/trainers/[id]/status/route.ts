@@ -1,12 +1,15 @@
 export const runtime = "nodejs";
 
-import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { NextRequest, NextResponse } from "next/server";
+import prisma from "@/lib/prisma";
 import { verifyAdmin } from "@/lib/admin";
 import { verifyCSRF } from "@/lib/csrf";
 import { logAdminAction } from "@/lib/audit";
 
-export async function POST(req: Request) {
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
     // 🔐 Session validation
     if (!(await verifyAdmin())) {
@@ -24,19 +27,28 @@ export async function POST(req: Request) {
       );
     }
 
-    const body = await req.json();
-    const { trainerId } = body;
+    const { id: rawId } = await params;
+    const id = parseInt(rawId);
 
-    if (!trainerId) {
+    if (isNaN(id)) {
       return NextResponse.json(
-        { error: "trainerId required" },
+        { error: "Invalid trainer ID" },
+        { status: 400 }
+      );
+    }
+
+    const { status } = await req.json();
+
+    if (!["APPROVED", "REJECTED"].includes(status)) {
+      return NextResponse.json(
+        { error: "Invalid status" },
         { status: 400 }
       );
     }
 
     // 🔎 Fetch old status
     const existing = await prisma.trainer.findUnique({
-      where: { id: trainerId },
+      where: { id },
       select: { status: true },
     });
 
@@ -48,27 +60,28 @@ export async function POST(req: Request) {
     }
 
     const updated = await prisma.trainer.update({
-      where: { id: trainerId },
-      data: { status: "APPROVED" },
+      where: { id },
+      data: { status },
     });
 
     // 📝 Audit log
     await logAdminAction({
-      action: "TRAINER_APPROVED",
+      action: "TRAINER_STATUS_UPDATED",
       entityType: "Trainer",
-      entityId: trainerId,
+      entityId: id,
       metadata: {
         previousStatus: existing.status,
-        newStatus: "APPROVED",
+        newStatus: status,
       },
     });
 
     return NextResponse.json({ success: true, trainer: updated });
 
   } catch (error) {
-    console.error("ADMIN TRAINER APPROVE ERROR:", error);
+    console.error("ADMIN TRAINER STATUS UPDATE ERROR:", error);
+
     return NextResponse.json(
-      { error: "Internal Server Error" },
+      { error: "Failed to update status" },
       { status: 500 }
     );
   }

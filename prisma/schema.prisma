@@ -7,9 +7,13 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
 enum VehicleType {
   CAR
   BIKE
+  BIKE_GEARED
+  BIKE_NON_GEARED
 }
 
 enum TrainerType {
@@ -37,8 +41,12 @@ enum PaymentStatus {
   REFUNDED
 }
 
+// ─── Models ───────────────────────────────────────────────────────────────────
+
 model Trainer {
   id             Int           @id @default(autoincrement())
+
+  // ── Basic info (existing) ─────────────────────────────────────────────────
   name           String
   mobile         String        @unique
   city           String
@@ -48,14 +56,32 @@ model Trainer {
   status         TrainerStatus @default(PENDING)
   rating         Float?        @default(0)
   basePrice      Int?
-  verifiedSchool Boolean       @default(false) // ✅ CAR training safety gate
+  verifiedSchool Boolean       @default(false)
   createdAt      DateTime      @default(now())
 
+  // ── New: contact & profile ────────────────────────────────────────────────
+  email          String?       @unique    // for login & notifications
+  bio            String?                  // shown on public profile
+  photoUrl       String?                  // profile photo
+
+  // ── New: location & pincode matching ─────────────────────────────────────
+  pincode        String?                  // trainer's home/base pincode
+  serviceArea    String[]                 // all pincodes this trainer covers
+
+  // ── New: expertise ────────────────────────────────────────────────────────
+  languages      String[]                 // e.g. ["Hindi", "English"]
+  vehicleTypes   VehicleType[]            // all vehicle types they can train
+
+  // ── New: credentials ─────────────────────────────────────────────────────
+  aadharNo       String?                  // ⚠️ hash before storing in prod
+
+  // ── Existing relations ────────────────────────────────────────────────────
   vehicles       Vehicle[]
   bookings       Booking[]
 
   @@index([city])
   @@index([status])
+  @@index([pincode])          // new: for pincode-based lookups
 }
 
 model Vehicle {
@@ -77,14 +103,16 @@ model Booking {
   trainerId     Int
   packageName   String
   amount        Int
-
-  platformFee   Int?          // ✅ revenue tracking
-  trainerPayout Int?          // ✅ margin calculation
+  platformFee   Int?
+  trainerPayout Int?
 
   customerName  String
   mobile        String
   city          String
   address       String
+
+  // ── New: pincode on booking ───────────────────────────────────────────────
+  pincode       String?                   // learner's pincode at time of booking
 
   status        BookingStatus @default(PENDING)
   paymentStatus PaymentStatus @default(PENDING)
@@ -97,4 +125,25 @@ model Booking {
   @@index([trainerId])
   @@index([status])
   @@index([paymentStatus])
+  @@index([pincode])          // new: for area-based analytics
+}
+// ─── Admin Session (Production Auth Upgrade) ───────────────────────────────
+
+model AdminSession {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  @@index([expiresAt])
+}
+model AdminAuditLog {
+  id         Int      @id @default(autoincrement())
+  action     String
+  entityType String
+  entityId   String?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([entityType])
+  @@index([createdAt])
 }
