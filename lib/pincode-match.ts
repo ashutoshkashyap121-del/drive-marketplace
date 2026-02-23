@@ -1,6 +1,3 @@
-// lib/pincode-match.ts
-// Pincode-based trainer-to-learner matching utility
-
 import { prisma } from "@/lib/prisma";
 
 export type VehicleType = "CAR" | "BIKE" | "BIKE_GEARED" | "BIKE_NON_GEARED";
@@ -11,13 +8,6 @@ export interface MatchOptions {
   maxResults?: number;
 }
 
-/**
- * Find approved trainers who service a given pincode for a given vehicle type.
- * Trainers are sorted by:
- *   1. Whether their home pincode exactly matches (primary preference)
- *   2. Rating (descending)
- *   3. Price (ascending as tiebreaker)
- */
 export async function findTrainersByPincode({
   pincode,
   vehicleType,
@@ -25,14 +15,10 @@ export async function findTrainersByPincode({
 }: MatchOptions) {
   const trainers = await prisma.trainer.findMany({
     where: {
-      isApproved: true,
-      isActive: true,
-      serviceArea: {
-        has: pincode,
-      },
-      vehicleTypes: {
-        has: vehicleType,
-      },
+      status: "APPROVED",        // ✅ was: isApproved (doesn't exist)
+                                 // ✅ removed: isActive (doesn't exist)
+      serviceArea: { has: pincode },
+      vehicleTypes: { has: vehicleType },
     },
     select: {
       id: true,
@@ -42,30 +28,25 @@ export async function findTrainersByPincode({
       city: true,
       pincode: true,
       vehicleTypes: true,
-      pricePerHour: true,
-      yearsExp: true,
+      basePrice: true,           // ✅ was: pricePerHour
+      experience: true,          // ✅ was: yearsExp
       languages: true,
       rating: true,
-      totalReviews: true,
+                                 // ✅ removed: totalReviews (doesn't exist)
     },
-    orderBy: [{ rating: "desc" }, { pricePerHour: "asc" }],
+    orderBy: [{ rating: "desc" }, { basePrice: "asc" }], // ✅ was: pricePerHour
     take: maxResults,
   });
 
-  // Boost trainers whose home pincode matches exactly
   return trainers.sort((a, b) => {
     const aExact = a.pincode === pincode ? 1 : 0;
     const bExact = b.pincode === pincode ? 1 : 0;
     if (bExact !== aExact) return bExact - aExact;
-    if (b.rating !== a.rating) return b.rating - a.rating;
-    return a.pricePerHour - b.pricePerHour;
+    if (b.rating !== a.rating) return (b.rating ?? 0) - (a.rating ?? 0); // ✅ null-safe
+    return (a.basePrice ?? 0) - (b.basePrice ?? 0); // ✅ was: pricePerHour, null-safe
   });
 }
 
-/**
- * Validate an Indian pincode via the India Post API (free, no auth needed).
- * Returns { valid, district, state } or { valid: false }
- */
 export async function validatePincode(pincode: string): Promise<{
   valid: boolean;
   district?: string;
@@ -75,10 +56,9 @@ export async function validatePincode(pincode: string): Promise<{
   if (!/^\d{6}$/.test(pincode)) return { valid: false };
 
   try {
-    const res = await fetch(
-      `https://api.postalpincode.in/pincode/${pincode}`,
-      { next: { revalidate: 86400 } } // cache for 24h
-    );
+    const res = await fetch(`https://api.postalpincode.in/pincode/${pincode}`, {
+      next: { revalidate: 86400 },
+    });
     const data = await res.json();
     if (data[0]?.Status === "Success") {
       const po = data[0].PostOffice[0];
@@ -90,14 +70,11 @@ export async function validatePincode(pincode: string): Promise<{
       };
     }
   } catch {
-    // silently fail — don't block the UX on a 3rd party service
+    // silently fail
   }
   return { valid: false };
 }
 
-/**
- * Normalised vehicle type labels for display
- */
 export const VEHICLE_LABELS: Record<VehicleType, string> = {
   CAR: "Car",
   BIKE: "Bike (Any)",

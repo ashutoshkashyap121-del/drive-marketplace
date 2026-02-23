@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 
 export async function verifyAdmin(): Promise<boolean> {
   try {
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const sessionId = cookieStore.get("admin_session")?.value;
 
     if (!sessionId) return false;

@@ -1,7 +1,7 @@
 // 🔒 TODO: Add your auth guard here (NextAuth / Clerk / middleware)
 // e.g. with NextAuth: const session = await getServerSession(); if (!session) redirect("/login");
 
-import prisma from "@/lib/prisma";
+import {prisma} from "@/lib/prisma";
 import PendingTrainers from "./_components/PendingTrainers";
 
 export const dynamic = "force-dynamic"; // always fetch fresh data

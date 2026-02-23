@@ -60,15 +60,14 @@ export async function GET(req: NextRequest) {
         pincode: true,
         serviceArea: true,
         vehicleTypes: true,
-        pricePerHour: true,
-        yearsExp: true,
+        basePrice: true,
+        experience: true,
         languages: true,
         rating: true,
-        totalReviews: true,
       },
       orderBy: [
         { rating: "desc" },
-        { pricePerHour: "asc" },
+        { basePrice: "asc" },
       ],
       skip: (page - 1) * limit,
       take: limit,
@@ -81,7 +80,7 @@ export async function GET(req: NextRequest) {
         const aExact = a.pincode === pincode ? 1 : 0;
         const bExact = b.pincode === pincode ? 1 : 0;
         if (bExact !== aExact) return bExact - aExact;
-        return b.rating - a.rating;
+        return (b.rating ?? 0) - (a.rating ?? 0);
       })
     : trainers;
 

@@ -30,7 +30,7 @@ export async function POST(req: Request) {
       },
     });
 
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
 
     // Session cookie (httpOnly)
     cookieStore.set("admin_session", sessionId, {
