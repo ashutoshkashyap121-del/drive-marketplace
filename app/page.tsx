@@ -109,7 +109,7 @@ export default function HomePage() {
         <div className="brand-name">Learn<span>Drive</span></div>
         <div style={{ display: "flex", gap: 24, alignItems: "center" }}>
           <a href="/trainers" style={{ color: "rgba(255,255,255,0.75)", textDecoration: "none", fontSize: "0.9rem", fontWeight: 500 }}>Browse Trainers</a>
-          <a href="/trainers/register" style={{ color: "rgba(255,255,255,0.5)", textDecoration: "none", fontSize: "0.82rem" }}>For Schools</a>
+          <a href="/trainers/register" style={{ color: "rgba(255,255,255,0.5)", textDecoration: "none", fontSize: "0.82rem" }}>Register as Trainer</a>
         </div>
       </nav>
 
@@ -266,7 +266,7 @@ export default function HomePage() {
         <div style={{ marginBottom: 10 }}>
           <a href="/terms">Terms of Service</a>
           <a href="/privacy">Privacy Policy</a>
-          <a href="/trainers/register">For Driving Schools</a>
+          <a href="/trainers/register">Register as Trainer</a>
         </div>
         © {new Date().getFullYear()} LearnDrive. All rights reserved. &nbsp;·&nbsp; Delhi NCR · Mumbai · Bangalore
       </footer>
