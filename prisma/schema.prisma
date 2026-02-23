@@ -7,9 +7,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-//
-// ───────────────────────────────── ENUMS ─────────────────────────────────
-//
+// ─── Enums ────────────────────────────────────────────────────────────────────
 
 enum VehicleType {
   CAR
@@ -43,14 +41,12 @@ enum PaymentStatus {
   REFUNDED
 }
 
-//
-// ───────────────────────────────── MODELS ─────────────────────────────────
-//
+// ─── Models ───────────────────────────────────────────────────────────────────
 
 model Trainer {
   id             Int           @id @default(autoincrement())
 
-  // ── Basic info ─────────────────────────────────────────────
+  // Basic info
   name           String
   mobile         String        @unique
   city           String
@@ -63,25 +59,25 @@ model Trainer {
   verifiedSchool Boolean       @default(false)
   createdAt      DateTime      @default(now())
 
-  // ── Contact & profile ─────────────────────────────────────
+  // Contact & profile
   email          String?       @unique
   bio            String?
   photoUrl       String?
 
-  // ── Location ──────────────────────────────────────────────
+  // Location
   pincode        String?
   serviceArea    String[]
 
-  // ── Expertise ─────────────────────────────────────────────
+  // Expertise
   languages      String[]
   vehicleTypes   VehicleType[]
 
-  // ── Credentials (ENCRYPTED Aadhaar) ───────────────────────
-aadharEncrypted String?
-aadharIV        String?
-aadharAuthTag   String?
+  // Aadhaar (encrypted — AES-256-GCM)
+  aadharEncrypted String?
+  aadharIV        String?
+  aadharAuthTag   String?
 
-  // ── Relations ─────────────────────────────────────────────
+  // Relations
   vehicles       Vehicle[]
   bookings       Booking[]
   documents      TrainerDocument[]
@@ -90,10 +86,6 @@ aadharAuthTag   String?
   @@index([status])
   @@index([pincode])
 }
-
-//
-// ───────────────────────────── VEHICLES ─────────────────────────────
-//
 
 model Vehicle {
   id                  Int         @id @default(autoincrement())
@@ -104,7 +96,7 @@ model Vehicle {
   insured             Boolean     @default(false)
   createdAt           DateTime    @default(now())
 
-  // Extra vehicle details
+  // Extended fields
   rcNumber            String?
   vehicleYear         Int?
   insuranceValidUntil DateTime?
@@ -114,16 +106,12 @@ model Vehicle {
   @@index([trainerId])
 }
 
-//
-// ───────────────────────── TRAINER DOCUMENTS ─────────────────────────
-//
-
 model TrainerDocument {
   id          Int      @id @default(autoincrement())
   trainerId   Int
-  docType     String   // "LICENSE", "INSURANCE", "RC"
+  docType     String   // "LICENSE" | "INSURANCE" | "RC"
   fileName    String
-  base64Data  String   @db.Text
+  fileUrl     String   // Cloudinary secure_url
   createdAt   DateTime @default(now())
 
   trainer     Trainer  @relation(fields: [trainerId], references: [id])
@@ -131,10 +119,6 @@ model TrainerDocument {
   @@index([trainerId])
   @@index([docType])
 }
-
-//
-// ───────────────────────── BOOKINGS ─────────────────────────
-//
 
 model Booking {
   id            Int           @id @default(autoincrement())
@@ -163,10 +147,6 @@ model Booking {
   @@index([paymentStatus])
   @@index([pincode])
 }
-
-//
-// ───────────────────────── ADMIN MODELS ─────────────────────────
-//
 
 model AdminSession {
   id        String   @id @default(uuid())

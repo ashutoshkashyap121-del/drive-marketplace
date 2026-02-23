@@ -1,3 +1,4 @@
+// app/api/trainers/register/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { encryptAadhar } from "@/lib/aadhar";
@@ -6,12 +7,15 @@ import { notifyAdminNewTrainer } from "@/lib/notifications";
 
 const CURRENT_YEAR = new Date().getFullYear();
 
+// ─── Validation Schema ────────────────────────────────────────────────────────
+// Documents are now Cloudinary URLs — uploaded directly from browser
+
 const DocumentSchema = z.object({
-  licensePhoto: z.string().min(1),
+  licensePhotoUrl: z.string().url("Invalid licence photo URL"),
   licensePhotoName: z.string().min(1),
-  insuranceDoc: z.string().min(1),
+  insuranceDocUrl: z.string().url("Invalid insurance document URL"),
   insuranceDocName: z.string().min(1),
-  rcDoc: z.string().min(1),
+  rcDocUrl: z.string().url("Invalid RC document URL"),
   rcDocName: z.string().min(1),
 });
 
@@ -25,9 +29,9 @@ const RegisterSchema = z.object({
   pincode: z.string().regex(/^\d{6}$/),
   serviceArea: z.array(z.string().regex(/^\d{6}$/)).min(1).max(10),
 
-  vehicleTypes: z
-    .array(z.enum(["CAR", "BIKE", "BIKE_GEARED", "BIKE_NON_GEARED"]))
-    .min(1),
+  vehicleTypes: z.array(
+    z.enum(["CAR", "BIKE", "BIKE_GEARED", "BIKE_NON_GEARED"])
+  ).min(1),
 
   experience: z.number().min(5),
   languages: z.array(z.string()).min(1),
@@ -40,21 +44,18 @@ const RegisterSchema = z.object({
   insuranceValidUntil: z.string(),
 
   licenseNumber: z.string().min(10),
-
-  aadharNo: z
-    .string()
-    .regex(/^\d{12}$/, "Aadhaar must be 12 digits")
-    .optional(),
+  aadharNo: z.string().regex(/^\d{12}$/).optional(),
 
   documents: DocumentSchema,
 });
+
+// ─── POST Handler ─────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
 
     const parsed = RegisterSchema.safeParse(body);
-
     if (!parsed.success) {
       const issues: Record<string, string> = {};
       parsed.error.issues.forEach((e) => {
@@ -66,15 +67,7 @@ export async function POST(req: NextRequest) {
 
     const data = parsed.data;
 
-    const insuranceDate = new Date(data.insuranceValidUntil);
-    if (insuranceDate <= new Date()) {
-      return NextResponse.json(
-        { error: "Validation failed", issues: { insuranceValidUntil: "Insurance must be valid" } },
-        { status: 400 }
-      );
-    }
-
-    // Car trainers must have dual control
+    // Dual control check
     if (data.vehicleTypes.includes("CAR") && !data.hasDualControl) {
       return NextResponse.json(
         { error: "Validation failed", issues: { hasDualControl: "Car trainers must confirm dual control vehicle" } },
@@ -82,21 +75,37 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Insurance validity check
+    const insuranceDate = new Date(data.insuranceValidUntil);
+    if (insuranceDate <= new Date()) {
+      return NextResponse.json(
+        { error: "Validation failed", issues: { insuranceValidUntil: "Insurance must be currently valid" } },
+        { status: 400 }
+      );
+    }
+
+    // Duplicate check
     const existing = await prisma.trainer.findFirst({
       where: { OR: [{ mobile: data.mobile }, { email: data.email }] },
     });
-
     if (existing) {
-      return NextResponse.json({ error: "Trainer already exists" }, { status: 409 });
+      const field = existing.mobile === data.mobile ? "mobile" : "email";
+      return NextResponse.json(
+        { error: "Validation failed", issues: { [field]: `A trainer with this ${field} already exists` } },
+        { status: 409 }
+      );
     }
 
-    // Encrypt Aadhaar only if provided
+    // Encrypt Aadhaar if provided
     let encryptedAadhar: { encrypted: string; iv: string; authTag: string } | undefined;
     if (data.aadharNo) {
       encryptedAadhar = encryptAadhar(data.aadharNo);
     }
 
+    // ── Transaction ───────────────────────────────────────────────────────────
     const trainer = await prisma.$transaction(async (tx) => {
+
+      // 1. Create trainer
       const newTrainer = await tx.trainer.create({
         data: {
           name: data.name,
@@ -111,15 +120,16 @@ export async function POST(req: NextRequest) {
           languages: data.languages,
           basePrice: data.basePrice,
           licenseNumber: data.licenseNumber,
-          aadharEncrypted: encryptedAadhar?.encrypted,
-          aadharIV: encryptedAadhar?.iv,
-          aadharAuthTag: encryptedAadhar?.authTag,
+          aadharEncrypted: encryptedAadhar?.encrypted ?? null,
+          aadharIV: encryptedAadhar?.iv ?? null,
+          aadharAuthTag: encryptedAadhar?.authTag ?? null,
           trainerType: "INDEPENDENT",
           status: "PENDING",
           rating: 0,
         },
       });
 
+      // 2. Create vehicle
       await tx.vehicle.create({
         data: {
           trainerId: newTrainer.id,
@@ -133,18 +143,34 @@ export async function POST(req: NextRequest) {
         },
       });
 
+      // 3. Save Cloudinary URLs — no server upload needed, browser already did it
       await tx.trainerDocument.createMany({
         data: [
-          { trainerId: newTrainer.id, docType: "LICENSE", fileName: data.documents.licensePhotoName, base64Data: data.documents.licensePhoto },
-          { trainerId: newTrainer.id, docType: "INSURANCE", fileName: data.documents.insuranceDocName, base64Data: data.documents.insuranceDoc },
-          { trainerId: newTrainer.id, docType: "RC", fileName: data.documents.rcDocName, base64Data: data.documents.rcDoc },
+          {
+            trainerId: newTrainer.id,
+            docType: "LICENSE",
+            fileName: data.documents.licensePhotoName,
+            fileUrl: data.documents.licensePhotoUrl,
+          },
+          {
+            trainerId: newTrainer.id,
+            docType: "INSURANCE",
+            fileName: data.documents.insuranceDocName,
+            fileUrl: data.documents.insuranceDocUrl,
+          },
+          {
+            trainerId: newTrainer.id,
+            docType: "RC",
+            fileName: data.documents.rcDocName,
+            fileUrl: data.documents.rcDocUrl,
+          },
         ],
       });
 
       return newTrainer;
     });
 
-    // ── Notify admin (non-blocking — won't fail the request if email fails) ──
+    // ── Notify admin (non-blocking) ───────────────────────────────────────────
     notifyAdminNewTrainer({
       id: trainer.id,
       name: trainer.name,
@@ -156,10 +182,24 @@ export async function POST(req: NextRequest) {
       licenseNumber: data.licenseNumber,
     }).catch((err) => console.error("[NOTIFY_ADMIN_ERROR]", err));
 
-    return NextResponse.json({ success: true, trainerId: trainer.id }, { status: 201 });
+    return NextResponse.json(
+      {
+        success: true,
+        message: "Application submitted successfully. Our team will review within 24-48 hours.",
+        trainerId: trainer.id,
+      },
+      { status: 201 }
+    );
 
-  } catch (error) {
+  } catch (error: any) {
     console.error("[TRAINER_REGISTER]", error);
-    return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
+    if (error?.code === "P2002") {
+      const field = error?.meta?.target?.[0];
+      return NextResponse.json(
+        { error: "Validation failed", issues: { [field]: `This ${field} is already registered` } },
+        { status: 409 }
+      );
+    }
+    return NextResponse.json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }
