@@ -70,14 +70,18 @@ export async function POST(req: NextRequest) {
     // ── Validate input ───────────────────────────────────────────────────────
     const parsed = RegisterSchema.safeParse(body);
     if (!parsed.success) {
-      const issues: Record<string, string> = {};
-      parsed.error.errors.forEach((e) => {
-        const key = e.path[e.path.length - 1] as string;
-        if (!issues[key]) issues[key] = e.message;
-      });
-      return NextResponse.json({ error: "Validation failed", issues }, { status: 400 });
-    }
+  const issues: Record<string, string> = {};
 
+  parsed.error.issues.forEach((e) => {
+    const key = e.path[e.path.length - 1] as string;
+    if (!issues[key]) issues[key] = e.message;
+  });
+
+  return NextResponse.json(
+    { error: "Validation failed", issues },
+    { status: 400 }
+  );
+}
     const data = parsed.data;
 
     // ── Car trainers MUST have dual control ──────────────────────────────────
