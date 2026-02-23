@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -22,7 +22,20 @@ interface FormData {
   yearsExp: string;
   languages: string[];
   pricePerHour: string;
-  // Step 4 – Credentials
+  // Step 3b – Vehicle Details
+  hasDualControl: boolean;
+  vehicleYear: string;
+  insuranceValidUntil: string;
+  rcNumber: string;
+  vehicleNumber: string;
+  // Step 4 – Documents
+  licensePhotoBase64: string;
+  licensePhotoName: string;
+  insuranceDocBase64: string;
+  insuranceDocName: string;
+  rcDocBase64: string;
+  rcDocName: string;
+  // Step 5 – Credentials
   licenseNo: string;
   aadharNo: string;
   agreedToTerms: boolean;
@@ -32,29 +45,66 @@ interface FormData {
 
 const CITIES = ["Delhi NCR", "Mumbai", "Bangalore"];
 
-const VEHICLE_OPTIONS: { value: VehicleType; label: string; icon: string; desc: string }[] = [
-  { value: "CAR", label: "Car", icon: "🚗", desc: "Manual & automatic transmission" },
-  { value: "BIKE_GEARED", label: "Geared Bike", icon: "🏍️", desc: "Motorcycles with gears" },
-  { value: "BIKE_NON_GEARED", label: "Scooter / Non-Geared", icon: "🛵", desc: "Scooters & automatic bikes" },
+const VEHICLE_OPTIONS: {
+  value: VehicleType;
+  label: string;
+  icon: string;
+  desc: string;
+}[] = [
+  {
+    value: "CAR",
+    label: "Car",
+    icon: "🚗",
+    desc: "Manual & automatic transmission",
+  },
+  {
+    value: "BIKE_GEARED",
+    label: "Geared Bike",
+    icon: "🏍️",
+    desc: "Motorcycles with gears",
+  },
+  {
+    value: "BIKE_NON_GEARED",
+    label: "Scooter / Non-Geared",
+    icon: "🛵",
+    desc: "Scooters & automatic bikes",
+  },
 ];
 
-const LANGUAGES = ["Hindi", "English", "Marathi", "Kannada", "Tamil", "Telugu", "Bengali", "Gujarati", "Punjabi"];
+const LANGUAGES = [
+  "Hindi","English","Marathi","Kannada","Tamil",
+  "Telugu","Bengali","Gujarati","Punjabi",
+];
+
+const CURRENT_YEAR = new Date().getFullYear();
 
 const STEPS = [
   { id: 1, label: "Personal", icon: "👤" },
   { id: 2, label: "Location", icon: "📍" },
   { id: 3, label: "Expertise", icon: "🎓" },
-  { id: 4, label: "Credentials", icon: "📋" },
+  { id: 4, label: "Documents", icon: "📄" },
+  { id: 5, label: "Verify", icon: "🔒" },
 ];
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 function FieldError({ msg }: { msg?: string }) {
   if (!msg) return null;
-  return <p className="mt-1 text-xs text-red-400 flex items-center gap-1"><span>⚠</span>{msg}</p>;
+  return (
+    <p className="mt-1 text-xs text-red-400 flex items-center gap-1">
+      <span>⚠</span>
+      {msg}
+    </p>
+  );
 }
 
-function Label({ children, required }: { children: React.ReactNode; required?: boolean }) {
+function Label({
+  children,
+  required,
+}: {
+  children: React.ReactNode;
+  required?: boolean;
+}) {
   return (
     <label className="block text-sm font-semibold text-slate-300 mb-1.5 tracking-wide">
       {children}
@@ -70,6 +120,8 @@ function Input({
   placeholder,
   maxLength,
   disabled,
+  min,
+  max,
 }: {
   type?: string;
   value: string;
@@ -77,6 +129,8 @@ function Input({
   placeholder?: string;
   maxLength?: number;
   disabled?: boolean;
+  min?: string;
+  max?: string;
 }) {
   return (
     <input
@@ -86,7 +140,9 @@ function Input({
       placeholder={placeholder}
       maxLength={maxLength}
       disabled={disabled}
-      className="w-full bg-navy-800 border border-slate-600 rounded-xl px-4 py-3 text-white placeholder-slate-500
+      min={min}
+      max={max}
+      className="w-full border border-slate-600 rounded-xl px-4 py-3 text-white placeholder-slate-500
         focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20
         disabled:opacity-50 transition-all duration-200"
       style={{ background: "rgba(15, 23, 42, 0.8)" }}
@@ -94,7 +150,90 @@ function Input({
   );
 }
 
-// ─── Steps ────────────────────────────────────────────────────────────────────
+// ─── File Upload Component ────────────────────────────────────────────────────
+
+function FileUpload({
+  label,
+  required,
+  accept,
+  fileName,
+  onFile,
+  hint,
+}: {
+  label: string;
+  required?: boolean;
+  accept: string;
+  fileName: string;
+  onFile: (base64: string, name: string) => void;
+  hint?: string;
+}) {
+  const ref = useRef<HTMLInputElement>(null);
+  const [error, setError] = useState("");
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setError("");
+
+    // 5 MB limit
+    if (file.size > 5 * 1024 * 1024) {
+      setError("File too large — max 5 MB");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64 = (reader.result as string).split(",")[1];
+      onFile(base64, file.name);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  return (
+    <div>
+      <Label required={required}>{label}</Label>
+      {hint && <p className="text-xs text-slate-500 mb-2">{hint}</p>}
+      <div
+        onClick={() => ref.current?.click()}
+        className={`relative flex items-center gap-4 px-4 py-4 rounded-xl border-2 border-dashed cursor-pointer transition-all duration-200
+          ${fileName
+            ? "border-green-500/50 bg-green-500/5"
+            : "border-slate-600 hover:border-amber-400/50 hover:bg-amber-400/5"
+          }`}
+      >
+        <input
+          ref={ref}
+          type="file"
+          accept={accept}
+          onChange={handleChange}
+          className="hidden"
+        />
+        <div className="text-2xl">{fileName ? "✅" : "📁"}</div>
+        <div className="flex-1 min-w-0">
+          {fileName ? (
+            <>
+              <p className="text-sm font-medium text-green-400 truncate">{fileName}</p>
+              <p className="text-xs text-slate-500 mt-0.5">Click to replace</p>
+            </>
+          ) : (
+            <>
+              <p className="text-sm font-medium text-slate-300">Click to upload</p>
+              <p className="text-xs text-slate-500 mt-0.5">JPG, PNG or PDF · Max 5 MB</p>
+            </>
+          )}
+        </div>
+        {!fileName && (
+          <span className="text-xs text-amber-400 font-semibold border border-amber-400/30 rounded-lg px-3 py-1.5">
+            Browse
+          </span>
+        )}
+      </div>
+      {error && <p className="mt-1 text-xs text-red-400">⚠ {error}</p>}
+    </div>
+  );
+}
+
+// ─── Step 1: Personal ─────────────────────────────────────────────────────────
 
 function StepPersonal({
   data,
@@ -109,33 +248,51 @@ function StepPersonal({
     <div className="space-y-5">
       <div>
         <Label required>Full Name</Label>
-        <Input value={data.name} onChange={(v) => onChange("name", v)} placeholder="Rajesh Kumar" />
+        <Input
+          value={data.name}
+          onChange={(v) => onChange("name", v)}
+          placeholder="Rajesh Kumar"
+        />
         <FieldError msg={errors.name} />
       </div>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <Label required>Email Address</Label>
-          <Input type="email" value={data.email} onChange={(v) => onChange("email", v)} placeholder="rajesh@example.com" />
+          <Input
+            type="email"
+            value={data.email}
+            onChange={(v) => onChange("email", v)}
+            placeholder="rajesh@example.com"
+          />
           <FieldError msg={errors.email} />
         </div>
         <div>
           <Label required>Mobile Number</Label>
           <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-mono">+91</span>
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-mono">
+              +91
+            </span>
             <input
               type="tel"
               value={data.phone}
-              onChange={(e) => onChange("phone", e.target.value.replace(/\D/g, "").slice(0, 10))}
+              onChange={(e) =>
+                onChange("phone", e.target.value.replace(/\D/g, "").slice(0, 10))
+              }
               placeholder="9876543210"
               maxLength={10}
-              className="w-full bg-navy-800 border border-slate-600 rounded-xl pl-12 pr-4 py-3 text-white placeholder-slate-500
+              className="w-full border border-slate-600 rounded-xl pl-12 pr-4 py-3 text-white placeholder-slate-500
                 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-all duration-200"
               style={{ background: "rgba(15, 23, 42, 0.8)" }}
             />
           </div>
+          <p className="mt-1 text-xs text-slate-500">
+            Learners will contact you on this number
+          </p>
           <FieldError msg={errors.phone} />
         </div>
       </div>
+
       <div>
         <Label required>About You</Label>
         <textarea
@@ -144,7 +301,7 @@ function StepPersonal({
           placeholder="Tell learners about your teaching style, experience, and what makes you a great driving instructor..."
           rows={4}
           maxLength={500}
-          className="w-full bg-navy-800 border border-slate-600 rounded-xl px-4 py-3 text-white placeholder-slate-500
+          className="w-full border border-slate-600 rounded-xl px-4 py-3 text-white placeholder-slate-500
             focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-all duration-200 resize-none"
           style={{ background: "rgba(15, 23, 42, 0.8)" }}
         />
@@ -156,6 +313,8 @@ function StepPersonal({
     </div>
   );
 }
+
+// ─── Step 2: Location ─────────────────────────────────────────────────────────
 
 function StepLocation({
   data,
@@ -171,26 +330,16 @@ function StepLocation({
 
   const addPincode = () => {
     const p = pincodeInput.trim();
-    if (!/^\d{6}$/.test(p)) {
-      setPincodeError("Enter a valid 6-digit pincode");
-      return;
-    }
-    if (data.serviceArea.includes(p)) {
-      setPincodeError("Pincode already added");
-      return;
-    }
-    if (data.serviceArea.length >= 10) {
-      setPincodeError("Maximum 10 service pincodes");
-      return;
-    }
+    if (!/^\d{6}$/.test(p)) { setPincodeError("Enter a valid 6-digit pincode"); return; }
+    if (data.serviceArea.includes(p)) { setPincodeError("Pincode already added"); return; }
+    if (data.serviceArea.length >= 10) { setPincodeError("Maximum 10 service pincodes"); return; }
     onChange("serviceArea", [...data.serviceArea, p]);
     setPincodeInput("");
     setPincodeError("");
   };
 
-  const removePincode = (p: string) => {
+  const removePincode = (p: string) =>
     onChange("serviceArea", data.serviceArea.filter((x) => x !== p));
-  };
 
   return (
     <div className="space-y-5">
@@ -233,7 +382,7 @@ function StepLocation({
       <div>
         <Label required>Service Pincodes</Label>
         <p className="text-xs text-slate-500 mb-2">
-          Add all pincodes you can travel to for training sessions (max 10)
+          Add all pincodes you can travel to for training (max 10)
         </p>
         <div className="flex gap-2">
           <input
@@ -243,21 +392,20 @@ function StepLocation({
             onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addPincode())}
             placeholder="e.g. 110001"
             maxLength={6}
-            className="flex-1 bg-navy-800 border border-slate-600 rounded-xl px-4 py-3 text-white placeholder-slate-500
+            className="flex-1 border border-slate-600 rounded-xl px-4 py-3 text-white placeholder-slate-500
               focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-all duration-200"
             style={{ background: "rgba(15, 23, 42, 0.8)" }}
           />
           <button
             type="button"
             onClick={addPincode}
-            className="px-5 py-3 bg-amber-400 hover:bg-amber-300 text-navy-900 font-bold rounded-xl transition-colors duration-200 text-sm"
+            className="px-5 py-3 bg-amber-400 hover:bg-amber-300 font-bold rounded-xl transition-colors duration-200 text-sm"
             style={{ color: "#0f172a" }}
           >
             Add
           </button>
         </div>
         {pincodeError && <p className="mt-1 text-xs text-red-400">⚠ {pincodeError}</p>}
-
         {data.serviceArea.length > 0 && (
           <div className="flex flex-wrap gap-2 mt-3">
             {data.serviceArea.map((p) => (
@@ -283,6 +431,8 @@ function StepLocation({
   );
 }
 
+// ─── Step 3: Expertise + Vehicle Details ──────────────────────────────────────
+
 function StepExpertise({
   data,
   errors,
@@ -292,6 +442,8 @@ function StepExpertise({
   errors: Partial<Record<keyof FormData, string>>;
   onChange: (k: keyof FormData, v: any) => void;
 }) {
+  const hasCAR = data.vehicleTypes.includes("CAR");
+
   const toggleVehicle = (v: VehicleType) => {
     const current = data.vehicleTypes;
     onChange(
@@ -310,6 +462,7 @@ function StepExpertise({
 
   return (
     <div className="space-y-6">
+      {/* Vehicle Types */}
       <div>
         <Label required>Vehicle Types You Train</Label>
         <div className="grid grid-cols-1 gap-3 mt-1">
@@ -339,7 +492,9 @@ function StepExpertise({
                     selected ? "border-amber-400 bg-amber-400" : "border-slate-600"
                   }`}
                 >
-                  {selected && <span className="text-xs text-navy-900 font-bold" style={{ color: "#0f172a" }}>✓</span>}
+                  {selected && (
+                    <span className="text-xs font-bold" style={{ color: "#0f172a" }}>✓</span>
+                  )}
                 </div>
               </button>
             );
@@ -348,6 +503,105 @@ function StepExpertise({
         <FieldError msg={errors.vehicleTypes} />
       </div>
 
+      {/* Dual Control — mandatory for CAR */}
+      {hasCAR && (
+        <div
+          className="rounded-xl p-4 border"
+          style={{ background: "rgba(239,68,68,0.06)", borderColor: "rgba(239,68,68,0.25)" }}
+        >
+          <div className="flex items-start gap-3">
+            <div className="text-red-400 text-lg mt-0.5">⚠️</div>
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-red-300 mb-1">
+                Dual Control Vehicle — Mandatory for Car Trainers
+              </p>
+              <p className="text-xs text-slate-400 mb-3 leading-relaxed">
+                Under the <strong className="text-slate-300">Motor Vehicles Act, 1988</strong>, all
+                cars used for driving training must have dual controls (secondary brake & clutch
+                pedals for the instructor). Trainers without dual control cars will not be approved.
+              </p>
+              <button
+                type="button"
+                onClick={() => onChange("hasDualControl", !data.hasDualControl)}
+                className="flex items-start gap-3 w-full text-left group"
+              >
+                <div
+                  className={`mt-0.5 w-5 h-5 rounded border-2 flex-shrink-0 flex items-center justify-center transition-all duration-200 ${
+                    data.hasDualControl
+                      ? "border-green-400 bg-green-400"
+                      : "border-slate-500 group-hover:border-red-400"
+                  }`}
+                >
+                  {data.hasDualControl && (
+                    <span className="text-xs font-bold" style={{ color: "#0f172a" }}>✓</span>
+                  )}
+                </div>
+                <span className="text-sm text-slate-200 leading-relaxed">
+                  I confirm my training car has{" "}
+                  <strong className="text-white">dual control (dual brake & clutch pedals)</strong>{" "}
+                  installed and meets all Motor Vehicles Act requirements.
+                </span>
+              </button>
+              <FieldError msg={errors.hasDualControl} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Vehicle Details */}
+      <div>
+        <h3 className="text-sm font-semibold text-amber-400 uppercase tracking-widest mb-3">
+          Training Vehicle Details
+        </h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <Label required>Vehicle Registration Number</Label>
+            <Input
+              value={data.vehicleNumber}
+              onChange={(v) => onChange("vehicleNumber", v.toUpperCase())}
+              placeholder="DL01AB1234"
+            />
+            <FieldError msg={errors.vehicleNumber} />
+          </div>
+          <div>
+            <Label required>Vehicle Year of Manufacture</Label>
+            <Input
+              type="number"
+              value={data.vehicleYear}
+              onChange={(v) => onChange("vehicleYear", v)}
+              placeholder={String(CURRENT_YEAR - 3)}
+              min={String(CURRENT_YEAR - 8)}
+              max={String(CURRENT_YEAR)}
+            />
+            <p className="mt-1 text-xs text-slate-500">
+              Must be {CURRENT_YEAR - 8} or newer (max 8 years old)
+            </p>
+            <FieldError msg={errors.vehicleYear} />
+          </div>
+          <div>
+            <Label required>RC Number</Label>
+            <Input
+              value={data.rcNumber}
+              onChange={(v) => onChange("rcNumber", v.toUpperCase())}
+              placeholder="DL01AB1234"
+            />
+            <FieldError msg={errors.rcNumber} />
+          </div>
+          <div>
+            <Label required>Insurance Valid Until</Label>
+            <Input
+              type="date"
+              value={data.insuranceValidUntil}
+              onChange={(v) => onChange("insuranceValidUntil", v)}
+              min={new Date().toISOString().split("T")[0]}
+            />
+            <p className="mt-1 text-xs text-slate-500">Insurance must be currently valid</p>
+            <FieldError msg={errors.insuranceValidUntil} />
+          </div>
+        </div>
+      </div>
+
+      {/* Experience, Languages, Price */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <Label required>Years of Experience</Label>
@@ -356,13 +610,17 @@ function StepExpertise({
             value={data.yearsExp}
             onChange={(v) => onChange("yearsExp", v)}
             placeholder="5"
+            min="5"
           />
+          <p className="mt-1 text-xs text-slate-500">Minimum 5 years required</p>
           <FieldError msg={errors.yearsExp} />
         </div>
         <div>
-          <Label required>Price per Hour (₹)</Label>
+          <Label required>Base Price per Hour (₹)</Label>
           <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-semibold">₹</span>
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-semibold">
+              ₹
+            </span>
             <input
               type="number"
               value={data.pricePerHour}
@@ -370,7 +628,7 @@ function StepExpertise({
               placeholder="500"
               min={200}
               max={5000}
-              className="w-full bg-navy-800 border border-slate-600 rounded-xl pl-8 pr-4 py-3 text-white placeholder-slate-500
+              className="w-full border border-slate-600 rounded-xl pl-8 pr-4 py-3 text-white placeholder-slate-500
                 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-all duration-200"
               style={{ background: "rgba(15, 23, 42, 0.8)" }}
             />
@@ -397,7 +655,8 @@ function StepExpertise({
                 }`}
                 style={{ background: selected ? "rgba(251,191,36,0.1)" : "transparent" }}
               >
-                {selected && "✓ "}{lang}
+                {selected && "✓ "}
+                {lang}
               </button>
             );
           })}
@@ -407,6 +666,80 @@ function StepExpertise({
     </div>
   );
 }
+
+// ─── Step 4: Documents ────────────────────────────────────────────────────────
+
+function StepDocuments({
+  data,
+  errors,
+  onChange,
+}: {
+  data: FormData;
+  errors: Partial<Record<keyof FormData, string>>;
+  onChange: (k: keyof FormData, v: any) => void;
+}) {
+  return (
+    <div className="space-y-6">
+      <div
+        className="rounded-xl p-4 border border-blue-500/20 text-sm text-blue-300"
+        style={{ background: "rgba(59,130,246,0.07)" }}
+      >
+        📄 Upload clear photos or scans of your documents. All files are encrypted and used only for verification. Max 5 MB per file.
+      </div>
+
+      <FileUpload
+        label="Driving Licence (Front & Back)"
+        required
+        accept="image/jpeg,image/png,application/pdf"
+        fileName={data.licensePhotoName}
+        hint="Upload a clear photo/scan of your valid Indian driving licence"
+        onFile={(base64, name) => {
+          onChange("licensePhotoBase64", base64);
+          onChange("licensePhotoName", name);
+        }}
+      />
+      <FieldError msg={errors.licensePhotoBase64} />
+
+      <FileUpload
+        label="Vehicle Insurance Document"
+        required
+        accept="image/jpeg,image/png,application/pdf"
+        fileName={data.insuranceDocName}
+        hint="Upload your current valid vehicle insurance certificate"
+        onFile={(base64, name) => {
+          onChange("insuranceDocBase64", base64);
+          onChange("insuranceDocName", name);
+        }}
+      />
+      <FieldError msg={errors.insuranceDocBase64} />
+
+      <FileUpload
+        label="Vehicle RC (Registration Certificate)"
+        required
+        accept="image/jpeg,image/png,application/pdf"
+        fileName={data.rcDocName}
+        hint="Upload your vehicle Registration Certificate (RC book)"
+        onFile={(base64, name) => {
+          onChange("rcDocBase64", base64);
+          onChange("rcDocName", name);
+        }}
+      />
+      <FieldError msg={errors.rcDocBase64} />
+
+      <div
+        className="rounded-xl p-4 border border-amber-400/15"
+        style={{ background: "rgba(251,191,36,0.04)" }}
+      >
+        <p className="text-xs text-slate-400 leading-relaxed">
+          🔒 Your documents are used solely for identity and credential verification by the LearnDrive admin team. They are never shared publicly or with third parties. See our{" "}
+          <span className="text-amber-400 underline cursor-pointer">Privacy Policy</span> for details.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ─── Step 5: Credentials ──────────────────────────────────────────────────────
 
 function StepCredentials({
   data,
@@ -423,7 +756,7 @@ function StepCredentials({
         className="border border-blue-500/30 rounded-xl p-4 text-sm text-blue-300"
         style={{ background: "rgba(59,130,246,0.08)" }}
       >
-        🔒 Your credentials are encrypted and used only for verification. Aadhaar numbers are never stored in plain text in production.
+        🔒 Your credentials are encrypted and used only for RTO verification. Aadhaar numbers are masked and never displayed publicly.
       </div>
 
       <div>
@@ -433,7 +766,9 @@ function StepCredentials({
           onChange={(v) => onChange("licenseNo", v.toUpperCase())}
           placeholder="DL0120230001234"
         />
-        <p className="mt-1 text-xs text-slate-500">Must be a valid Indian DL covering the vehicle classes you selected</p>
+        <p className="mt-1 text-xs text-slate-500">
+          Must be a valid Indian DL covering the vehicle classes you selected
+        </p>
         <FieldError msg={errors.licenseNo} />
       </div>
 
@@ -442,10 +777,12 @@ function StepCredentials({
         <input
           type="password"
           value={data.aadharNo}
-          onChange={(e) => onChange("aadharNo", e.target.value.replace(/\D/g, "").slice(0, 12))}
+          onChange={(e) =>
+            onChange("aadharNo", e.target.value.replace(/\D/g, "").slice(0, 12))
+          }
           placeholder="••••••••••••"
           maxLength={12}
-          className="w-full bg-navy-800 border border-slate-600 rounded-xl px-4 py-3 text-white placeholder-slate-500
+          className="w-full border border-slate-600 rounded-xl px-4 py-3 text-white placeholder-slate-500
             focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-all duration-200"
           style={{ background: "rgba(15, 23, 42, 0.8)" }}
         />
@@ -461,7 +798,9 @@ function StepCredentials({
         >
           <div
             className={`mt-0.5 w-5 h-5 rounded border-2 flex-shrink-0 flex items-center justify-center transition-all duration-200 ${
-              data.agreedToTerms ? "border-amber-400 bg-amber-400" : "border-slate-500 group-hover:border-slate-400"
+              data.agreedToTerms
+                ? "border-amber-400 bg-amber-400"
+                : "border-slate-500 group-hover:border-slate-400"
             }`}
           >
             {data.agreedToTerms && (
@@ -469,10 +808,14 @@ function StepCredentials({
             )}
           </div>
           <span className="text-sm text-slate-300 leading-relaxed">
-            I confirm that all information provided is accurate and I agree to LearnDrive's{" "}
-            <span className="text-amber-400 underline">Trainer Terms of Service</span>,{" "}
-            <span className="text-amber-400 underline">Privacy Policy</span>, and the{" "}
+            I confirm that all information and documents provided are genuine and accurate. I agree to
+            LearnDrive's{" "}
+            <a href="/terms" target="_blank" className="text-amber-400 underline">Trainer Terms of Service</a>
+            ,{" "}
+            <a href="/privacy" target="_blank" className="text-amber-400 underline">Privacy Policy</a>
+            , and the{" "}
             <span className="text-amber-400 underline">Platform Commission Structure</span>.
+            I understand that providing false information will result in immediate removal from the platform.
           </span>
         </button>
         <FieldError msg={errors.agreedToTerms} />
@@ -484,14 +827,109 @@ function StepCredentials({
       >
         <h4 className="text-sm font-semibold text-amber-300 mb-2">📝 What happens next?</h4>
         <ul className="text-sm text-slate-400 space-y-1.5">
-          <li className="flex items-start gap-2"><span className="text-amber-400 mt-0.5">1.</span>Our team reviews your application within 24–48 hours</li>
-          <li className="flex items-start gap-2"><span className="text-amber-400 mt-0.5">2.</span>We verify your driving licence with RTO records</li>
-          <li className="flex items-start gap-2"><span className="text-amber-400 mt-0.5">3.</span>You receive an approval email with your dashboard login</li>
-          <li className="flex items-start gap-2"><span className="text-amber-400 mt-0.5">4.</span>Your profile goes live and learners can book you!</li>
+          <li className="flex items-start gap-2">
+            <span className="text-amber-400 mt-0.5">1.</span>
+            Our team reviews your application within 24–48 hours
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="text-amber-400 mt-0.5">2.</span>
+            We verify your driving licence and documents
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="text-amber-400 mt-0.5">3.</span>
+            You receive an approval SMS + email with your dashboard login
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="text-amber-400 mt-0.5">4.</span>
+            Your profile goes live and learners start booking you!
+          </li>
         </ul>
       </div>
     </div>
   );
+}
+
+// ─── Validation ───────────────────────────────────────────────────────────────
+
+function validateStep(
+  step: number,
+  data: FormData
+): Partial<Record<keyof FormData, string>> {
+  const errors: Partial<Record<keyof FormData, string>> = {};
+
+  if (step === 1) {
+    if (!data.name.trim() || data.name.length < 2)
+      errors.name = "Full name is required (min 2 characters)";
+    if (!data.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email))
+      errors.email = "Valid email is required";
+    if (!data.phone || !/^[6-9]\d{9}$/.test(data.phone))
+      errors.phone = "Valid 10-digit Indian mobile required";
+    if (!data.bio || data.bio.length < 20)
+      errors.bio = "Bio must be at least 20 characters";
+  }
+
+  if (step === 2) {
+    if (!data.city) errors.city = "Select your city";
+    if (!data.pincode || !/^\d{6}$/.test(data.pincode))
+      errors.pincode = "Valid 6-digit pincode required";
+    if (data.serviceArea.length === 0)
+      errors.serviceArea = "Add at least one service pincode";
+  }
+
+  if (step === 3) {
+    if (data.vehicleTypes.length === 0)
+      errors.vehicleTypes = "Select at least one vehicle type";
+
+    // Dual control mandatory for car
+    if (data.vehicleTypes.includes("CAR") && !data.hasDualControl)
+      errors.hasDualControl =
+        "You must confirm dual control vehicle to train car learners";
+
+    if (!data.vehicleNumber || data.vehicleNumber.length < 6)
+      errors.vehicleNumber = "Enter your vehicle registration number";
+
+    if (!data.rcNumber || data.rcNumber.length < 6)
+      errors.rcNumber = "Enter your RC number";
+
+    const year = Number(data.vehicleYear);
+    if (!data.vehicleYear || isNaN(year) || year < CURRENT_YEAR - 8 || year > CURRENT_YEAR)
+      errors.vehicleYear = `Vehicle must be manufactured between ${CURRENT_YEAR - 8} and ${CURRENT_YEAR}`;
+
+    if (!data.insuranceValidUntil)
+      errors.insuranceValidUntil = "Enter your insurance validity date";
+    else if (new Date(data.insuranceValidUntil) <= new Date())
+      errors.insuranceValidUntil = "Insurance must be currently valid";
+
+    if (!data.yearsExp || isNaN(Number(data.yearsExp)) || Number(data.yearsExp) < 5)
+      errors.yearsExp = "Minimum 5 years of experience required";
+
+    if (data.languages.length === 0)
+      errors.languages = "Select at least one language";
+
+    const price = Number(data.pricePerHour);
+    if (!data.pricePerHour || isNaN(price) || price < 200 || price > 5000)
+      errors.pricePerHour = "Price must be between ₹200 and ₹5,000";
+  }
+
+  if (step === 4) {
+    if (!data.licensePhotoBase64)
+      errors.licensePhotoBase64 = "Upload your driving licence photo";
+    if (!data.insuranceDocBase64)
+      errors.insuranceDocBase64 = "Upload your insurance document";
+    if (!data.rcDocBase64)
+      errors.rcDocBase64 = "Upload your RC document";
+  }
+
+  if (step === 5) {
+    if (!data.licenseNo || data.licenseNo.length < 10)
+      errors.licenseNo = "Enter your driving licence number";
+    if (!data.aadharNo || !/^\d{12}$/.test(data.aadharNo))
+      errors.aadharNo = "Aadhaar must be 12 digits";
+    if (!data.agreedToTerms)
+      errors.agreedToTerms = "You must agree to the terms to continue";
+  }
+
+  return errors;
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
@@ -500,41 +938,13 @@ const INITIAL_DATA: FormData = {
   name: "", email: "", phone: "", bio: "",
   pincode: "", city: "", serviceArea: [],
   vehicleTypes: [], yearsExp: "", languages: [], pricePerHour: "",
+  hasDualControl: false,
+  vehicleYear: "", insuranceValidUntil: "", rcNumber: "", vehicleNumber: "",
+  licensePhotoBase64: "", licensePhotoName: "",
+  insuranceDocBase64: "", insuranceDocName: "",
+  rcDocBase64: "", rcDocName: "",
   licenseNo: "", aadharNo: "", agreedToTerms: false,
 };
-
-function validateStep(step: number, data: FormData): Partial<Record<keyof FormData, string>> {
-  const errors: Partial<Record<keyof FormData, string>> = {};
-
-  if (step === 1) {
-    if (!data.name.trim() || data.name.length < 2) errors.name = "Full name is required (min 2 characters)";
-    if (!data.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) errors.email = "Valid email is required";
-    if (!data.phone || !/^[6-9]\d{9}$/.test(data.phone)) errors.phone = "Valid 10-digit Indian mobile required";
-    if (!data.bio || data.bio.length < 20) errors.bio = "Bio must be at least 20 characters";
-  }
-
-  if (step === 2) {
-    if (!data.city) errors.city = "Select your city";
-    if (!data.pincode || !/^\d{6}$/.test(data.pincode)) errors.pincode = "Valid 6-digit pincode required";
-    if (data.serviceArea.length === 0) errors.serviceArea = "Add at least one service pincode";
-  }
-
-  if (step === 3) {
-    if (data.vehicleTypes.length === 0) errors.vehicleTypes = "Select at least one vehicle type";
-    if (!data.yearsExp || isNaN(Number(data.yearsExp)) || Number(data.yearsExp) < 1) errors.yearsExp = "Enter years of experience";
-    if (data.languages.length === 0) errors.languages = "Select at least one language";
-    const price = Number(data.pricePerHour);
-    if (!data.pricePerHour || isNaN(price) || price < 200 || price > 5000) errors.pricePerHour = "Price must be between ₹200 and ₹5,000";
-  }
-
-  if (step === 4) {
-    if (!data.licenseNo || data.licenseNo.length < 10) errors.licenseNo = "Enter your driving licence number";
-    if (!data.aadharNo || !/^\d{12}$/.test(data.aadharNo)) errors.aadharNo = "Aadhaar must be 12 digits";
-    if (!data.agreedToTerms) errors.agreedToTerms = "You must agree to the terms to continue";
-  }
-
-  return errors;
-}
 
 export default function TrainerRegisterPage() {
   const router = useRouter();
@@ -567,7 +977,7 @@ export default function TrainerRegisterPage() {
   };
 
   const handleSubmit = async () => {
-    const stepErrors = validateStep(4, data);
+    const stepErrors = validateStep(5, data);
     if (Object.keys(stepErrors).length > 0) {
       setErrors(stepErrors);
       return;
@@ -581,9 +991,33 @@ export default function TrainerRegisterPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ...data,
-          yearsExp: Number(data.yearsExp),
-          pricePerHour: Number(data.pricePerHour),
+          name: data.name,
+          email: data.email,
+          mobile: data.phone,
+          bio: data.bio,
+          city: data.city,
+          pincode: data.pincode,
+          serviceArea: data.serviceArea,
+          vehicleTypes: data.vehicleTypes,
+          experience: Number(data.yearsExp),
+          languages: data.languages,
+          basePrice: Number(data.pricePerHour),
+          hasDualControl: data.hasDualControl,
+          vehicleNumber: data.vehicleNumber,
+          vehicleYear: Number(data.vehicleYear),
+          rcNumber: data.rcNumber,
+          insuranceValidUntil: data.insuranceValidUntil,
+          licenseNumber: data.licenseNo,
+          aadharNo: data.aadharNo,
+          // Documents as base64 for admin review
+          documents: {
+            licensePhoto: data.licensePhotoBase64,
+            licensePhotoName: data.licensePhotoName,
+            insuranceDoc: data.insuranceDocBase64,
+            insuranceDocName: data.insuranceDocName,
+            rcDoc: data.rcDocBase64,
+            rcDocName: data.rcDocName,
+          },
         }),
       });
 
@@ -611,7 +1045,7 @@ export default function TrainerRegisterPage() {
     }
   };
 
-  // ── Success State ────────────────────────────────────────────────────────────
+  // ── Success State ──────────────────────────────────────────────────────────
 
   if (submitted) {
     return (
@@ -628,19 +1062,22 @@ export default function TrainerRegisterPage() {
           </div>
           <h1 className="text-3xl font-bold text-white mb-3">Application Submitted!</h1>
           <p className="text-slate-400 mb-8 leading-relaxed">
-            Thanks, <span className="text-amber-300 font-semibold">{data.name}</span>! We've received your trainer application.
-            Our team will review and verify your credentials within <strong className="text-white">24–48 hours</strong>.
-            Check your email at <span className="text-amber-300">{data.email}</span> for updates.
+            Thanks,{" "}
+            <span className="text-amber-300 font-semibold">{data.name}</span>! We've received your
+            trainer application and documents. Our team will verify your credentials within{" "}
+            <strong className="text-white">24–48 hours</strong>. Check your email at{" "}
+            <span className="text-amber-300">{data.email}</span> and SMS on{" "}
+            <span className="text-amber-300">+91 {data.phone}</span> for updates.
           </p>
           <div
             className="rounded-2xl p-6 mb-8 text-left space-y-3"
             style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
           >
             <div className="flex items-center gap-3 text-sm text-slate-300">
-              <span className="text-amber-400">✓</span> Application received &amp; under review
+              <span className="text-amber-400">✓</span> Application &amp; documents received
             </div>
             <div className="flex items-center gap-3 text-sm text-slate-400">
-              <span className="text-slate-600">○</span> DL verification in progress
+              <span className="text-slate-600">○</span> DL &amp; vehicle verification in progress
             </div>
             <div className="flex items-center gap-3 text-sm text-slate-400">
               <span className="text-slate-600">○</span> Profile approval &amp; go-live
@@ -658,7 +1095,7 @@ export default function TrainerRegisterPage() {
     );
   }
 
-  // ── Form ─────────────────────────────────────────────────────────────────────
+  // ── Form ───────────────────────────────────────────────────────────────────
 
   const progress = (step / STEPS.length) * 100;
 
@@ -670,7 +1107,11 @@ export default function TrainerRegisterPage() {
       {/* Header */}
       <header
         className="sticky top-0 z-50 px-4 py-4 flex items-center justify-between"
-        style={{ background: "rgba(10, 22, 40, 0.9)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}
+        style={{
+          background: "rgba(10, 22, 40, 0.9)",
+          backdropFilter: "blur(12px)",
+          borderBottom: "1px solid rgba(255,255,255,0.06)",
+        }}
       >
         <button
           onClick={() => router.push("/")}
@@ -703,13 +1144,15 @@ export default function TrainerRegisterPage() {
             {step === 1 && "Tell us about yourself"}
             {step === 2 && "Where do you operate?"}
             {step === 3 && "What do you teach?"}
-            {step === 4 && "Verify your credentials"}
+            {step === 4 && "Upload your documents"}
+            {step === 5 && "Verify your credentials"}
           </h1>
           <p className="text-slate-400 mt-2 text-sm">
             {step === 1 && "Basic info that learners will see on your profile"}
             {step === 2 && "Help learners find you based on their location"}
-            {step === 3 && "Your vehicle expertise, languages, and pricing"}
-            {step === 4 && "One-time verification to build learner trust"}
+            {step === 3 && "Your vehicle expertise, training vehicle details, and pricing"}
+            {step === 4 && "Secure upload — used for verification only, never shared publicly"}
+            {step === 5 && "One-time verification to build learner trust"}
           </p>
         </div>
 
@@ -752,7 +1195,8 @@ export default function TrainerRegisterPage() {
           {step === 1 && <StepPersonal data={data} errors={errors} onChange={onChange} />}
           {step === 2 && <StepLocation data={data} errors={errors} onChange={onChange} />}
           {step === 3 && <StepExpertise data={data} errors={errors} onChange={onChange} />}
-          {step === 4 && <StepCredentials data={data} errors={errors} onChange={onChange} />}
+          {step === 4 && <StepDocuments data={data} errors={errors} onChange={onChange} />}
+          {step === 5 && <StepCredentials data={data} errors={errors} onChange={onChange} />}
         </div>
 
         {/* Submit error */}
@@ -808,9 +1252,8 @@ export default function TrainerRegisterPage() {
           )}
         </div>
 
-        {/* Trust signal */}
         <p className="text-center text-xs text-slate-600 mt-8">
-          🔒 Secure · Encrypted · Your data is never shared with third parties
+          🔒 Secure · Encrypted · Your documents are never shared with third parties
         </p>
       </div>
     </div>

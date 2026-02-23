@@ -46,56 +46,79 @@ enum PaymentStatus {
 model Trainer {
   id             Int           @id @default(autoincrement())
 
-  // ── Basic info (existing) ─────────────────────────────────────────────────
+  // ── Basic info ────────────────────────────────────────────────────────────
   name           String
   mobile         String        @unique
   city           String
   experience     Int
   licenseNumber  String
-  trainerType    TrainerType
+  trainerType    TrainerType   @default(INDEPENDENT)
   status         TrainerStatus @default(PENDING)
   rating         Float?        @default(0)
   basePrice      Int?
   verifiedSchool Boolean       @default(false)
   createdAt      DateTime      @default(now())
 
-  // ── New: contact & profile ────────────────────────────────────────────────
-  email          String?       @unique    // for login & notifications
-  bio            String?                  // shown on public profile
-  photoUrl       String?                  // profile photo
+  // ── Contact & profile ─────────────────────────────────────────────────────
+  email          String?       @unique
+  bio            String?
+  photoUrl       String?
 
-  // ── New: location & pincode matching ─────────────────────────────────────
-  pincode        String?                  // trainer's home/base pincode
-  serviceArea    String[]                 // all pincodes this trainer covers
+  // ── Location ──────────────────────────────────────────────────────────────
+  pincode        String?
+  serviceArea    String[]
 
-  // ── New: expertise ────────────────────────────────────────────────────────
-  languages      String[]                 // e.g. ["Hindi", "English"]
-  vehicleTypes   VehicleType[]            // all vehicle types they can train
+  // ── Expertise ─────────────────────────────────────────────────────────────
+  languages      String[]
+  vehicleTypes   VehicleType[]
 
-  // ── New: credentials ─────────────────────────────────────────────────────
-  aadharNo       String?                  // ⚠️ hash before storing in prod
+  // ── Credentials (sensitive) ───────────────────────────────────────────────
+  aadharNo       String?       // ⚠️ hash before storing in prod
 
-  // ── Existing relations ────────────────────────────────────────────────────
+  // ── Relations ─────────────────────────────────────────────────────────────
   vehicles       Vehicle[]
   bookings       Booking[]
+  documents      TrainerDocument[]
 
   @@index([city])
   @@index([status])
-  @@index([pincode])          // new: for pincode-based lookups
+  @@index([pincode])
 }
 
 model Vehicle {
-  id            Int         @id @default(autoincrement())
-  trainerId     Int
-  type          VehicleType
-  vehicleNumber String
-  dualControl   Boolean
-  insured       Boolean
-  createdAt     DateTime    @default(now())
+  id                  Int         @id @default(autoincrement())
+  trainerId           Int
+  type                VehicleType
+  vehicleNumber       String
+  dualControl         Boolean     @default(false)
+  insured             Boolean     @default(false)
+  createdAt           DateTime    @default(now())
 
-  trainer       Trainer     @relation(fields: [trainerId], references: [id])
+  // ── New fields ────────────────────────────────────────────────────────────
+  rcNumber            String?                   // RC book number
+  vehicleYear         Int?                      // Year of manufacture
+  insuranceValidUntil DateTime?                 // Insurance expiry date
+
+  trainer             Trainer     @relation(fields: [trainerId], references: [id])
 
   @@index([trainerId])
+}
+
+// ─── Trainer Documents ────────────────────────────────────────────────────────
+// Stores uploaded documents (base64) for admin verification
+
+model TrainerDocument {
+  id          Int      @id @default(autoincrement())
+  trainerId   Int
+  docType     String   // "LICENSE", "INSURANCE", "RC"
+  fileName    String
+  base64Data  String   @db.Text  // base64 encoded file content
+  createdAt   DateTime @default(now())
+
+  trainer     Trainer  @relation(fields: [trainerId], references: [id])
+
+  @@index([trainerId])
+  @@index([docType])
 }
 
 model Booking {
@@ -110,9 +133,7 @@ model Booking {
   mobile        String
   city          String
   address       String
-
-  // ── New: pincode on booking ───────────────────────────────────────────────
-  pincode       String?                   // learner's pincode at time of booking
+  pincode       String?
 
   status        BookingStatus @default(PENDING)
   paymentStatus PaymentStatus @default(PENDING)
@@ -125,9 +146,10 @@ model Booking {
   @@index([trainerId])
   @@index([status])
   @@index([paymentStatus])
-  @@index([pincode])          // new: for area-based analytics
+  @@index([pincode])
 }
-// ─── Admin Session (Production Auth Upgrade) ───────────────────────────────
+
+// ─── Admin Models ─────────────────────────────────────────────────────────────
 
 model AdminSession {
   id        String   @id @default(uuid())
@@ -136,6 +158,7 @@ model AdminSession {
 
   @@index([expiresAt])
 }
+
 model AdminAuditLog {
   id         Int      @id @default(autoincrement())
   action     String
