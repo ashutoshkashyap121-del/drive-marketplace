@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import {prisma} from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
+import { notifyBookingMade, notifyAdminNewBooking } from "@/lib/notifications";
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { trainerId, customerName, mobile, city, address, pincode, bookingDate } = body;
+    const { trainerId, customerName, mobile, email, city, address, pincode, bookingDate } = body;
 
     if (!trainerId || !customerName || !mobile || !city || !address || !bookingDate) {
       return NextResponse.json({ error: "All fields are required" }, { status: 400 });
@@ -18,6 +19,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Trainer not available" }, { status: 404 });
     }
 
+    // Calculate platform fee & payout
+    const amount = trainer.basePrice ?? 0;
+    const platformFee = Math.round(amount * 0.15);
+    const trainerPayout = amount - platformFee;
+
     const booking = await prisma.booking.create({
       data: {
         trainerId: parseInt(trainerId),
@@ -28,11 +34,51 @@ export async function POST(req: NextRequest) {
         pincode: pincode || null,
         bookingDate: new Date(bookingDate),
         packageName: "Standard Session",
-        amount: trainer.basePrice ?? 0,
+        amount,
+        platformFee,      // ✅ now calculated instead of null
+        trainerPayout,    // ✅ now calculated instead of null
       },
     });
 
+    // Format date for emails
+    const bookingDateFormatted = new Date(bookingDate).toLocaleDateString("en-IN", {
+      weekday: "long", year: "numeric", month: "long", day: "numeric",
+    });
+
+    // ── Notify trainer + learner + admin (non-blocking) ────────────────────
+    if (trainer.email) {
+      notifyBookingMade({
+        trainer: {
+          name: trainer.name,
+          email: trainer.email,
+          mobile: trainer.mobile,
+        },
+        learner: {
+          name: customerName,
+          email: email || "",   // add email field to your booking form to use this
+          mobile,
+        },
+        booking: {
+          id: booking.id,
+          packageName: "Standard Session",
+          amount,
+          bookingDate: bookingDateFormatted,
+          address,
+          city,
+        },
+      }).catch((err) => console.error("[NOTIFY_BOOKING_ERROR]", err));
+    }
+
+    notifyAdminNewBooking({
+      learnerName: customerName,
+      trainerName: trainer.name,
+      packageName: "Standard Session",
+      amount,
+      city,
+    }).catch((err) => console.error("[NOTIFY_ADMIN_BOOKING_ERROR]", err));
+
     return NextResponse.json({ success: true, booking }, { status: 201 });
+
   } catch (error) {
     console.error("Booking error:", error);
     return NextResponse.json({ error: "Failed to create booking" }, { status: 500 });

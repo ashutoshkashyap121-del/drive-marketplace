@@ -7,7 +7,9 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ─── Enums ────────────────────────────────────────────────────────────────────
+//
+// ───────────────────────────────── ENUMS ─────────────────────────────────
+//
 
 enum VehicleType {
   CAR
@@ -41,12 +43,14 @@ enum PaymentStatus {
   REFUNDED
 }
 
-// ─── Models ───────────────────────────────────────────────────────────────────
+//
+// ───────────────────────────────── MODELS ─────────────────────────────────
+//
 
 model Trainer {
   id             Int           @id @default(autoincrement())
 
-  // ── Basic info ────────────────────────────────────────────────────────────
+  // ── Basic info ─────────────────────────────────────────────
   name           String
   mobile         String        @unique
   city           String
@@ -59,23 +63,25 @@ model Trainer {
   verifiedSchool Boolean       @default(false)
   createdAt      DateTime      @default(now())
 
-  // ── Contact & profile ─────────────────────────────────────────────────────
+  // ── Contact & profile ─────────────────────────────────────
   email          String?       @unique
   bio            String?
   photoUrl       String?
 
-  // ── Location ──────────────────────────────────────────────────────────────
+  // ── Location ──────────────────────────────────────────────
   pincode        String?
   serviceArea    String[]
 
-  // ── Expertise ─────────────────────────────────────────────────────────────
+  // ── Expertise ─────────────────────────────────────────────
   languages      String[]
   vehicleTypes   VehicleType[]
 
-  // ── Credentials (sensitive) ───────────────────────────────────────────────
-  aadharNo       String?       // ⚠️ hash before storing in prod
+  // ── Credentials (ENCRYPTED Aadhaar) ───────────────────────
+aadharEncrypted String?
+aadharIV        String?
+aadharAuthTag   String?
 
-  // ── Relations ─────────────────────────────────────────────────────────────
+  // ── Relations ─────────────────────────────────────────────
   vehicles       Vehicle[]
   bookings       Booking[]
   documents      TrainerDocument[]
@@ -84,6 +90,10 @@ model Trainer {
   @@index([status])
   @@index([pincode])
 }
+
+//
+// ───────────────────────────── VEHICLES ─────────────────────────────
+//
 
 model Vehicle {
   id                  Int         @id @default(autoincrement())
@@ -94,25 +104,26 @@ model Vehicle {
   insured             Boolean     @default(false)
   createdAt           DateTime    @default(now())
 
-  // ── New fields ────────────────────────────────────────────────────────────
-  rcNumber            String?                   // RC book number
-  vehicleYear         Int?                      // Year of manufacture
-  insuranceValidUntil DateTime?                 // Insurance expiry date
+  // Extra vehicle details
+  rcNumber            String?
+  vehicleYear         Int?
+  insuranceValidUntil DateTime?
 
   trainer             Trainer     @relation(fields: [trainerId], references: [id])
 
   @@index([trainerId])
 }
 
-// ─── Trainer Documents ────────────────────────────────────────────────────────
-// Stores uploaded documents (base64) for admin verification
+//
+// ───────────────────────── TRAINER DOCUMENTS ─────────────────────────
+//
 
 model TrainerDocument {
   id          Int      @id @default(autoincrement())
   trainerId   Int
   docType     String   // "LICENSE", "INSURANCE", "RC"
   fileName    String
-  base64Data  String   @db.Text  // base64 encoded file content
+  base64Data  String   @db.Text
   createdAt   DateTime @default(now())
 
   trainer     Trainer  @relation(fields: [trainerId], references: [id])
@@ -120,6 +131,10 @@ model TrainerDocument {
   @@index([trainerId])
   @@index([docType])
 }
+
+//
+// ───────────────────────── BOOKINGS ─────────────────────────
+//
 
 model Booking {
   id            Int           @id @default(autoincrement())
@@ -149,7 +164,9 @@ model Booking {
   @@index([pincode])
 }
 
-// ─── Admin Models ─────────────────────────────────────────────────────────────
+//
+// ───────────────────────── ADMIN MODELS ─────────────────────────
+//
 
 model AdminSession {
   id        String   @id @default(uuid())
