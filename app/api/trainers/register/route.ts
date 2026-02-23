@@ -91,7 +91,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Encrypt Aadhaar only if provided
-    let encryptedAadhar;
+    let encryptedAadhar: { encrypted: string; iv: string; authTag: string } | undefined;
     if (data.aadharNo) {
       encryptedAadhar = encryptAadhar(data.aadharNo);
     }
