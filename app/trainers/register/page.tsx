@@ -357,6 +357,7 @@ function StepExpertise({ data, errors, onChange }: {
             <FieldError msg={errors.rcNumber} />
           </div>
           <div>
+    
             <Label required>Insurance Valid Until</Label>
             <Input type="date" value={data.insuranceValidUntil} onChange={(v) => onChange("insuranceValidUntil", v)}
               min={new Date().toISOString().split("T")[0]} />
