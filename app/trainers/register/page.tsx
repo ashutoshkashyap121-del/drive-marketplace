@@ -467,7 +467,7 @@ function StepCredentials({ data, errors, onChange }: {
         <FieldError msg={errors.licenseNo} />
       </div>
       <div>
-        <Label>Aadhaar Number (Optional)</Label>
+        <Label>Aadhar Number (Optional)</Label>
         <input type="password" value={data.aadharNo}
           onChange={(e) => onChange("aadharNo", e.target.value.replace(/\D/g, "").slice(0, 12))}
           placeholder="••••••••••••" maxLength={12}
