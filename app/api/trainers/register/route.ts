@@ -5,11 +5,9 @@ import { prisma } from "@/lib/prisma";
 import { encryptAadhar } from "@/lib/aadhar";
 import { z } from "zod";
 import { notifyAdminNewTrainer } from "@/lib/notifications";
+import { smsAdminNewTrainer, smsTrainerNewBooking, smsAdminNewBooking } from "@/lib/sms";
 
 const CURRENT_YEAR = new Date().getFullYear();
-
-// ─── Validation Schema ────────────────────────────────────────────────────────
-// Documents are now Cloudinary URLs — uploaded directly from browser
 
 const DocumentSchema = z.object({
   licensePhotoUrl: z.string().url("Invalid licence photo URL"),
@@ -25,32 +23,22 @@ const RegisterSchema = z.object({
   email: z.string().email(),
   mobile: z.string().regex(/^[6-9]\d{9}$/),
   bio: z.string().min(20).max(500),
-
   city: z.string().min(1),
   pincode: z.string().regex(/^\d{6}$/),
   serviceArea: z.array(z.string().regex(/^\d{6}$/)).min(1).max(10),
-
-  vehicleTypes: z.array(
-    z.enum(["CAR", "BIKE", "BIKE_GEARED", "BIKE_NON_GEARED"])
-  ).min(1),
-
+  vehicleTypes: z.array(z.enum(["CAR", "BIKE", "BIKE_GEARED", "BIKE_NON_GEARED"])).min(1),
   experience: z.number().min(5),
   languages: z.array(z.string()).min(1),
   basePrice: z.number().min(200).max(5000),
-
   hasDualControl: z.boolean(),
   vehicleNumber: z.string().min(6),
   vehicleYear: z.number().min(CURRENT_YEAR - 8).max(CURRENT_YEAR),
   rcNumber: z.string().min(6),
   insuranceValidUntil: z.string(),
-
   licenseNumber: z.string().min(10),
   aadharNo: z.string().regex(/^\d{12}$/).optional(),
-
   documents: DocumentSchema,
 });
-
-// ─── POST Handler ─────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
   try {
@@ -68,7 +56,6 @@ export async function POST(req: NextRequest) {
 
     const data = parsed.data;
 
-    // Dual control check
     if (data.vehicleTypes.includes("CAR") && !data.hasDualControl) {
       return NextResponse.json(
         { error: "Validation failed", issues: { hasDualControl: "Car trainers must confirm dual control vehicle" } },
@@ -76,7 +63,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Insurance validity check
     const insuranceDate = new Date(data.insuranceValidUntil);
     if (insuranceDate <= new Date()) {
       return NextResponse.json(
@@ -85,7 +71,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Duplicate check
     const existing = await prisma.trainer.findFirst({
       where: { OR: [{ mobile: data.mobile }, { email: data.email }] },
     });
@@ -97,16 +82,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Encrypt Aadhaar if provided
     let encryptedAadhar: { encrypted: string; iv: string; authTag: string } | undefined;
     if (data.aadharNo) {
       encryptedAadhar = encryptAadhar(data.aadharNo);
     }
 
-    // ── Transaction ───────────────────────────────────────────────────────────
     const trainer = await prisma.$transaction(async (tx) => {
-
-      // 1. Create trainer
       const newTrainer = await tx.trainer.create({
         data: {
           name: data.name,
@@ -130,7 +111,6 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      // 2. Create vehicle
       await tx.vehicle.create({
         data: {
           trainerId: newTrainer.id,
@@ -144,34 +124,24 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      // 3. Save Cloudinary URLs — no server upload needed, browser already did it
       await tx.trainerDocument.createMany({
         data: [
-          {
-            trainerId: newTrainer.id,
-            docType: "LICENSE",
-            fileName: data.documents.licensePhotoName,
-            fileUrl: data.documents.licensePhotoUrl,
-          },
-          {
-            trainerId: newTrainer.id,
-            docType: "INSURANCE",
-            fileName: data.documents.insuranceDocName,
-            fileUrl: data.documents.insuranceDocUrl,
-          },
-          {
-            trainerId: newTrainer.id,
-            docType: "RC",
-            fileName: data.documents.rcDocName,
-            fileUrl: data.documents.rcDocUrl,
-          },
+          { trainerId: newTrainer.id, docType: "LICENSE", fileName: data.documents.licensePhotoName, fileUrl: data.documents.licensePhotoUrl },
+          { trainerId: newTrainer.id, docType: "INSURANCE", fileName: data.documents.insuranceDocName, fileUrl: data.documents.insuranceDocUrl },
+          { trainerId: newTrainer.id, docType: "RC", fileName: data.documents.rcDocName, fileUrl: data.documents.rcDocUrl },
         ],
       });
 
       return newTrainer;
     });
 
-    // ── Notify admin (non-blocking) ───────────────────────────────────────────
+    // ── Notify admin via SMS + email (non-blocking) ───────────────────────────
+    smsAdminNewTrainer({
+      name: trainer.name,
+      mobile: trainer.mobile,
+      city: trainer.city,
+    }).catch((err) => console.error("[SMS_ADMIN_TRAINER_ERROR]", err));
+
     notifyAdminNewTrainer({
       id: trainer.id,
       name: trainer.name,
@@ -181,14 +151,10 @@ export async function POST(req: NextRequest) {
       vehicleTypes: data.vehicleTypes,
       experience: data.experience,
       licenseNumber: data.licenseNumber,
-    }).catch((err) => console.error("[NOTIFY_ADMIN_ERROR]", err));
+    }).catch((err) => console.error("[EMAIL_ADMIN_TRAINER_ERROR]", err));
 
     return NextResponse.json(
-      {
-        success: true,
-        message: "Application submitted successfully. Our team will review within 24-48 hours.",
-        trainerId: trainer.id,
-      },
+      { success: true, message: "Application submitted successfully. Our team will review within 24-48 hours.", trainerId: trainer.id },
       { status: 201 }
     );
 
