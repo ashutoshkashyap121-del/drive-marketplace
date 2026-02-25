@@ -1,4 +1,5 @@
 // app/api/trainers/register/route.ts
+export const runtime = "nodejs";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { encryptAadhar } from "@/lib/aadhar";
