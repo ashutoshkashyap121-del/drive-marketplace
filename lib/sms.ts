@@ -1,88 +1,184 @@
-export const runtime = "nodejs";
+// lib/sms.ts
+// Fast2SMS integration for LearnDrive
+// Docs: https://docs.fast2sms.com
 
-import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { verifyAdmin } from "@/lib/admin";
-import { verifyCSRF } from "@/lib/csrf";
-import { logAdminAction } from "@/lib/audit";
-import { smsLearnerBookingConfirmed } from "@/lib/sms";
+const FAST2SMS_API_KEY = process.env.FAST2SMS_API_KEY!;
+const BASE_URL = "https://www.fast2sms.com/dev/bulkV2";
 
-const VALID_STATUSES = ["PENDING", "CONFIRMED", "COMPLETED", "CANCELLED"];
+// ─── Core SMS sender ──────────────────────────────────────────────────────────
 
-export async function POST(req: Request) {
-  try {
-    if (!(await verifyAdmin())) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    if (!(await verifyCSRF(req))) {
-      return NextResponse.json({ error: "Invalid CSRF token" }, { status: 403 });
-    }
-
-    const body = await req.json();
-    const bookingId = body.id ?? body.bookingId;
-    const { status, paymentStatus } = body;
-
-    if (!bookingId) {
-      return NextResponse.json({ error: "Booking ID is required" }, { status: 400 });
-    }
-
-    if (status && !VALID_STATUSES.includes(status)) {
-      return NextResponse.json({ error: "Invalid status" }, { status: 400 });
-    }
-
-    const existing = await prisma.booking.findUnique({
-      where: { id: Number(bookingId) },
-      select: {
-        status: true,
-        paymentStatus: true,
-        customerName: true,
-        mobile: true,
-        trainer: {
-          select: { name: true, mobile: true },
-        },
-      },
-    });
-
-    if (!existing) {
-      return NextResponse.json({ error: "Booking not found" }, { status: 404 });
-    }
-
-    const updated = await prisma.booking.update({
-      where: { id: Number(bookingId) },
-      data: {
-        ...(status ? { status } : {}),
-        ...(paymentStatus ? { paymentStatus } : {}),
-      },
-    });
-
-    await logAdminAction({
-      action: "BOOKING_UPDATED",
-      entityType: "Booking",
-      entityId: String(bookingId),
-      metadata: {
-        previousStatus: existing.status,
-        newStatus: status,
-        previousPaymentStatus: existing.paymentStatus,
-        newPaymentStatus: paymentStatus,
-      },
-    });
-
-    // ── SMS learner when booking is confirmed (non-blocking) ──────────────────
-    if (status === "CONFIRMED" && existing.status !== "CONFIRMED") {
-      smsLearnerBookingConfirmed({
-        customerName: existing.customerName,
-        customerMobile: existing.mobile,
-        trainerName: existing.trainer.name,
-        trainerMobile: existing.trainer.mobile,
-        bookingId: Number(bookingId),
-      }).catch((err) => console.error("[SMS_BOOKING_CONFIRMED_ERROR]", err));
-    }
-
-    return NextResponse.json({ success: true, booking: updated });
-
-  } catch (error) {
-    console.error("ADMIN BOOKING UPDATE ERROR:", error);
-    return NextResponse.json({ error: "Failed to update booking" }, { status: 500 });
+async function sendSMS(mobile: string, message: string): Promise<boolean> {
+  if (!FAST2SMS_API_KEY) {
+    console.warn("[SMS] FAST2SMS_API_KEY not set — skipping SMS");
+    return false;
   }
+
+  // Clean mobile number — remove +91 prefix if present
+  const cleanMobile = mobile.replace(/^\+91/, "").replace(/\D/g, "");
+
+  if (cleanMobile.length !== 10) {
+    console.warn(`[SMS] Invalid mobile number: ${mobile}`);
+    return false;
+  }
+
+  try {
+    const res = await fetch(BASE_URL, {
+      method: "POST",
+      headers: {
+        authorization: FAST2SMS_API_KEY,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        route: "q", // Quick/Transactional route
+        numbers: cleanMobile,
+        message: message,
+        flash: 0,
+        language: "english",
+      }),
+    });
+
+    const data = await res.json();
+
+    if (data.return === true) {
+      console.log(`[SMS] Sent to ${cleanMobile}`);
+      return true;
+    } else {
+      console.error(`[SMS] Failed:`, data.message || data);
+      return false;
+    }
+  } catch (err) {
+    console.error("[SMS] Error:", err);
+    return false;
+  }
+}
+
+// ─── Notification functions ───────────────────────────────────────────────────
+
+/**
+ * Notify admin when a new trainer registers
+ * Called from: app/api/trainers/register/route.ts
+ */
+export async function smsAdminNewTrainer({
+  name,
+  mobile,
+  city,
+}: {
+  name: string;
+  mobile: string;
+  city: string;
+}) {
+  const adminMobile = process.env.ADMIN_MOBILE;
+  if (!adminMobile) return;
+
+  const message = `LearnDrive: New trainer application received!\nName: ${name}\nMobile: ${mobile}\nCity: ${city}\nReview at: drive-marketplace.vercel.app/admin`;
+
+  return sendSMS(adminMobile, message);
+}
+
+/**
+ * Notify trainer when their application is approved
+ * Called from: app/api/admin/trainers/approve/route.ts
+ */
+export async function smsTrainerApproved({
+  name,
+  mobile,
+  city,
+}: {
+  name: string;
+  mobile: string;
+  city: string;
+}) {
+  const message = `Hi ${name}! Your LearnDrive trainer application has been APPROVED. Your profile is now live and learners in ${city} can start booking you. Welcome aboard! - LearnDrive Team`;
+
+  return sendSMS(mobile, message);
+}
+
+/**
+ * Notify trainer when their application is rejected
+ * Called from: app/api/admin/trainers/approve/route.ts
+ */
+export async function smsTrainerRejected({
+  name,
+  mobile,
+  reason,
+}: {
+  name: string;
+  mobile: string;
+  reason?: string;
+}) {
+  const reasonText = reason ? `\nReason: ${reason}` : "";
+  const message = `Hi ${name}, unfortunately your LearnDrive trainer application was not approved at this time.${reasonText}\nFor queries contact: support@learndrive.in - LearnDrive Team`;
+
+  return sendSMS(mobile, message);
+}
+
+/**
+ * Notify trainer when a new booking is made
+ * Called from: app/api/bookings/route.ts
+ */
+export async function smsTrainerNewBooking({
+  trainerName,
+  trainerMobile,
+  customerName,
+  customerMobile,
+  city,
+  packageName,
+  amount,
+}: {
+  trainerName: string;
+  trainerMobile: string;
+  customerName: string;
+  customerMobile: string;
+  city: string;
+  packageName: string;
+  amount: number;
+}) {
+  const message = `LearnDrive: New booking!\nLearner: ${customerName}\nContact: ${customerMobile}\nPackage: ${packageName}\nAmount: Rs.${amount}\nCity: ${city}\nContact the learner to confirm timing. - LearnDrive`;
+
+  return sendSMS(trainerMobile, message);
+}
+
+/**
+ * Notify admin when a new booking is made
+ * Called from: app/api/bookings/route.ts
+ */
+export async function smsAdminNewBooking({
+  customerName,
+  trainerName,
+  amount,
+  platformFee,
+}: {
+  customerName: string;
+  trainerName: string;
+  amount: number;
+  platformFee: number;
+}) {
+  const adminMobile = process.env.ADMIN_MOBILE;
+  if (!adminMobile) return;
+
+  const message = `LearnDrive: New booking!\nLearner: ${customerName}\nTrainer: ${trainerName}\nAmount: Rs.${amount}\nPlatform fee: Rs.${platformFee}\nReview at: drive-marketplace.vercel.app/admin`;
+
+  return sendSMS(adminMobile, message);
+}
+
+/**
+ * Notify learner when their booking is confirmed by admin
+ * Called from: app/api/admin/bookings/update/route.ts
+ */
+export async function smsLearnerBookingConfirmed({
+  customerName,
+  customerMobile,
+  trainerName,
+  trainerMobile,
+  bookingId,
+}: {
+  customerName: string;
+  customerMobile: string;
+  trainerName: string;
+  trainerMobile: string;
+  bookingId: number;
+}) {
+  const message = `Hi ${customerName}! Your driving session with ${trainerName} is CONFIRMED (Booking #${bookingId}). Your trainer will contact you on ${trainerMobile} to arrange timing. - LearnDrive`;
+
+  return sendSMS(customerMobile, message);
 }
