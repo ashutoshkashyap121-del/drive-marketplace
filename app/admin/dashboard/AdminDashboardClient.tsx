@@ -3,6 +3,24 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
+// ── CSRF helper — reads token from cookie set at login ────────────────────────
+function getCsrfToken(): string {
+  if (typeof document === "undefined") return "";
+  const match = document.cookie.match(/(?:^|;\s*)csrf_token=([^;]+)/);
+  return match ? decodeURIComponent(match[1]) : "";
+}
+
+function adminFetch(url: string, body: object) {
+  return fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-csrf-token": getCsrfToken(), // ← sends CSRF token with every request
+    },
+    body: JSON.stringify(body),
+  });
+}
+
 type Document = {
   docType: string;
   fileName: string;
@@ -112,44 +130,28 @@ export default function AdminDashboardClient({
   // ── Actions ───────────────────────────────────────────────────────────────
   async function approveTrainer(id: number) {
     setUpdatingId(id);
-    await fetch("/api/admin/trainers/approve", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ trainerId: id, action: "APPROVED" }),
-    });
+    await adminFetch("/api/admin/trainers/approve", { trainerId: id, action: "APPROVED" });
     router.refresh();
     setUpdatingId(null);
   }
 
   async function rejectTrainer(id: number) {
     setUpdatingId(id);
-    await fetch("/api/admin/trainers/approve", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ trainerId: id, action: "REJECTED", reason: rejectReason[id] || "" }),
-    });
+    await adminFetch("/api/admin/trainers/approve", { trainerId: id, action: "REJECTED", reason: rejectReason[id] || "" });
     router.refresh();
     setUpdatingId(null);
   }
 
   async function suspendTrainer(id: number) {
     setUpdatingId(id);
-    await fetch("/api/admin/trainers/approve", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ trainerId: id, action: "SUSPENDED" }),
-    });
+    await adminFetch("/api/admin/trainers/approve", { trainerId: id, action: "SUSPENDED" });
     router.refresh();
     setUpdatingId(null);
   }
 
   async function updateBookingStatus(id: number, status: string) {
     setUpdatingId(id);
-    await fetch("/api/admin/bookings/update", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, status }),
-    });
+    await adminFetch("/api/admin/bookings/update", { id, status });
     router.refresh();
     setUpdatingId(null);
   }

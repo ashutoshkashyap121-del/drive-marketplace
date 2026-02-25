@@ -2,6 +2,7 @@ export const runtime = "nodejs";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyAdmin } from "@/lib/admin";
+import { verifyCSRF } from "@/lib/csrf";
 import { logAdminAction } from "@/lib/audit";
 import { notifyTrainerApproved, notifyTrainerRejected } from "@/lib/notifications";
 
@@ -11,6 +12,10 @@ export async function POST(req: Request) {
   try {
     if (!(await verifyAdmin())) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    if (!(await verifyCSRF(req))) {
+      return NextResponse.json({ error: "Invalid CSRF token" }, { status: 403 });
     }
 
     const body = await req.json();
