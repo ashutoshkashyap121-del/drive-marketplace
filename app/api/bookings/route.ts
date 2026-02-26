@@ -1,6 +1,8 @@
+export const runtime = "nodejs";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { notifyBookingMade, notifyAdminNewBooking } from "@/lib/notifications";
+import { smsTrainerNewBooking, smsAdminNewBooking } from "@/lib/sms";
 
 export async function POST(req: NextRequest) {
   try {
@@ -19,7 +21,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Trainer not available" }, { status: 404 });
     }
 
-    // Calculate platform fee & payout
     const amount = trainer.basePrice ?? 0;
     const platformFee = Math.round(amount * 0.15);
     const trainerPayout = amount - platformFee;
@@ -35,47 +36,74 @@ export async function POST(req: NextRequest) {
         bookingDate: new Date(bookingDate),
         packageName: "Standard Session",
         amount,
-        platformFee,      // ✅ now calculated instead of null
-        trainerPayout,    // ✅ now calculated instead of null
+        platformFee,
+        trainerPayout,
       },
     });
 
-    // Format date for emails
     const bookingDateFormatted = new Date(bookingDate).toLocaleDateString("en-IN", {
       weekday: "long", year: "numeric", month: "long", day: "numeric",
     });
 
-    // ── Notify trainer + learner + admin (non-blocking) ────────────────────
+    // ── SMS trainer (awaited so Vercel doesn't kill early) ────────────────────
+    try {
+      await smsTrainerNewBooking({
+        trainerName: trainer.name,
+        trainerMobile: trainer.mobile,
+        customerName,
+        customerMobile: mobile,
+        city,
+        packageName: "Standard Session",
+        amount,
+      });
+    } catch (err) { console.error("[SMS_TRAINER_BOOKING_ERROR]", err); }
+
+    // ── SMS admin ─────────────────────────────────────────────────────────────
+    try {
+      await smsAdminNewBooking({
+        customerName,
+        trainerName: trainer.name,
+        amount,
+        platformFee,
+      });
+    } catch (err) { console.error("[SMS_ADMIN_BOOKING_ERROR]", err); }
+
+    // ── Email trainer (awaited) ───────────────────────────────────────────────
     if (trainer.email) {
-      notifyBookingMade({
-        trainer: {
-          name: trainer.name,
-          email: trainer.email,
-          mobile: trainer.mobile,
-        },
-        learner: {
-          name: customerName,
-          email: email || "",   // add email field to your booking form to use this
-          mobile,
-        },
-        booking: {
-          id: booking.id,
-          packageName: "Standard Session",
-          amount,
-          bookingDate: bookingDateFormatted,
-          address,
-          city,
-        },
-      }).catch((err) => console.error("[NOTIFY_BOOKING_ERROR]", err));
+      try {
+        await notifyBookingMade({
+          trainer: {
+            name: trainer.name,
+            email: trainer.email,
+            mobile: trainer.mobile,
+          },
+          learner: {
+            name: customerName,
+            email: email || "",
+            mobile,
+          },
+          booking: {
+            id: booking.id,
+            packageName: "Standard Session",
+            amount,
+            bookingDate: bookingDateFormatted,
+            address,
+            city,
+          },
+        });
+      } catch (err) { console.error("[EMAIL_BOOKING_ERROR]", err); }
     }
 
-    notifyAdminNewBooking({
-      learnerName: customerName,
-      trainerName: trainer.name,
-      packageName: "Standard Session",
-      amount,
-      city,
-    }).catch((err) => console.error("[NOTIFY_ADMIN_BOOKING_ERROR]", err));
+    // ── Email admin ───────────────────────────────────────────────────────────
+    try {
+      await notifyAdminNewBooking({
+        learnerName: customerName,
+        trainerName: trainer.name,
+        packageName: "Standard Session",
+        amount,
+        city,
+      });
+    } catch (err) { console.error("[EMAIL_ADMIN_BOOKING_ERROR]", err); }
 
     return NextResponse.json({ success: true, booking }, { status: 201 });
 
