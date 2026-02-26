@@ -50,38 +50,46 @@ export async function POST(req: Request) {
       metadata: { previousStatus: existing.status, newStatus: action, reason: reason || null },
     });
 
-    // ── SMS notifications (non-blocking) ─────────────────────────────────────
+    // ── SMS notifications (awaited so Vercel doesn't kill before sending) ─────
     if (action === "APPROVED") {
-      smsTrainerApproved({
-        name: existing.name,
-        mobile: existing.mobile,
-        city: existing.city,
-      }).catch((err) => console.error("[SMS_APPROVED_ERROR]", err));
-
-      if (existing.email) {
-        notifyTrainerApproved({
-          id: trainerId,
+      try {
+        await smsTrainerApproved({
           name: existing.name,
-          email: existing.email,
+          mobile: existing.mobile,
           city: existing.city,
-        }).catch((err) => console.error("[EMAIL_APPROVED_ERROR]", err));
-      }
+        });
+      } catch (err) { console.error("[SMS_APPROVED_ERROR]", err); }
+
+      try {
+        if (existing.email) {
+          await notifyTrainerApproved({
+            id: trainerId,
+            name: existing.name,
+            email: existing.email,
+            city: existing.city,
+          });
+        }
+      } catch (err) { console.error("[EMAIL_APPROVED_ERROR]", err); }
     }
 
     if (action === "REJECTED") {
-      smsTrainerRejected({
-        name: existing.name,
-        mobile: existing.mobile,
-        reason: reason || undefined,
-      }).catch((err) => console.error("[SMS_REJECTED_ERROR]", err));
-
-      if (existing.email) {
-        notifyTrainerRejected({
+      try {
+        await smsTrainerRejected({
           name: existing.name,
-          email: existing.email,
+          mobile: existing.mobile,
           reason: reason || undefined,
-        }).catch((err) => console.error("[EMAIL_REJECTED_ERROR]", err));
-      }
+        });
+      } catch (err) { console.error("[SMS_REJECTED_ERROR]", err); }
+
+      try {
+        if (existing.email) {
+          await notifyTrainerRejected({
+            name: existing.name,
+            email: existing.email,
+            reason: reason || undefined,
+          });
+        }
+      } catch (err) { console.error("[EMAIL_REJECTED_ERROR]", err); }
     }
 
     return NextResponse.json({ success: true, trainer: updated });

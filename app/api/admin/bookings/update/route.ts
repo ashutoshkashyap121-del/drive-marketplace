@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { verifyAdmin } from "@/lib/admin";
 import { verifyCSRF } from "@/lib/csrf";
 import { logAdminAction } from "@/lib/audit";
+import { smsLearnerBookingConfirmed } from "@/lib/sms";
 
 const VALID_STATUSES = ["PENDING", "CONFIRMED", "COMPLETED", "CANCELLED"];
 
@@ -19,8 +20,6 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-
-    // Dashboard sends { id, status } — support both id and bookingId
     const bookingId = body.id ?? body.bookingId;
     const { status, paymentStatus } = body;
 
@@ -34,7 +33,13 @@ export async function POST(req: Request) {
 
     const existing = await prisma.booking.findUnique({
       where: { id: Number(bookingId) },
-      select: { status: true, paymentStatus: true },
+      select: {
+        status: true,
+        paymentStatus: true,
+        customerName: true,
+        mobile: true,
+        trainer: { select: { name: true, mobile: true } },
+      },
     });
 
     if (!existing) {
@@ -60,6 +65,19 @@ export async function POST(req: Request) {
         newPaymentStatus: paymentStatus,
       },
     });
+
+    // ── SMS learner when booking is confirmed (awaited so Vercel doesn't kill) ─
+    if (status === "CONFIRMED" && existing.status !== "CONFIRMED") {
+      try {
+        await smsLearnerBookingConfirmed({
+          customerName: existing.customerName,
+          customerMobile: existing.mobile,
+          trainerName: existing.trainer.name,
+          trainerMobile: existing.trainer.mobile,
+          bookingId: Number(bookingId),
+        });
+      } catch (err) { console.error("[SMS_BOOKING_CONFIRMED_ERROR]", err); }
+    }
 
     return NextResponse.json({ success: true, booking: updated });
 

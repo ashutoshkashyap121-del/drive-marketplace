@@ -21,6 +21,11 @@ async function sendSMS(mobile: string, message: string): Promise<boolean> {
     return false;
   }
 
+  // Fast2SMS rejects messages with newlines — replace with space
+  const cleanMessage = message.replace(/\n/g, " ").trim();
+
+  console.log(`[SMS] Sending to ${cleanMobile}: ${cleanMessage.slice(0, 50)}...`);
+
   try {
     const res = await fetch(BASE_URL, {
       method: "POST",
@@ -29,156 +34,66 @@ async function sendSMS(mobile: string, message: string): Promise<boolean> {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        route: "q", // Quick/Transactional route
+        route: "q",
         numbers: cleanMobile,
-        message: message,
+        message: cleanMessage,
         flash: 0,
         language: "english",
       }),
     });
 
-    const data = await res.json();
+    const rawText = await res.text();
+    console.log(`[SMS] Fast2SMS raw response:`, rawText);
+
+    let data: any;
+    try { data = JSON.parse(rawText); } catch { data = { raw: rawText }; }
 
     if (data.return === true) {
-      console.log(`[SMS] Sent to ${cleanMobile}`);
+      console.log(`[SMS] ✅ Sent successfully to ${cleanMobile}`);
       return true;
     } else {
-      console.error(`[SMS] Failed:`, data.message || data);
+      console.error(`[SMS] ❌ Failed:`, JSON.stringify(data));
       return false;
     }
   } catch (err) {
-    console.error("[SMS] Error:", err);
+    console.error("[SMS] ❌ Network error:", err);
     return false;
   }
 }
 
 // ─── Notification functions ───────────────────────────────────────────────────
 
-/**
- * Notify admin when a new trainer registers
- * Called from: app/api/trainers/register/route.ts
- */
-export async function smsAdminNewTrainer({
-  name,
-  mobile,
-  city,
-}: {
-  name: string;
-  mobile: string;
-  city: string;
+export async function smsAdminNewTrainer({ name, mobile, city }: { name: string; mobile: string; city: string }) {
+  const adminMobile = process.env.ADMIN_MOBILE;
+  if (!adminMobile) return;
+  return sendSMS(adminMobile, `LearnDrive: New trainer application from ${name} (${mobile}) in ${city}. Review: drive-marketplace.vercel.app/admin`);
+}
+
+export async function smsTrainerApproved({ name, mobile, city }: { name: string; mobile: string; city: string }) {
+  return sendSMS(mobile, `Hi ${name}! Your LearnDrive trainer profile is now APPROVED and live in ${city}. Learners can now book you. Welcome! - LearnDrive`);
+}
+
+export async function smsTrainerRejected({ name, mobile, reason }: { name: string; mobile: string; reason?: string }) {
+  const r = reason ? ` Reason: ${reason}.` : "";
+  return sendSMS(mobile, `Hi ${name}, your LearnDrive application was not approved.${r} Contact support@learndrive.in - LearnDrive`);
+}
+
+export async function smsTrainerNewBooking({ trainerMobile, customerName, customerMobile, packageName, amount }: {
+  trainerName: string; trainerMobile: string; customerName: string; customerMobile: string; city: string; packageName: string; amount: number;
+}) {
+  return sendSMS(trainerMobile, `LearnDrive: New booking! Learner: ${customerName}, Contact: ${customerMobile}, Package: ${packageName}, Amount: Rs${amount}. Contact learner to confirm. - LearnDrive`);
+}
+
+export async function smsAdminNewBooking({ customerName, trainerName, amount, platformFee }: {
+  customerName: string; trainerName: string; amount: number; platformFee: number;
 }) {
   const adminMobile = process.env.ADMIN_MOBILE;
   if (!adminMobile) return;
-
-  const message = `LearnDrive: New trainer application received!\nName: ${name}\nMobile: ${mobile}\nCity: ${city}\nReview at: drive-marketplace.vercel.app/admin`;
-
-  return sendSMS(adminMobile, message);
+  return sendSMS(adminMobile, `LearnDrive: New booking! Learner: ${customerName}, Trainer: ${trainerName}, Amount: Rs${amount}, Fee: Rs${platformFee}. Review: drive-marketplace.vercel.app/admin`);
 }
 
-/**
- * Notify trainer when their application is approved
- * Called from: app/api/admin/trainers/approve/route.ts
- */
-export async function smsTrainerApproved({
-  name,
-  mobile,
-  city,
-}: {
-  name: string;
-  mobile: string;
-  city: string;
+export async function smsLearnerBookingConfirmed({ customerName, customerMobile, trainerName, trainerMobile, bookingId }: {
+  customerName: string; customerMobile: string; trainerName: string; trainerMobile: string; bookingId: number;
 }) {
-  const message = `Hi ${name}! Your LearnDrive trainer application has been APPROVED. Your profile is now live and learners in ${city} can start booking you. Welcome aboard! - LearnDrive Team`;
-
-  return sendSMS(mobile, message);
-}
-
-/**
- * Notify trainer when their application is rejected
- * Called from: app/api/admin/trainers/approve/route.ts
- */
-export async function smsTrainerRejected({
-  name,
-  mobile,
-  reason,
-}: {
-  name: string;
-  mobile: string;
-  reason?: string;
-}) {
-  const reasonText = reason ? `\nReason: ${reason}` : "";
-  const message = `Hi ${name}, unfortunately your LearnDrive trainer application was not approved at this time.${reasonText}\nFor queries contact: support@learndrive.in - LearnDrive Team`;
-
-  return sendSMS(mobile, message);
-}
-
-/**
- * Notify trainer when a new booking is made
- * Called from: app/api/bookings/route.ts
- */
-export async function smsTrainerNewBooking({
-  trainerName,
-  trainerMobile,
-  customerName,
-  customerMobile,
-  city,
-  packageName,
-  amount,
-}: {
-  trainerName: string;
-  trainerMobile: string;
-  customerName: string;
-  customerMobile: string;
-  city: string;
-  packageName: string;
-  amount: number;
-}) {
-  const message = `LearnDrive: New booking!\nLearner: ${customerName}\nContact: ${customerMobile}\nPackage: ${packageName}\nAmount: Rs.${amount}\nCity: ${city}\nContact the learner to confirm timing. - LearnDrive`;
-
-  return sendSMS(trainerMobile, message);
-}
-
-/**
- * Notify admin when a new booking is made
- * Called from: app/api/bookings/route.ts
- */
-export async function smsAdminNewBooking({
-  customerName,
-  trainerName,
-  amount,
-  platformFee,
-}: {
-  customerName: string;
-  trainerName: string;
-  amount: number;
-  platformFee: number;
-}) {
-  const adminMobile = process.env.ADMIN_MOBILE;
-  if (!adminMobile) return;
-
-  const message = `LearnDrive: New booking!\nLearner: ${customerName}\nTrainer: ${trainerName}\nAmount: Rs.${amount}\nPlatform fee: Rs.${platformFee}\nReview at: drive-marketplace.vercel.app/admin`;
-
-  return sendSMS(adminMobile, message);
-}
-
-/**
- * Notify learner when their booking is confirmed by admin
- * Called from: app/api/admin/bookings/update/route.ts
- */
-export async function smsLearnerBookingConfirmed({
-  customerName,
-  customerMobile,
-  trainerName,
-  trainerMobile,
-  bookingId,
-}: {
-  customerName: string;
-  customerMobile: string;
-  trainerName: string;
-  trainerMobile: string;
-  bookingId: number;
-}) {
-  const message = `Hi ${customerName}! Your driving session with ${trainerName} is CONFIRMED (Booking #${bookingId}). Your trainer will contact you on ${trainerMobile} to arrange timing. - LearnDrive`;
-
-  return sendSMS(customerMobile, message);
+  return sendSMS(customerMobile, `Hi ${customerName}! Your driving session with ${trainerName} is CONFIRMED (Ref #${bookingId}). Trainer will call you on ${trainerMobile} to arrange timing. - LearnDrive`);
 }

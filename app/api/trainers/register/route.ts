@@ -1,11 +1,10 @@
-// app/api/trainers/register/route.ts
 export const runtime = "nodejs";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { encryptAadhar } from "@/lib/aadhar";
 import { z } from "zod";
 import { notifyAdminNewTrainer } from "@/lib/notifications";
-import { smsAdminNewTrainer, smsTrainerNewBooking, smsAdminNewBooking } from "@/lib/sms";
+import { smsAdminNewTrainer } from "@/lib/sms";
 
 const CURRENT_YEAR = new Date().getFullYear();
 
@@ -135,26 +134,34 @@ export async function POST(req: NextRequest) {
       return newTrainer;
     });
 
-    // ── Notify admin via SMS + email (non-blocking) ───────────────────────────
-    smsAdminNewTrainer({
-      name: trainer.name,
-      mobile: trainer.mobile,
-      city: trainer.city,
-    }).catch((err) => console.error("[SMS_ADMIN_TRAINER_ERROR]", err));
+    // ── Notify admin via SMS + email (awaited so Vercel doesn't kill early) ───
+    try {
+      await smsAdminNewTrainer({
+        name: trainer.name,
+        mobile: trainer.mobile,
+        city: trainer.city,
+      });
+    } catch (err) { console.error("[SMS_ADMIN_TRAINER_ERROR]", err); }
 
-    notifyAdminNewTrainer({
-      id: trainer.id,
-      name: trainer.name,
-      mobile: trainer.mobile,
-      email: trainer.email,
-      city: trainer.city,
-      vehicleTypes: data.vehicleTypes,
-      experience: data.experience,
-      licenseNumber: data.licenseNumber,
-    }).catch((err) => console.error("[EMAIL_ADMIN_TRAINER_ERROR]", err));
+    try {
+      await notifyAdminNewTrainer({
+        id: trainer.id,
+        name: trainer.name,
+        mobile: trainer.mobile,
+        email: trainer.email,
+        city: trainer.city,
+        vehicleTypes: data.vehicleTypes,
+        experience: data.experience,
+        licenseNumber: data.licenseNumber,
+      });
+    } catch (err) { console.error("[EMAIL_ADMIN_TRAINER_ERROR]", err); }
 
     return NextResponse.json(
-      { success: true, message: "Application submitted successfully. Our team will review within 24-48 hours.", trainerId: trainer.id },
+      {
+        success: true,
+        message: "Application submitted successfully. Our team will review within 24-48 hours.",
+        trainerId: trainer.id,
+      },
       { status: 201 }
     );
 
