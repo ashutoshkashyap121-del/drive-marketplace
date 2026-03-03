@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import TrainersClient from "./TrainersClient";
 
 export const metadata: Metadata = {
@@ -15,5 +16,9 @@ export const metadata: Metadata = {
 };
 
 export default function Page() {
-  return <TrainersClient />;
+  return (
+    <Suspense fallback={<div style={{ minHeight: "100vh", background: "#F8F7F4" }} />}>
+      <TrainersClient />
+    </Suspense>
+  );
 }
