@@ -41,7 +41,8 @@ export default function TrainersClient() {
     fetch(`/api/trainers?city=${encodeURIComponent(city)}&vehicle=${vehicle}`)
       .then((res) => res.json())
       .then((data) => {
-        setTrainers(Array.isArray(data) ? data : []);
+  const list = Array.isArray(data) ? data : (data.trainers ?? []);
+  setTrainers(list);
         setLoading(false);
       })
       .catch(() => {
