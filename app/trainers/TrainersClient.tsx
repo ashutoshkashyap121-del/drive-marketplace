@@ -38,7 +38,7 @@ export default function TrainersClient() {
     if (!city || !vehicle) return;
     setLoading(true);
     setSearched(true);
-    fetch(`/api/trainers?city=${encodeURIComponent(city)}&vehicle=${vehicle}${pincode ? `&pincode=${pincode}` : ""}`)
+    fetch(`/api/trainers?city=${encodeURIComponent(city)}&vehicle=${vehicle}`)
       .then((res) => res.json())
       .then((data) => {
   const list = Array.isArray(data) ? data : (data.trainers ?? []);
