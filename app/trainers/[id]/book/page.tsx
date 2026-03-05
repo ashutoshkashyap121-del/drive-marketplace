@@ -96,9 +96,8 @@ export default function BookingPage() {
         return;
       }
       // ✅ Redirect to success page (triggers SMS to learner when admin confirms)
-      router.push(
-        `/success?id=${data.booking.id}&trainer=${encodeURIComponent(trainer.name)}`
-      );
+      router.push(`/success?id=${data.id}&trainer=${encodeURIComponent(trainer.name)}`)
+      
     } catch {
       setSubmitError("Network error. Please check your connection and try again.");
     } finally {

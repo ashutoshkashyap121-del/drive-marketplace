@@ -38,7 +38,7 @@ export default function TrainersClient() {
     if (!city || !vehicle) return;
     setLoading(true);
     setSearched(true);
-    fetch(`/api/trainers?city=${encodeURIComponent(city)}&vehicle=${vehicle}`)
+    fetch(`/api/trainers?city=${encodeURIComponent(city)}&vehicle=${vehicle}${pincode ? `&pincode=${pincode}` : ""}`)
       .then((res) => res.json())
       .then((data) => {
   const list = Array.isArray(data) ? data : (data.trainers ?? []);
@@ -52,11 +52,8 @@ export default function TrainersClient() {
   }, [city, vehicle]);
 
   const handleBook = (trainer: Trainer) => {
-    const amount = trainer.basePrice ?? 5000;
-    router.push(
-      `/book?trainerId=${trainer.id}&trainerName=${encodeURIComponent(trainer.name)}&city=${encodeURIComponent(trainer.city)}&amount=${amount}`
-    );
-  };
+  router.push(`/trainers/${trainer.id}/book`);
+};
 
   return (
     <main style={{ fontFamily: "'DM Sans', 'Segoe UI', sans-serif", background: "#F8F7F4", minHeight: "100vh" }}>
