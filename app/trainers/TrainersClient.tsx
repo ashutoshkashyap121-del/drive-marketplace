@@ -29,31 +29,40 @@ export default function TrainersClient() {
 
   const [city, setCity] = useState(searchParams.get("city") || "");
   const [vehicle, setVehicle] = useState(searchParams.get("vehicle") || "");
+  const [pincode, setPincode] = useState(searchParams.get("pincode") || "");
   const [trainers, setTrainers] = useState<Trainer[]>([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
 
-  // Fetch whenever city or vehicle changes (if both are set)
+  // Fetch whenever city, vehicle, or a complete pincode changes
   useEffect(() => {
     if (!city || !vehicle) return;
+    // Don't fire on partial pincode — only on empty or full 6-digit
+    if (pincode.length > 0 && pincode.length < 6) return;
+
     setLoading(true);
     setSearched(true);
-    fetch(`/api/trainers?city=${encodeURIComponent(city)}&vehicle=${vehicle}`)
+
+    const url = `/api/trainers?city=${encodeURIComponent(city)}&vehicle=${vehicle}${
+      pincode.length === 6 ? `&pincode=${pincode}` : ""
+    }`;
+
+    fetch(url)
       .then((res) => res.json())
       .then((data) => {
-  const list = Array.isArray(data) ? data : (data.trainers ?? []);
-  setTrainers(list);
+        const list = Array.isArray(data) ? data : (data.trainers ?? []);
+        setTrainers(list);
         setLoading(false);
       })
       .catch(() => {
         setTrainers([]);
         setLoading(false);
       });
-  }, [city, vehicle]);
+  }, [city, vehicle, pincode]);
 
   const handleBook = (trainer: Trainer) => {
-  router.push(`/trainers/${trainer.id}/book`);
-};
+    router.push(`/trainers/${trainer.id}/book`);
+  };
 
   return (
     <main style={{ fontFamily: "'DM Sans', 'Segoe UI', sans-serif", background: "#F8F7F4", minHeight: "100vh" }}>
@@ -99,6 +108,20 @@ export default function TrainersClient() {
           padding-right: 30px;
         }
         .filter-select:focus { outline: none; border-color: #F59E0B; }
+
+        .pincode-input {
+          padding: 9px 14px;
+          border: 2px solid #E2E8F0;
+          border-radius: 10px;
+          font-size: 0.88rem;
+          font-family: inherit;
+          color: #0F172A;
+          background: #F8FAFC;
+          width: 150px;
+          transition: border-color 0.2s;
+        }
+        .pincode-input:focus { outline: none; border-color: #F59E0B; }
+        .pincode-input::placeholder { color: #CBD5E1; }
 
         .vehicle-toggle { display: flex; gap: 8px; }
         .vbtn {
@@ -207,6 +230,7 @@ export default function TrainersClient() {
       <div className="filter-bar">
         <span className="filter-label">Showing:</span>
 
+        {/* City dropdown */}
         <select
           className="filter-select"
           value={city}
@@ -216,6 +240,7 @@ export default function TrainersClient() {
           {CITIES.map((c) => <option key={c} value={c}>{c}</option>)}
         </select>
 
+        {/* Vehicle toggle */}
         <div className="vehicle-toggle">
           <button className={`vbtn ${vehicle === "CAR" ? "active" : ""}`} onClick={() => setVehicle("CAR")}>
             🚗 Car
@@ -224,6 +249,39 @@ export default function TrainersClient() {
             🏍️ Bike
           </button>
         </div>
+
+        {/* Pincode filter — only fires fetch at 6 digits */}
+        <input
+          className="pincode-input"
+          type="text"
+          inputMode="numeric"
+          placeholder="📍 Pincode (optional)"
+          value={pincode}
+          maxLength={6}
+          onChange={(e) => setPincode(e.target.value.replace(/\D/g, ""))}
+        />
+
+        {/* Clear pincode pill — shown when pincode is active */}
+        {pincode.length === 6 && (
+          <button
+            onClick={() => setPincode("")}
+            style={{
+              padding: "6px 12px",
+              borderRadius: 100,
+              border: "none",
+              background: "#FEF3C7",
+              color: "#92400E",
+              fontSize: "0.78rem",
+              fontWeight: 600,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: 4,
+            }}
+          >
+            {pincode} ✕
+          </button>
+        )}
 
         {searched && !loading && (
           <span className="result-meta">{trainers.length} result{trainers.length !== 1 ? "s" : ""}</span>
@@ -241,7 +299,6 @@ export default function TrainersClient() {
             <p style={{ fontSize: "0.88rem" }}>to see available verified trainers near you</p>
           </div>
         ) : loading ? (
-          // Skeleton loading
           <>
             <div className="skeleton" />
             <div className="skeleton" style={{ opacity: 0.7 }} />
@@ -250,8 +307,12 @@ export default function TrainersClient() {
         ) : trainers.length === 0 ? (
           <div className="empty-state">
             <div className="empty-icon">😕</div>
-            <div className="empty-title">No trainers available in {city} yet</div>
-            <p style={{ fontSize: "0.88rem" }}>We're onboarding trainers fast — check back soon or try another city.</p>
+            <div className="empty-title">No trainers found{pincode.length === 6 ? ` in pincode ${pincode}` : ` in ${city}`}</div>
+            <p style={{ fontSize: "0.88rem" }}>
+              {pincode.length === 6
+                ? "Try clearing the pincode filter to see all trainers in your city."
+                : "We're onboarding trainers fast — check back soon or try another city."}
+            </p>
           </div>
         ) : (
           trainers.map((trainer) => {

@@ -1,7 +1,6 @@
-export const dynamic = "force-dynamic";
+import { redirect } from "next/navigation";
 
-import BookClient from "./BookClient";
-
-export default function Page() {
-  return <BookClient />;
+// Old /book route — redirects to trainer search
+export default function OldBookPage() {
+  redirect("/trainers");
 }

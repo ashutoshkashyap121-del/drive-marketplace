@@ -84,7 +84,7 @@ export default function BookingPage() {
           customerName: form.customerName,
           mobile: form.mobile,
           email: form.email,
-          city: trainer.city, // ← use trainer's city, not manual input
+          city: trainer.city,
           address: form.address,
           pincode: form.pincode,
           bookingDate: form.bookingDate,
@@ -95,9 +95,8 @@ export default function BookingPage() {
         setSubmitError(data.error || "Something went wrong. Please try again.");
         return;
       }
-      // ✅ Redirect to success page (triggers SMS to learner when admin confirms)
-      router.push(`/success?id=${data.id}&trainer=${encodeURIComponent(trainer.name)}`)
-      
+      // ✅ Fixed: API returns { success, booking } so we need data.booking.id
+      router.push(`/success?id=${data.booking.id}&trainer=${encodeURIComponent(trainer.name)}`);
     } catch {
       setSubmitError("Network error. Please check your connection and try again.");
     } finally {
