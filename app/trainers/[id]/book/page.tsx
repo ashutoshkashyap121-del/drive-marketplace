@@ -3,6 +3,13 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 
+// Razorpay types
+declare global {
+  interface Window {
+    Razorpay: any;
+  }
+}
+
 interface Trainer {
   id: number;
   name: string;
@@ -36,6 +43,15 @@ export default function BookingPage() {
     pincode: "",
     bookingDate: "",
   });
+
+  // Load Razorpay script
+  useEffect(() => {
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.async = true;
+    document.body.appendChild(script);
+    return () => { document.body.removeChild(script); };
+  }, []);
 
   useEffect(() => {
     fetch(`/api/trainers/${id}`)
@@ -75,31 +91,98 @@ export default function BookingPage() {
     if (!validate() || !trainer) return;
     setSubmitting(true);
     setSubmitError("");
+
     try {
-      const res = await fetch("/api/bookings", {
+      // ── Step 1: Create Razorpay order ──────────────────────────────────────
+      const orderRes = await fetch("/api/razorpay/order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          trainerId: id,
+          amount: trainer.basePrice ?? 0,
           customerName: form.customerName,
-          mobile: form.mobile,
-          email: form.email,
-          city: trainer.city,
-          address: form.address,
-          pincode: form.pincode,
-          bookingDate: form.bookingDate,
+          trainerName: trainer.name,
         }),
       });
-      const data = await res.json();
-      if (!res.ok) {
-        setSubmitError(data.error || "Something went wrong. Please try again.");
+
+      const orderData = await orderRes.json();
+
+      if (!orderRes.ok) {
+        setSubmitError(orderData.error || "Failed to initiate payment. Please try again.");
+        setSubmitting(false);
         return;
       }
-      // ✅ Fixed: API returns { success, booking } so we need data.booking.id
-      router.push(`/success?id=${data.booking.id}&trainer=${encodeURIComponent(trainer.name)}`);
+
+      // ── Step 2: Open Razorpay checkout popup ───────────────────────────────
+      const options = {
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: "LearnDrive",
+        description: `Driving session with ${trainer.name}`,
+        order_id: orderData.orderId,
+        prefill: {
+          name: form.customerName,
+          contact: form.mobile,
+          email: form.email || "",
+        },
+        theme: {
+          color: "#F59E0B",
+        },
+        modal: {
+          ondismiss: () => {
+            setSubmitError("Payment cancelled. Your booking was not confirmed.");
+            setSubmitting(false);
+          },
+        },
+        handler: async (response: {
+          razorpay_order_id: string;
+          razorpay_payment_id: string;
+          razorpay_signature: string;
+        }) => {
+          // ── Step 3: Verify payment + create booking ────────────────────────
+          try {
+            const verifyRes = await fetch("/api/razorpay/verify", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                trainerId: id,
+                customerName: form.customerName,
+                mobile: form.mobile,
+                email: form.email,
+                city: trainer.city,
+                address: form.address,
+                pincode: form.pincode,
+                bookingDate: form.bookingDate,
+              }),
+            });
+
+            const verifyData = await verifyRes.json();
+
+            if (!verifyRes.ok) {
+              setSubmitError(verifyData.error || "Payment verification failed. Contact support.");
+              setSubmitting(false);
+              return;
+            }
+
+            // ✅ Success — redirect to success page
+            router.push(
+              `/success?id=${verifyData.booking.id}&trainer=${encodeURIComponent(trainer.name)}`
+            );
+          } catch {
+            setSubmitError("Payment received but booking failed. Please contact support with your payment ID: " + response.razorpay_payment_id);
+            setSubmitting(false);
+          }
+        },
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.open();
+
     } catch {
       setSubmitError("Network error. Please check your connection and try again.");
-    } finally {
       setSubmitting(false);
     }
   };
@@ -159,6 +242,15 @@ export default function BookingPage() {
               <p style={{ fontSize: "0.75rem", color: "#94A3B8" }}>per session</p>
             </div>
           )}
+        </div>
+
+        {/* Payment badge */}
+        <div style={{ background: "#F0FDF4", border: "1px solid #BBF7D0", borderRadius: 12, padding: "12px 16px", marginBottom: 20, display: "flex", alignItems: "center", gap: 10 }}>
+          <span style={{ fontSize: "1.2rem" }}>🔒</span>
+          <div>
+            <p style={{ fontSize: "0.82rem", fontWeight: 600, color: "#166534", margin: 0 }}>Secure Payment via Razorpay</p>
+            <p style={{ fontSize: "0.75rem", color: "#4ADE80", margin: 0 }}>UPI · Cards · Net Banking · Wallets accepted</p>
+          </div>
         </div>
 
         {/* Form */}
@@ -232,13 +324,29 @@ export default function BookingPage() {
             </div>
           )}
 
+          {/* Price summary */}
+          <div style={{ background: "#F8FAFC", borderRadius: 12, padding: "14px 16px", marginBottom: 20, border: "1px solid #E2E8F0" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", color: "#64748B", marginBottom: 6 }}>
+              <span>Session fee</span>
+              <span>₹{(trainer.basePrice ?? 0).toLocaleString("en-IN")}</span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", color: "#64748B", marginBottom: 10, paddingBottom: 10, borderBottom: "1px solid #E2E8F0" }}>
+              <span>Platform fee</span>
+              <span>₹{Math.round((trainer.basePrice ?? 0) * 0.15).toLocaleString("en-IN")}</span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "'Sora', sans-serif", fontWeight: 800, fontSize: "1rem", color: "#0F172A" }}>
+              <span>Total payable</span>
+              <span style={{ color: "#F59E0B" }}>₹{(trainer.basePrice ?? 0).toLocaleString("en-IN")}</span>
+            </div>
+          </div>
+
           <button onClick={handleSubmit} disabled={submitting}
             style={{ width: "100%", padding: "15px", background: submitting ? "#94A3B8" : "linear-gradient(135deg, #F59E0B, #D97706)", color: "#FFFFFF", fontFamily: "'Sora', sans-serif", fontSize: "1rem", fontWeight: 700, border: "none", borderRadius: 12, cursor: submitting ? "not-allowed" : "pointer", boxShadow: "0 4px 16px rgba(245,158,11,0.4)", transition: "all 0.2s" }}>
-            {submitting ? "⏳ Submitting..." : "Confirm Booking Request →"}
+            {submitting ? "⏳ Opening Payment..." : `Pay ₹${(trainer.basePrice ?? 0).toLocaleString("en-IN")} & Confirm →`}
           </button>
 
           <p style={{ textAlign: "center", fontSize: "0.75rem", color: "#94A3B8", marginTop: 14 }}>
-            🔒 Your details are secure · Trainer will contact you to confirm timing
+            🔒 Secured by Razorpay · Trainer will contact you to confirm timing
           </p>
         </div>
       </div>

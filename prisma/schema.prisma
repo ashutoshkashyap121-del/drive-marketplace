@@ -137,6 +137,10 @@ model Booking {
   status        BookingStatus @default(PENDING)
   paymentStatus PaymentStatus @default(PENDING)
 
+  // ── Razorpay ──────────────────────────────────────────────────────────────
+  razorpayOrderId   String?   @unique
+  razorpayPaymentId String?   @unique
+
   bookingDate   DateTime?
   createdAt     DateTime      @default(now())
 
