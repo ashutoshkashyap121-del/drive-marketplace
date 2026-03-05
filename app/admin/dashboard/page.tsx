@@ -20,6 +20,7 @@ export default async function AdminDashboardPage() {
       mobile: true,
       email: true,
       city: true,
+      pincode: true,
       licenseNumber: true,
       vehicleTypes: true,
       serviceArea: true,

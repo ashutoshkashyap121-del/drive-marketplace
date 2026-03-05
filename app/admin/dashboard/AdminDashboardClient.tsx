@@ -43,6 +43,8 @@ type Trainer = {
   mobile: string;
   email: string | null;
   city: string;
+  pincode: string | null;
+  serviceArea: string[];
   experience: number;
   trainerType: string;
   status: string;
@@ -351,6 +353,27 @@ export default function AdminDashboardClient({
                               <div>
                                 <div style={{ fontSize: "0.72rem", fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: "0.8px", marginBottom: 6 }}>Bio</div>
                                 <p style={{ fontSize: "0.85rem", color: "#475569", lineHeight: 1.6 }}>{t.bio || "—"}</p>
+
+                                {/* Service pincodes */}
+                                <div style={{ marginTop: 16 }}>
+                                  <div style={{ fontSize: "0.72rem", fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: "0.8px", marginBottom: 8 }}>
+                                    📍 Home Pincode &amp; Service Area
+                                  </div>
+                                  <div style={{ fontSize: "0.82rem", color: "#374151", marginBottom: 6 }}>
+                                    <strong>Home:</strong> {t.pincode || "—"}
+                                  </div>
+                                  {t.serviceArea && t.serviceArea.length > 0 ? (
+                                    <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                                      {t.serviceArea.map((pin) => (
+                                        <span key={pin} style={{ background: "#EFF6FF", color: "#1D4ED8", fontSize: "0.75rem", fontWeight: 600, padding: "3px 10px", borderRadius: 100, border: "1px solid #BFDBFE", fontFamily: "monospace" }}>
+                                          {pin}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    <span style={{ fontSize: "0.82rem", color: "#94A3B8" }}>No service pincodes added</span>
+                                  )}
+                                </div>
                               </div>
 
                               {/* Vehicle details */}
