@@ -171,3 +171,12 @@ model AdminAuditLog {
   @@index([entityType])
   @@index([createdAt])
 }
+// Add this model to the bottom of your prisma/schema.prisma file
+
+model Waitlist {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
