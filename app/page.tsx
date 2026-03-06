@@ -4,13 +4,6 @@ import { useState, useEffect } from "react";
 
 const LAUNCH_DATE = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days from now
 
-const searchParams = useSearchParams();
-
-if (typeof window !== "undefined" && searchParams.get("preview") === "ld2025") {
-  window.location.href = "/trainers";
-  return null;
-}
-
 function useCountdown(target: Date) {
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   useEffect(() => {
@@ -51,7 +44,13 @@ export default function ComingSoonPage() {
   const [submitting, setSubmitting] = useState(false);
   const [activeStep, setActiveStep] = useState(0);
   const [carPos, setCarPos] = useState(0);
+  const searchParams = useSearchParams();
 
+  // Preview bypass — visit /?preview=ld2025 to skip coming soon
+  if (searchParams.get("preview") === "ld2025") {
+    if (typeof window !== "undefined") window.location.href = "/trainers";
+    return null;
+  }
   // Animate car along road
   useEffect(() => {
     const id = setInterval(() => {
