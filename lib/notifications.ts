@@ -4,7 +4,7 @@
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY!;
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL!;
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://drive-marketplace.vercel.app";
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://learndrive.in";
 const FROM_EMAIL = process.env.FROM_EMAIL || "LearnDrive <notifications@learndrive.in>";
 
 // ─── Core send function ───────────────────────────────────────────────────────
