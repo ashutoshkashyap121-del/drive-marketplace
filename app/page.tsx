@@ -4,6 +4,13 @@ import { useState, useEffect } from "react";
 
 const LAUNCH_DATE = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days from now
 
+const searchParams = useSearchParams();
+
+if (typeof window !== "undefined" && searchParams.get("preview") === "ld2025") {
+  window.location.href = "/trainers";
+  return null;
+}
+
 function useCountdown(target: Date) {
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   useEffect(() => {
