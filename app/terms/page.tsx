@@ -128,16 +128,14 @@ export default function TermsPage() {
       <Section title="6. Cancellations & Refunds">
         <ul className="list-disc pl-5 space-y-2">
           <li>
-            Cancellations made <strong>48+ hours</strong> before the session:
+            Cancellations made <strong>24+ hours</strong> before the session:
             Full refund.
           </li>
           <li>
-            Cancellations made <strong>24–48 hours</strong> before: 50% refund.
-          </li>
-          <li>
-            Cancellations made <strong>less than 24 hours</strong> before: No
+            Cancellations made <strong>less than 24 hours</strong> before: 50%
             refund.
           </li>
+          <li>Cancellations made after session time: No refund.</li>
           <li>
             If a trainer cancels, the Learner will receive a full refund and
             LearnDrive will attempt to find a replacement trainer.
@@ -215,10 +213,11 @@ export default function TermsPage() {
         </p>
       </Section>
 
-      <div className="mt-10 pt-6 border-t text-sm text-gray-400 flex gap-4">
-        <Link href="/privacy" className="hover:underline">Privacy Policy</Link>
-        <Link href="/" className="hover:underline">Home</Link>
-      </div>
+<div className="mt-10 pt-6 border-t text-sm text-gray-400 flex gap-4">
+  <Link href="/privacy" className="hover:underline">Privacy Policy</Link>
+  <Link href="/refund" className="hover:underline">Refund Policy</Link>
+  <Link href="/" className="hover:underline">Home</Link>
+</div>
     </main>
   );
 }
