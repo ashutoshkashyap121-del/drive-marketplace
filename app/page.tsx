@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
 
 const LAUNCH_DATE = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days from now
+
 
 function useCountdown(target: Date) {
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
@@ -45,13 +45,15 @@ export default function ComingSoonPage() {
   const [submitting, setSubmitting] = useState(false);
   const [activeStep, setActiveStep] = useState(0);
   const [carPos, setCarPos] = useState(0);
-  const searchParams = useSearchParams();
 
-  // Preview bypass — visit /?preview=ld2025 to skip coming soon
-  if (searchParams.get("preview") === "ld2025") {
-    if (typeof window !== "undefined") window.location.href = "/trainers";
-    return null;
-  }
+  // ── Preview bypass — visit /?preview=ld2025 to skip coming soon ─────────────
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("preview") === "ld2025") {
+      window.location.href = "/trainers";
+    }
+  }, []);
+
   // Animate car along road
   useEffect(() => {
     const id = setInterval(() => {
@@ -409,6 +411,8 @@ export default function ComingSoonPage() {
             <a href="/trainers/register" className="fl">Trainer Registration</a>
             <a href="/terms" className="fl">Terms of Service</a>
             <a href="/privacy" className="fl">Privacy Policy</a>
+            <a href="/refund" className="fl">Refund Policy</a>
+            <a href="/help" className="fl">Help & FAQ</a>
           </div>
           <div style={{ fontSize:"0.75rem", color:"rgba(255,255,255,0.1)" }}>
             © 2025 LearnDrive · Made with ❤️ in India
