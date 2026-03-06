@@ -322,56 +322,85 @@ export async function notifyBookingMade({
   `);
 
   // Email to learner
-  const learnerHtml = baseTemplate(`
-    <div style="text-align:center;margin-bottom:32px;">
-      <div style="font-size:48px;margin-bottom:12px;">🎉</div>
-      <h2 style="margin:0;color:#111827;font-size:24px;font-weight:800;">Booking Confirmed!</h2>
-      <p style="margin:8px 0 0;color:#6b7280;font-size:15px;">
-        Your driving lesson is booked
-      </p>
-    </div>
+// ─── REPLACEMENT for the learnerHtml template in notifyBookingMade() ─────────
+// In lib/notifications.ts, replace the entire learnerHtml variable with this:
 
-    <p style="color:#374151;font-size:15px;line-height:1.7;margin-bottom:20px;">
-      Hi <strong>${learner.name}</strong>, your booking is confirmed!
+const learnerHtml = baseTemplate(`
+  <div style="text-align:center;margin-bottom:32px;">
+    <div style="font-size:48px;margin-bottom:12px;">🎉</div>
+    <h2 style="margin:0;color:#111827;font-size:24px;font-weight:800;">Booking Confirmed!</h2>
+    <p style="margin:8px 0 0;color:#6b7280;font-size:15px;">
+      Your driving lesson is booked and payment received
     </p>
+  </div>
 
-    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:24px;margin-bottom:28px;">
-      <table style="width:100%;border-collapse:collapse;">
-        <tr style="border-bottom:1px solid #d1fae5;">
-          <td style="padding:10px 0;color:#6b7280;font-size:14px;width:120px;">Trainer</td>
-          <td style="padding:10px 0;color:#111827;font-size:14px;font-weight:600;">${trainer.name}</td>
-        </tr>
-        <tr style="border-bottom:1px solid #d1fae5;">
-          <td style="padding:10px 0;color:#6b7280;font-size:14px;">Contact</td>
-          <td style="padding:10px 0;color:#111827;font-size:14px;font-weight:600;">+91 ${trainer.mobile}</td>
-        </tr>
-        <tr style="border-bottom:1px solid #d1fae5;">
-          <td style="padding:10px 0;color:#6b7280;font-size:14px;">Package</td>
-          <td style="padding:10px 0;color:#111827;font-size:14px;">${booking.packageName}</td>
-        </tr>
-        <tr style="border-bottom:1px solid #d1fae5;">
-          <td style="padding:10px 0;color:#6b7280;font-size:14px;">Date</td>
-          <td style="padding:10px 0;color:#111827;font-size:14px;">${booking.bookingDate}</td>
-        </tr>
-        <tr>
-          <td style="padding:10px 0;color:#6b7280;font-size:14px;">Address</td>
-          <td style="padding:10px 0;color:#111827;font-size:14px;">${booking.address}, ${booking.city}</td>
-        </tr>
-      </table>
-    </div>
+  <p style="color:#374151;font-size:15px;line-height:1.7;margin-bottom:20px;">
+    Hi <strong>${learner.name}</strong>, your booking is confirmed!
+  </p>
 
-    <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:16px;margin-bottom:28px;">
-      <p style="margin:0;color:#92400e;font-size:13px;line-height:1.6;">
-        💡 <strong>Tip:</strong> Make sure you have your Learner's Licence ready before the session. 
-        Your trainer will contact you to confirm the exact timing.
-      </p>
-    </div>
+  <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:24px;margin-bottom:20px;">
+    <table style="width:100%;border-collapse:collapse;">
+      <tr style="border-bottom:1px solid #d1fae5;">
+        <td style="padding:10px 0;color:#6b7280;font-size:14px;width:120px;">Booking ID</td>
+        <td style="padding:10px 0;color:#f59e0b;font-size:16px;font-weight:800;">#${booking.id}</td>
+      </tr>
+      <tr style="border-bottom:1px solid #d1fae5;">
+        <td style="padding:10px 0;color:#6b7280;font-size:14px;">Trainer</td>
+        <td style="padding:10px 0;color:#111827;font-size:14px;font-weight:600;">${trainer.name}</td>
+      </tr>
+      <tr style="border-bottom:1px solid #d1fae5;">
+        <td style="padding:10px 0;color:#6b7280;font-size:14px;">Contact</td>
+        <td style="padding:10px 0;color:#111827;font-size:14px;font-weight:600;">+91 ${trainer.mobile}</td>
+      </tr>
+      <tr style="border-bottom:1px solid #d1fae5;">
+        <td style="padding:10px 0;color:#6b7280;font-size:14px;">Package</td>
+        <td style="padding:10px 0;color:#111827;font-size:14px;">${booking.packageName}</td>
+      </tr>
+      <tr style="border-bottom:1px solid #d1fae5;">
+        <td style="padding:10px 0;color:#6b7280;font-size:14px;">Date</td>
+        <td style="padding:10px 0;color:#111827;font-size:14px;">${booking.bookingDate}</td>
+      </tr>
+      <tr>
+        <td style="padding:10px 0;color:#6b7280;font-size:14px;">Address</td>
+        <td style="padding:10px 0;color:#111827;font-size:14px;">${booking.address}, ${booking.city}</td>
+      </tr>
+    </table>
+  </div>
 
-    <p style="color:#9ca3af;font-size:13px;margin:0;">
-      Need help? Email us at 
-      <a href="mailto:support@learndrive.in" style="color:#fbbf24;">support@learndrive.in</a>
+  <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:16px;margin-bottom:28px;">
+    <p style="margin:0;color:#92400e;font-size:13px;line-height:1.6;">
+      💡 <strong>Tip:</strong> Save your Booking ID <strong>#${booking.id}</strong> — you'll need it if you want to cancel or contact support.
+      Your trainer will call you to confirm the exact session time.
     </p>
-  `);
+  </div>
+
+  <!-- Action buttons -->
+  <table style="width:100%;border-collapse:collapse;margin-bottom:28px;">
+    <tr>
+      <td style="padding-right:8px;">
+        <a href="${BASE_URL}/cancel"
+          style="display:block;text-align:center;background:#fef2f2;color:#dc2626;font-weight:700;font-size:14px;
+                 padding:12px 16px;border-radius:10px;text-decoration:none;border:1px solid #fecaca;">
+          ❌ Cancel Booking
+        </a>
+      </td>
+      <td style="padding-left:8px;">
+        <a href="${BASE_URL}/help"
+          style="display:block;text-align:center;background:#f1f5f9;color:#475569;font-weight:700;font-size:14px;
+                 padding:12px 16px;border-radius:10px;text-decoration:none;border:1px solid #e2e8f0;">
+          ❓ Help & FAQ
+        </a>
+      </td>
+    </tr>
+  </table>
+
+  <p style="color:#9ca3af;font-size:13px;margin:0;text-align:center;">
+    Need help? Email us at 
+    <a href="mailto:support@learndrive.in" style="color:#fbbf24;">support@learndrive.in</a>
+    &nbsp;·&nbsp;
+    <a href="${BASE_URL}/refund" style="color:#9ca3af;">Refund Policy</a>
+  </p>
+`);
 
   // Send both emails in parallel
   const [trainerResult, learnerResult] = await Promise.all([

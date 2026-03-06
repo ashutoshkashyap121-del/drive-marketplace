@@ -9,58 +9,91 @@ export default function SuccessClient() {
   const trainerName = params.get("trainer");
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-50 px-4">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8 text-center space-y-5">
+    <main style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#F8F7F4", fontFamily: "'DM Sans', 'Segoe UI', sans-serif", padding: "20px" }}>
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Sora:wght@700;800&display=swap');`}</style>
 
-        {/* Success Icon */}
-        <div className="flex justify-center">
-          <div className="h-16 w-16 rounded-full bg-amber-100 flex items-center justify-center text-3xl">
+      <div style={{ width: "100%", maxWidth: 460 }}>
+
+        {/* Main card */}
+        <div style={{ background: "#fff", borderRadius: 24, border: "1px solid #E2E8F0", padding: "40px 32px", textAlign: "center", marginBottom: 16 }}>
+
+          {/* Icon */}
+          <div style={{ width: 72, height: 72, borderRadius: "50%", background: "#FEF3C7", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "2rem", margin: "0 auto 20px" }}>
             🎉
           </div>
+
+          <h1 style={{ fontFamily: "'Sora', sans-serif", fontSize: "1.6rem", fontWeight: 800, color: "#0F172A", marginBottom: 10 }}>
+            Booking Confirmed!
+          </h1>
+
+          <p style={{ fontSize: "0.92rem", color: "#64748B", lineHeight: 1.7, marginBottom: 24 }}>
+            Your session with <strong style={{ color: "#0F172A" }}>{trainerName || "your trainer"}</strong> has been booked and payment received. You'll be contacted on your mobile to confirm timing.
+          </p>
+
+          {/* Booking ID */}
+          {bookingId && (
+            <div style={{ background: "#F8FAFC", borderRadius: 14, padding: "14px 20px", marginBottom: 24, border: "1px solid #E2E8F0" }}>
+              <p style={{ fontSize: "0.72rem", color: "#94A3B8", textTransform: "uppercase", letterSpacing: "0.8px", fontWeight: 600, marginBottom: 4 }}>Booking Reference</p>
+              <p style={{ fontFamily: "'Sora', sans-serif", fontSize: "1.5rem", fontWeight: 800, color: "#F59E0B", margin: 0 }}>#{bookingId}</p>
+              <p style={{ fontSize: "0.72rem", color: "#94A3B8", marginTop: 4 }}>Save this for cancellations or support</p>
+            </div>
+          )}
+
+          {/* What happens next */}
+          <div style={{ background: "#FFFBEB", border: "1px solid #FDE68A", borderRadius: 14, padding: "16px 20px", textAlign: "left", marginBottom: 24 }}>
+            <p style={{ fontSize: "0.72rem", fontWeight: 700, color: "#92400E", textTransform: "uppercase", letterSpacing: "1px", marginBottom: 12 }}>What happens next?</p>
+            {[
+              "Payment confirmed — your booking is locked in",
+              "Trainer will call you to confirm session time & location",
+              "Show up at your pickup address on the booked date 🚗",
+            ].map((step, i) => (
+              <div key={i} style={{ display: "flex", gap: 10, marginBottom: i < 2 ? 10 : 0, alignItems: "flex-start" }}>
+                <span style={{ fontFamily: "'Sora', sans-serif", fontWeight: 800, color: "#F59E0B", fontSize: "0.85rem", flexShrink: 0 }}>{i + 1}.</span>
+                <p style={{ margin: 0, fontSize: "0.85rem", color: "#374151", lineHeight: 1.6 }}>{step}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Buttons */}
+          <button onClick={() => router.push("/trainers")}
+            style={{ width: "100%", padding: "14px", background: "linear-gradient(135deg, #F59E0B, #D97706)", color: "#fff", fontFamily: "'Sora', sans-serif", fontSize: "0.95rem", fontWeight: 700, border: "none", borderRadius: 12, cursor: "pointer", marginBottom: 10 }}>
+            Book Another Session →
+          </button>
+
+          <button onClick={() => router.push("/")}
+            style={{ width: "100%", padding: "12px", background: "transparent", color: "#64748B", fontFamily: "'Sora', sans-serif", fontSize: "0.88rem", fontWeight: 600, border: "1.5px solid #E2E8F0", borderRadius: 12, cursor: "pointer" }}>
+            Back to Home
+          </button>
         </div>
 
-        <h1 className="text-2xl font-bold text-gray-900">
-          Booking Requested!
-        </h1>
+        {/* Cancel / Help links */}
+        <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #E2E8F0", padding: "16px 20px" }}>
+          <p style={{ fontSize: "0.78rem", color: "#94A3B8", textAlign: "center", marginBottom: 12 }}>Need help with this booking?</p>
+          <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
+            {bookingId && (
+              <a href={`/cancel`}
+                style={{ padding: "8px 16px", background: "#FEF2F2", border: "1px solid #FECACA", borderRadius: 100, fontSize: "0.78rem", fontWeight: 600, color: "#DC2626", textDecoration: "none" }}>
+                ❌ Cancel Booking
+              </a>
+            )}
+            <a href="/refund"
+              style={{ padding: "8px 16px", background: "#F1F5F9", border: "1px solid #E2E8F0", borderRadius: 100, fontSize: "0.78rem", fontWeight: 600, color: "#475569", textDecoration: "none" }}>
+              💰 Refund Policy
+            </a>
+            <a href="/help"
+              style={{ padding: "8px 16px", background: "#F1F5F9", border: "1px solid #E2E8F0", borderRadius: 100, fontSize: "0.78rem", fontWeight: 600, color: "#475569", textDecoration: "none" }}>
+              ❓ Help & FAQ
+            </a>
+          </div>
+        </div>
 
-        <p className="text-sm text-gray-600 leading-relaxed">
-          Your session with <strong>{trainerName || "your trainer"}</strong> has been requested.
-          You'll be contacted on your mobile to confirm the details.
+        {/* Support note */}
+        <p style={{ textAlign: "center", fontSize: "0.75rem", color: "#94A3B8", marginTop: 16 }}>
+          Questions? Email{" "}
+          <a href="mailto:support@learndrive.in" style={{ color: "#F59E0B", textDecoration: "none" }}>
+            support@learndrive.in
+          </a>
         </p>
-
-        {/* Booking ID */}
-        {bookingId && (
-          <div className="bg-gray-50 rounded-xl py-3 px-4">
-            <p className="text-xs text-gray-400 mb-1">Booking Reference</p>
-            <p className="text-lg font-bold text-blue-700">#{bookingId}</p>
-          </div>
-        )}
-
-        {/* Steps */}
-        <div className="text-left bg-amber-50 rounded-xl p-4 space-y-2">
-          <p className="text-xs font-bold text-amber-700 uppercase tracking-wide mb-3">What happens next?</p>
-          <div className="flex items-start gap-3 text-sm text-gray-600">
-            <span className="text-amber-500 font-bold">1.</span>
-            Our team reviews your booking within a few hours
-          </div>
-          <div className="flex items-start gap-3 text-sm text-gray-600">
-            <span className="text-amber-500 font-bold">2.</span>
-            Your trainer will call you to confirm the time & location
-          </div>
-          <div className="flex items-start gap-3 text-sm text-gray-600">
-            <span className="text-amber-500 font-bold">3.</span>
-            Your training session begins! 🚗
-          </div>
-        </div>
-
-        <button
-          onClick={() => router.push("/")}
-          className="w-full py-3 rounded-xl font-bold text-white transition"
-          style={{ background: "linear-gradient(135deg, #F59E0B, #D97706)" }}
-        >
-          Back to Home
-        </button>
-
       </div>
     </main>
   );
