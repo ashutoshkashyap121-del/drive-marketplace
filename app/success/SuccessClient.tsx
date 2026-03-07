@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 
 export default function SuccessClient() {
@@ -7,6 +8,17 @@ export default function SuccessClient() {
   const router = useRouter();
   const bookingId = params.get("id");
   const trainerName = params.get("trainer");
+
+  // Fire Meta Pixel Purchase event on booking success
+  useEffect(() => {
+    if (typeof window !== "undefined" && (window as any).fbq) {
+      (window as any).fbq("track", "Purchase", {
+        currency: "INR",
+        content_name: "Driving Session",
+        content_category: "Education",
+      });
+    }
+  }, []);
 
   return (
     <main style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#F8F7F4", fontFamily: "'DM Sans', 'Segoe UI', sans-serif", padding: "20px" }}>
@@ -71,7 +83,7 @@ export default function SuccessClient() {
           <p style={{ fontSize: "0.78rem", color: "#94A3B8", textAlign: "center", marginBottom: 12 }}>Need help with this booking?</p>
           <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
             {bookingId && (
-              <a href={`/cancel`}
+              <a href="/cancel"
                 style={{ padding: "8px 16px", background: "#FEF2F2", border: "1px solid #FECACA", borderRadius: 100, fontSize: "0.78rem", fontWeight: 600, color: "#DC2626", textDecoration: "none" }}>
                 ❌ Cancel Booking
               </a>

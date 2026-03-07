@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import Script from "next/script";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -13,11 +14,11 @@ const geistMono = Geist_Mono({
 });
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://learndrive.in";
+const META_PIXEL_ID = "1255996423299564";
 
 export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),
 
-  // ── Default title (overridden per page) ────────────────────────────────────
   title: {
     default: "LearnDrive — Book Verified Driving Trainers Near You",
     template: "%s | LearnDrive",
@@ -43,7 +44,6 @@ export const metadata: Metadata = {
   creator: "LearnDrive",
   publisher: "LearnDrive",
 
-  // ── Open Graph (WhatsApp, Facebook previews) ───────────────────────────────
   openGraph: {
     type: "website",
     locale: "en_IN",
@@ -62,7 +62,6 @@ export const metadata: Metadata = {
     ],
   },
 
-  // ── Twitter / X card ───────────────────────────────────────────────────────
   twitter: {
     card: "summary_large_image",
     title: "LearnDrive — Book Verified Driving Trainers Near You",
@@ -71,7 +70,6 @@ export const metadata: Metadata = {
     images: ["/og-image.png"],
   },
 
-  // ── Robots ─────────────────────────────────────────────────────────────────
   robots: {
     index: true,
     follow: true,
@@ -84,18 +82,11 @@ export const metadata: Metadata = {
     },
   },
 
-  // ── Canonical ──────────────────────────────────────────────────────────────
   alternates: {
     canonical: BASE_URL,
   },
-
-  // ── Verification (add Google Search Console verify code here later) ─────────
-  // verification: {
-  //   google: "your-google-verification-code",
-  // },
 };
 
-// ── Structured Data (JSON-LD) for Google rich results ─────────────────────────
 const structuredData = {
   "@context": "https://schema.org",
   "@type": "LocalBusiness",
@@ -127,10 +118,38 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+        {/* Structured Data */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
         />
+
+        {/* Meta Pixel — base code */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              !function(f,b,e,v,n,t,s)
+              {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+              n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+              if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+              n.queue=[];t=b.createElement(e);t.async=!0;
+              t.src=v;s=b.getElementsByTagName(e)[0];
+              s.parentNode.insertBefore(t,s)}(window, document,'script',
+              'https://connect.facebook.net/en_US/fbevents.js');
+              fbq('init', '${META_PIXEL_ID}');
+              fbq('track', 'PageView');
+            `,
+          }}
+        />
+        <noscript>
+          <img
+            height="1"
+            width="1"
+            style={{ display: "none" }}
+            src={`https://www.facebook.com/tr?id=${META_PIXEL_ID}&ev=PageView&noscript=1`}
+            alt=""
+          />
+        </noscript>
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         {children}
