@@ -4,6 +4,7 @@ import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
 import { notifyBookingMade, notifyAdminNewBooking } from "@/lib/notifications";
 import { smsTrainerNewBooking, smsAdminNewBooking } from "@/lib/sms";
+import { waBookingConfirmedLearner, waNewBookingTrainer } from "@/lib/whatsapp";
 
 export async function POST(req: NextRequest) {
   try {
@@ -11,7 +12,6 @@ export async function POST(req: NextRequest) {
       razorpay_order_id,
       razorpay_payment_id,
       razorpay_signature,
-      // Booking details
       trainerId,
       customerName,
       mobile,
@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
     const platformFee = Math.round(amount * 0.15);
     const trainerPayout = amount - platformFee;
 
-    // ── 3. Create booking in DB with PAID status ─────────────────────────────
+    // ── 3. Create booking in DB ──────────────────────────────────────────────
     const booking = await prisma.booking.create({
       data: {
         trainerId: parseInt(trainerId),
@@ -82,7 +82,7 @@ export async function POST(req: NextRequest) {
         packageName: "Standard Session",
         amount,
       });
-    } catch (err) { console.error("[SMS_TRAINER_BOOKING_ERROR]", err); }
+    } catch (err) { console.error("[SMS_TRAINER_ERROR]", err); }
 
     // ── 5. SMS admin ─────────────────────────────────────────────────────────
     try {
@@ -92,22 +92,39 @@ export async function POST(req: NextRequest) {
         amount,
         platformFee,
       });
-    } catch (err) { console.error("[SMS_ADMIN_BOOKING_ERROR]", err); }
+    } catch (err) { console.error("[SMS_ADMIN_ERROR]", err); }
 
-    // ── 6. Email trainer ─────────────────────────────────────────────────────
+    // ── 6. WhatsApp learner ──────────────────────────────────────────────────
+    try {
+      await waBookingConfirmedLearner({
+        learnerName: customerName,
+        learnerMobile: mobile,
+        trainerName: trainer.name,
+        bookingId: booking.id,
+        bookingDate: bookingDateFormatted,
+        address,
+      });
+    } catch (err) { console.error("[WA_LEARNER_ERROR]", err); }
+
+    // ── 7. WhatsApp trainer ──────────────────────────────────────────────────
+    try {
+      await waNewBookingTrainer({
+        trainerName: trainer.name,
+        trainerMobile: trainer.mobile,
+        learnerName: customerName,
+        learnerMobile: mobile,
+        bookingDate: bookingDateFormatted,
+        address,
+        amount,
+      });
+    } catch (err) { console.error("[WA_TRAINER_ERROR]", err); }
+
+    // ── 8. Email trainer ─────────────────────────────────────────────────────
     if (trainer.email) {
       try {
         await notifyBookingMade({
-          trainer: {
-            name: trainer.name,
-            email: trainer.email,
-            mobile: trainer.mobile,
-          },
-          learner: {
-            name: customerName,
-            email: email || "",
-            mobile,
-          },
+          trainer: { name: trainer.name, email: trainer.email, mobile: trainer.mobile },
+          learner: { name: customerName, email: email || "", mobile },
           booking: {
             id: booking.id,
             packageName: "Standard Session",
@@ -120,7 +137,7 @@ export async function POST(req: NextRequest) {
       } catch (err) { console.error("[EMAIL_BOOKING_ERROR]", err); }
     }
 
-    // ── 7. Email admin ───────────────────────────────────────────────────────
+    // ── 9. Email admin ───────────────────────────────────────────────────────
     try {
       await notifyAdminNewBooking({
         learnerName: customerName,
@@ -129,7 +146,7 @@ export async function POST(req: NextRequest) {
         amount,
         city,
       });
-    } catch (err) { console.error("[EMAIL_ADMIN_BOOKING_ERROR]", err); }
+    } catch (err) { console.error("[EMAIL_ADMIN_ERROR]", err); }
 
     return NextResponse.json({ success: true, booking }, { status: 201 });
 

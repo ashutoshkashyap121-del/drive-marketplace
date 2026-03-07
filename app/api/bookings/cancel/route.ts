@@ -2,6 +2,7 @@ export const runtime = "nodejs";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import Razorpay from "razorpay";
+import { waBookingCancelledLearner } from "@/lib/whatsapp";
 
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID!,
@@ -21,27 +22,16 @@ export async function POST(req: NextRequest) {
       where: { id: parseInt(bookingId), mobile },
     });
 
-    if (!booking) {
-      return NextResponse.json({ error: "Booking not found" }, { status: 404 });
-    }
-
-    if (booking.status === "CANCELLED") {
-      return NextResponse.json({ error: "Already cancelled" }, { status: 400 });
-    }
-
-    if (booking.status === "COMPLETED") {
-      return NextResponse.json({ error: "Completed bookings cannot be cancelled" }, { status: 400 });
-    }
-
+    if (!booking) return NextResponse.json({ error: "Booking not found" }, { status: 404 });
+    if (booking.status === "CANCELLED") return NextResponse.json({ error: "Already cancelled" }, { status: 400 });
+    if (booking.status === "COMPLETED") return NextResponse.json({ error: "Completed bookings cannot be cancelled" }, { status: 400 });
     if (booking.paymentStatus !== "PAID" || !booking.razorpayPaymentId) {
       return NextResponse.json({ error: "No payment found for this booking" }, { status: 400 });
     }
 
-    // ── 2. Calculate refund amount ───────────────────────────────────────────
+    // ── 2. Calculate refund ──────────────────────────────────────────────────
     const sessionDate = booking.bookingDate ? new Date(booking.bookingDate) : null;
-    const hoursUntil = sessionDate
-      ? (sessionDate.getTime() - Date.now()) / (1000 * 60 * 60)
-      : 0;
+    const hoursUntil = sessionDate ? (sessionDate.getTime() - Date.now()) / (1000 * 60 * 60) : 0;
 
     let refundPercent = 0;
     if (hoursUntil >= 24) refundPercent = 100;
@@ -53,9 +43,9 @@ export async function POST(req: NextRequest) {
 
     const refundAmount = Math.round((booking.amount * refundPercent) / 100);
 
-    // ── 3. Process refund via Razorpay ───────────────────────────────────────
+    // ── 3. Process Razorpay refund ───────────────────────────────────────────
     const refund = await razorpay.payments.refund(booking.razorpayPaymentId, {
-      amount: refundAmount * 100, // paise
+      amount: refundAmount * 100,
       notes: {
         reason: "Learner cancellation",
         bookingId: booking.id.toString(),
@@ -66,11 +56,18 @@ export async function POST(req: NextRequest) {
     // ── 4. Update booking in DB ──────────────────────────────────────────────
     await prisma.booking.update({
       where: { id: booking.id },
-      data: {
-        status: "CANCELLED",
-        paymentStatus: "REFUNDED",
-      },
+      data: { status: "CANCELLED", paymentStatus: "REFUNDED" },
     });
+
+    // ── 5. WhatsApp learner cancellation notification ────────────────────────
+    try {
+      await waBookingCancelledLearner({
+        learnerName: booking.customerName,
+        learnerMobile: booking.mobile,
+        bookingId: booking.id,
+        refundAmount,
+      });
+    } catch (err) { console.error("[WA_CANCEL_ERROR]", err); }
 
     return NextResponse.json({
       success: true,
