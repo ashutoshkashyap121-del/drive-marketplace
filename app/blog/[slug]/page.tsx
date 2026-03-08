@@ -7,8 +7,9 @@ export async function generateStaticParams() {
   return blogPosts.map((post) => ({ slug: post.slug }));
 }
 
-export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
-  const post = getBlogPost(params.slug);
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const post = getBlogPost(slug);
   if (!post) return {};
   return {
     title: `${post.title} | LearnDrive Blog`,
@@ -66,8 +67,9 @@ function renderMarkdown(content: string): string {
     .replace(/(<tr>[\s\S]*?<\/tr>\n?)+/g, '<div class="md-table-wrap"><table class="md-table">$&</table></div>');
 }
 
-export default function BlogPostPage({ params }: { params: { slug: string } }) {
-  const post = getBlogPost(params.slug);
+export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  const post = getBlogPost(slug);
   if (!post) notFound();
 
   const relatedPosts = blogPosts
