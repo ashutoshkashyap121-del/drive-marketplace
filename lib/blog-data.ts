@@ -1,6 +1,971 @@
-import type { BlogPost } from "./blog-data";
+export type BlogPost = {
+  slug: string;
+  title: string;
+  description: string;
+  category: string;
+  readTime: number;
+  date: string;
+  author: string;
+  tags: string[];
+  content: string;
+};
 
-export const extendedBlogPosts: BlogPost[] = [
+export const categories = [
+  "All",
+  "Licence Guide",
+  "RTO Tips",
+  "Driving Basics",
+  "Trainer Tips",
+  "Traffic Rules",
+];
+
+
+export const blogPosts: BlogPost[] = [
+  {
+    slug: "how-to-get-driving-licence-india",
+    title: "How to Get a Driving Licence in India (2025 Complete Guide)",
+    description:
+      "Step-by-step guide to getting your driving licence in India — from learner's licence to permanent licence, RTO test tips, and documents checklist.",
+    category: "Licence Guide",
+    readTime: 8,
+    date: "2025-03-01",
+    author: "LearnDrive Team",
+    tags: ["driving licence", "RTO", "learner licence", "India"],
+    content: `
+## Getting a Driving Licence in India: Everything You Need to Know
+
+Getting a driving licence in India involves two main stages: first obtaining a **Learner's Licence (LL)**, and after 30 days, applying for the **Permanent Driving Licence (DL)**. Here's a complete walkthrough.
+
+---
+
+## Step 1: Apply for a Learner's Licence
+
+A Learner's Licence is mandatory before you can drive on Indian roads. You must hold it for a minimum of 30 days before applying for the permanent licence.
+
+### Eligibility
+- **Age**: 16 years for motorcycles up to 50cc; 18 years for all other vehicles
+- **Medical fitness**: Basic eye test and health declaration
+- No prior criminal record related to traffic violations
+
+### Documents Required
+- **Age proof**: Aadhaar card, birth certificate, or passport
+- **Address proof**: Aadhaar card, voter ID, or utility bill
+- **Passport-sized photographs** (6 copies)
+- **Medical certificate** (Form 1A) — can be self-declared for non-commercial vehicles
+- **Application form** (Form 1 and Form 2)
+
+### The Process
+1. Visit your nearest **Regional Transport Office (RTO)** or apply online at [Parivahan](https://parivahan.gov.in)
+2. Fill out Form 1 (application) and Form 2 (physical fitness declaration)
+3. Submit documents and pay the fee (₹200–₹400 depending on state)
+4. Appear for the **computer-based written test** at the RTO
+5. Learner's Licence issued same-day if you pass
+
+### The Written Test
+The LL test consists of 15–20 multiple choice questions covering:
+- Traffic signs and signals
+- Road rules and right of way
+- Speed limits
+- Documents required while driving
+
+**Tip**: Use LearnDrive's free [RTO Practice Test](/rto-test) to prepare — it covers all official question categories.
+
+---
+
+## Step 2: Practice Driving for 30 Days
+
+After receiving your LL, you must practice driving for a minimum of 30 days before applying for the permanent licence.
+
+**Important rules during the learner period:**
+- Always display the **"L" board** on your vehicle (red L on white background)
+- Must be accompanied by a **licensed driver** at all times
+- Cannot drive on expressways or highways without supervision
+- Cannot drive at night without a licensed co-driver
+
+This is the perfect time to hire a professional driving trainer. A certified trainer from LearnDrive will teach you:
+- Vehicle controls and clutch-brakes coordination
+- Lane discipline and mirror usage
+- Parallel parking and hill starts
+- Navigating traffic and roundabouts
+
+---
+
+## Step 3: Apply for the Permanent Driving Licence
+
+After completing 30 days (and before 180 days from LL issue date), apply for your DL.
+
+### Additional Documents for DL
+- Learner's Licence (original)
+- Address and age proof (same as LL)
+- Passport photos
+- Fee payment receipt (₹500–₹800 depending on state and vehicle class)
+
+### The Driving Test
+The RTO **road test** involves:
+1. **Vehicle inspection** — check lights, horn, mirrors
+2. **Driving on a test track** — figure-8, forward parking, hill start
+3. **On-road driving** — some RTOs now conduct on-road tests
+
+### Pass Rate Tips
+- Practice at the **actual RTO test track** at least 2–3 times before your test date
+- Many RTOs have YouTube videos of their test track — watch them
+- Hire a trainer who has experience taking students to that specific RTO
+
+---
+
+## State-Specific Variations
+
+| State | LL Fee | DL Fee | Online Booking |
+|-------|--------|--------|----------------|
+| Delhi | ₹200 | ₹400 | Yes |
+| Karnataka | ₹250 | ₹500 | Yes |
+| Maharashtra | ₹300 | ₹600 | Yes |
+| Tamil Nadu | ₹200 | ₹450 | Partial |
+| Uttar Pradesh | ₹250 | ₹500 | Yes |
+
+---
+
+## Common Mistakes to Avoid
+
+1. **Not scheduling the slot online** — Walk-in queues at RTOs can take all day. Book your slot on Parivahan.gov.in
+2. **Wrong documents** — Always carry originals + photocopies. Self-attested copies are accepted
+3. **Skipping the L board** — You can be fined ₹500+ for driving without the L board
+4. **Not practicing before the test** — The RTO driving test has specific requirements. Practice specifically for those
+
+---
+
+## Quick Summary
+
+| Stage | Timeline | Cost |
+|-------|----------|------|
+| Learner's Licence | Day 1 | ₹200–400 |
+| Practice Period | Day 1–30 (min) | ₹2,000–5,000 (trainer) |
+| Permanent DL | Day 30+ | ₹500–800 |
+
+Ready to start your driving journey? [Find a certified trainer near you →](/trainers)
+    `,
+  },
+  {
+    slug: "best-driving-schools-bangalore",
+    title: "Best Driving Schools in Bangalore (2025) — Reviewed & Rated",
+    description:
+      "Looking for the best driving school in Bangalore? We compare top options in Koramangala, Whitefield, Indiranagar, and more — with pricing, reviews, and tips.",
+    category: "Trainer Tips",
+    readTime: 6,
+    date: "2025-03-03",
+    author: "LearnDrive Team",
+    tags: ["driving school Bangalore", "learn driving Bangalore", "RTO Bangalore"],
+    content: `
+## Finding the Right Driving School in Bangalore
+
+Bangalore's traffic is legendary — from Silk Board Junction to the Outer Ring Road, driving here requires real skill. Choosing the right driving school makes all the difference.
+
+---
+
+## What to Look For in a Bangalore Driving School
+
+### 1. Vehicle Type
+Make sure they train on the vehicle you plan to drive. Most schools offer:
+- Maruti Swift or WagonR for manual transmission
+- Automatic-only options (popular with IT crowd)
+- Two-wheelers (Honda Activa, Royal Enfield)
+
+### 2. Training Locations
+The best schools practice in:
+- **Empty grounds** (first 2–3 sessions)
+- **Low-traffic residential areas** (sessions 4–8)
+- **Main roads and flyovers** (sessions 9+)
+- **RTO test track** (before your test day)
+
+### 3. Trainer Certification
+Always verify your trainer:
+- Holds a valid commercial driving licence (badge 5 or 8)
+- Has at least 5 years of training experience
+- Can communicate in English, Hindi, or Kannada
+
+### 4. Pricing
+Bangalore driving school packages:
+- **Basic (8 sessions)**: ₹2,500–3,500
+- **Standard (12 sessions)**: ₹4,000–5,500
+- **Premium (with RTO assistance)**: ₹6,000–8,000
+
+---
+
+## Top Areas to Learn Driving in Bangalore
+
+### Koramangala / BTM Layout
+Dense, complex traffic with one-ways and narrow lanes. Great for learning real Bangalore driving. Look for trainers operating around Madiwala Market area.
+
+### Whitefield / ITPL
+Wider roads, more organized traffic. Better for beginners. Several IT company employees learn driving here on weekends.
+
+### Indiranagar / HAL
+Mix of main roads and quieter lanes. Good balance for intermediate practice.
+
+### Yelahanka / Hebbal (North Bangalore)
+New roads, less traffic. Best for complete beginners who are nervous about traffic.
+
+---
+
+## Red Flags to Watch Out For
+
+- **Trainers who insist on cash only** — no receipt, no accountability
+- **"We guarantee you'll pass the RTO test"** — no one can guarantee this
+- **Training on a single road repeatedly** — not preparing you for real driving
+- **Skipping highway/flyover practice** — essential for Bangalore driving
+
+---
+
+## Why Certified Trainers Are Worth It
+
+A certified trainer from LearnDrive comes with:
+- Verified licence and background check
+- Dual-control vehicle (brake on trainer's side)
+- Flexible scheduling — weekday, weekend, early morning
+- Digital booking and instant confirmation
+- Training near your home or office
+
+[Browse certified trainers in Bangalore →](/trainers?city=bangalore)
+
+---
+
+## RTO Test in Bangalore
+
+Bangalore has multiple RTOs. The main ones for DL tests are:
+- **Koramangala RTO** (covers south/central Bangalore)
+- **Rajajinagar RTO** (covers west Bangalore)
+- **Yeshwanthpur RTO** (covers north Bangalore)
+
+Book your slot on Parivahan.gov.in. Slots fill up 3–4 weeks in advance — plan early.
+
+**Prepare for the written test** with our [free RTO practice test →](/rto-test)
+    `,
+  },
+  {
+    slug: "rto-test-tips-tricks-pass-first-time",
+    title: "RTO Test Tips & Tricks: How to Pass Your Driving Test First Time",
+    description:
+      "Insider tips to pass the RTO learner's licence test and driving test on your first attempt — what examiners look for, common mistakes, and practice strategies.",
+    category: "RTO Tips",
+    readTime: 7,
+    date: "2025-03-05",
+    author: "LearnDrive Team",
+    tags: ["RTO test tips", "pass driving test", "learner licence test"],
+    content: `
+## How to Pass Your RTO Test on the First Attempt
+
+Failing the RTO test is more common than you'd think — but it's almost entirely preventable. Here's everything examiners actually look for, and how to nail it.
+
+---
+
+## Part 1: The Learner's Licence Written Test
+
+### What the Test Looks Like
+- **20 multiple choice questions** (varies by state: 15–20)
+- **Time limit**: 15–30 minutes
+- **Passing score**: 12/20 (60%) in most states
+- **Computer-based** at the RTO (touch screen)
+
+### Top Topics Tested
+
+#### Traffic Signs (30–40% of questions)
+You must recognize:
+- **Mandatory signs** (red circle border) — STOP, No Entry, Speed Limit
+- **Cautionary signs** (red triangle border) — School Ahead, Sharp Bend
+- **Informatory signs** (blue rectangle) — Hospital, Parking, Petrol Pump
+
+**Pro tip**: Focus on signs that look similar — many students confuse "Give Way" with "STOP", or mix up speed limit signs.
+
+#### Road Rules & Priority (25–30%)
+Common questions:
+- Who has priority at an unmarked intersection?
+- What do you do when an emergency vehicle approaches?
+- Which lane is for overtaking?
+
+#### Speed Limits (15–20%)
+Know these by heart:
+| Road Type | Car | Motorcycle |
+|-----------|-----|------------|
+| Urban roads | 50 km/h | 40 km/h |
+| State highways | 100 km/h | 80 km/h |
+| National highways | 120 km/h | 100 km/h |
+| School zones | 25 km/h | 25 km/h |
+
+#### Documents & Penalties (15%)
+- What documents must you carry while driving?
+- Penalties for drunk driving, no helmet, no seatbelt
+
+### How to Prepare
+1. **Take practice tests** — Use our [free RTO practice test](/rto-test) — 200+ questions from actual RTO question banks
+2. **Learn traffic signs** — Download the Motor Vehicles Act sign chart (available at any RTO)
+3. **Practice 2–3 days before** — Don't cram. Spaced repetition works better
+
+---
+
+## Part 2: The Permanent Licence Driving Test
+
+### What Examiners Look For
+
+The RTO driving test evaluates:
+
+**1. Vehicle Control**
+- Smooth clutch-brake coordination
+- No stalling or jerky starts
+- Proper use of handbrake on slopes
+
+**2. Mirror Usage**
+- Check mirrors **before every manoeuvre** — examiners watch this closely
+- Side mirrors before changing lanes
+- Rear mirror before braking
+
+**3. Lane Discipline**
+- Stay in the correct lane
+- Proper signalling before turns
+- No sudden lane changes
+
+**4. Parking Manoeuvres**
+Most RTOs test:
+- **Forward parking** into a marked bay
+- **Parallel parking** (some RTOs)
+- **Figure-8** on the test track
+
+**5. Hill Start (if applicable)**
+- Engage handbrake
+- Find clutch bite point
+- Release handbrake as you accelerate
+
+### Most Common Reasons for Failure
+
+1. **Stalling the vehicle** — especially at the start or on slopes
+2. **Not checking mirrors** before reversing or changing lanes
+3. **Panic under pressure** — examiner is watching, nerves make you forget basics
+4. **Wrong gear selection** — grinding gears or being in wrong gear for speed
+5. **Not wearing seatbelt** — immediate fail at many RTOs
+
+### 5-Day Preparation Plan
+
+| Day | What to Practice |
+|-----|-----------------|
+| Day 1–2 | Basic vehicle control, smooth starts/stops |
+| Day 3 | Parking manoeuvres (figure-8, forward parking) |
+| Day 4 | Drive to actual RTO test track, do 2–3 practice runs |
+| Day 5 | Light practice + rest. Don't over-prepare day before |
+
+---
+
+## Bonus: Day-of-Test Checklist
+
+- [ ] Bring LL (original), address proof, photos
+- [ ] Arrive 30 minutes early
+- [ ] Adjust seat, mirrors, and headrest **before** starting
+- [ ] Seatbelt on before anything else
+- [ ] Stay calm — the examiner wants you to pass
+
+**Practice for the written test right now →** [Take the free RTO test](/rto-test)
+    `,
+  },
+  {
+    slug: "learner-licence-documents-checklist",
+    title: "Learner Licence Documents Checklist India (2025)",
+    description:
+      "Complete list of documents required for learner licence application in India. State-wise requirements, self-attestation rules, and how to apply online.",
+    category: "Licence Guide",
+    readTime: 5,
+    date: "2025-03-07",
+    author: "LearnDrive Team",
+    tags: ["learner licence documents", "LL documents", "driving licence documents India"],
+    content: `
+## Documents Required for Learner's Licence in India
+
+The documents required for a learner's licence are standard across most states, with minor variations. Here's the complete checklist.
+
+---
+
+## Core Documents Required
+
+### 1. Age Proof (any one)
+- Aadhaar card
+- Birth certificate (issued by municipality/gram panchayat)
+- School transfer certificate / marksheet (Class 10)
+- Passport
+- PAN card (for age proof only)
+
+**Minimum age**: 18 years for car/motorcycle; 16 years for motorcycles under 50cc (with parent's consent)
+
+### 2. Address Proof (any one)
+- Aadhaar card
+- Voter ID card
+- Passport
+- Ration card
+- Utility bill (electricity/gas/water) — not older than 3 months
+- Bank passbook with address
+
+### 3. Photographs
+- 6 recent passport-sized photos
+- White background preferred
+- Should clearly show face (no sunglasses, no heavy filters)
+
+### 4. Application Forms
+- **Form 1**: Application for Learner's Licence
+- **Form 1A**: Medical certificate (physical fitness declaration)
+
+These forms are available free of cost at the RTO, or downloadable from Parivahan.gov.in
+
+### 5. Payment
+- Fee: ₹200–₹400 (varies by state and vehicle class)
+- Accepted via DD, online payment, or cash at RTO cashier
+
+---
+
+## Self-Attestation Rules
+
+For **non-transport vehicles** (personal cars, motorcycles), documents can be **self-attested** — you sign and date the photocopy yourself.
+
+For **transport/commercial vehicles**, you may need gazetted officer attestation.
+
+**How to self-attest**: Write "Self-Attested" + your signature + date on the photocopy of each document.
+
+---
+
+## Online Application via Parivahan
+
+You can apply online and just visit RTO for the test (no queuing for forms):
+
+1. Go to [parivahan.gov.in](https://parivahan.gov.in)
+2. Select your state → **Driving Licence** → **Apply for LL**
+3. Fill Form 1 and Form 1A online
+4. Upload scanned documents (PDF, under 1MB each)
+5. Pay fee online (debit/credit/UPI)
+6. Book your **test slot** at the RTO
+7. Visit RTO on test day with **originals** for verification
+
+---
+
+## Documents to Carry on Test Day
+
+Even if you applied online, carry **originals** of:
+- Age proof
+- Address proof
+- All photographs
+- Fee payment receipt (print or screenshot)
+- Aadhaar card (most RTOs require this)
+
+---
+
+## Special Cases
+
+### Learner Licence for Two-Wheeler (16–18 year olds)
+- Age proof showing 16+ years
+- **Parent/guardian consent letter** (Form LLR for minor)
+- Parent/guardian's ID proof
+- Only for vehicles without gear (moped, scooter under 50cc)
+
+### Change of Address on LL
+If your address changes after getting LL, update it before applying for DL. Use Form LLD at the RTO.
+
+### Lost Learner's Licence
+Apply for a duplicate with:
+- Form LLD (Duplicate LL application)
+- FIR copy (optional, but helpful)
+- Same address + age proof documents
+- ₹200 fee
+
+---
+
+## State-by-State Variations
+
+| State | Online Slot Booking | Aadhaar Mandatory | Photo Count |
+|-------|---------------------|-------------------|-------------|
+| Delhi | Yes | Yes | 4 |
+| Karnataka | Yes | Yes | 6 |
+| Maharashtra | Yes | Preferred | 6 |
+| Tamil Nadu | Partial | No | 4 |
+| Uttar Pradesh | Yes | Yes | 6 |
+| Rajasthan | Yes | Yes | 4 |
+
+---
+
+Ready to prepare for your written test? [Take the free RTO practice test →](/rto-test)
+    `,
+  },
+  {
+    slug: "car-vs-bike-licence-difference",
+    title: "Car vs Bike Licence India: Key Differences, Which to Get First?",
+    description:
+      "Comparing car (LMV) and bike (MCWG) driving licences in India — eligibility, test differences, cost, and which licence is better to get first.",
+    category: "Licence Guide",
+    readTime: 5,
+    date: "2025-03-08",
+    author: "LearnDrive Team",
+    tags: ["car licence", "bike licence", "LMV", "MCWG", "two wheeler licence"],
+    content: `
+## Car Licence vs Bike Licence in India: Complete Comparison
+
+The most common question we get: "Should I get a car or bike licence first?" Here's everything you need to make the right choice.
+
+---
+
+## Licence Categories in India
+
+Under the Motor Vehicles Act, the main categories are:
+
+| Code | Meaning | Examples |
+|------|---------|----------|
+| **MC50CC** | Motorcycle without gear, up to 50cc | Moped, small scooters |
+| **MCWOG** | Motorcycle without gear, above 50cc | Activa, Pleasure, Jupiter |
+| **MCWG** | Motorcycle with gear | Pulsar, Splendor, Royal Enfield |
+| **LMV-NT** | Light Motor Vehicle (non-transport) | Car, Jeep, SUV (personal use) |
+| **LMV-T** | Light Motor Vehicle (transport) | Taxi, cab |
+
+You can add multiple categories to one licence.
+
+---
+
+## Key Differences
+
+| Factor | Car (LMV-NT) | Bike (MCWG) |
+|--------|-------------|-------------|
+| Minimum age | 18 years | 18 years (with gear) |
+| LL validity | 6 months | 6 months |
+| DL test difficulty | Moderate | Easier |
+| RTO test track | Figure-8 + parking | Figure-8 + balancing |
+| LL test questions | Same | Same |
+| Additional fee | ₹200–300 extra vs bike | Base fee |
+| Training time | 12–20 sessions | 8–12 sessions |
+
+---
+
+## Which Should You Get First?
+
+### Get the Car Licence First If:
+- You plan to drive a car primarily
+- You have access to a car for practice
+- You want one comprehensive licence (car licence holders can legally ride **gearless scooters/motorcycles** in many states — check your state rules)
+
+### Get the Bike Licence First If:
+- You currently ride a two-wheeler daily
+- The bike licence test is easier — good for building confidence
+- You need to be road-legal quickly
+
+### Get Both at the Same Time:
+You can add both categories on a single LL and appear for both DL tests. This saves one LL fee and one set of document submissions. Most RTOs allow this.
+
+---
+
+## Can a Car Licence Holder Ride a Bike?
+
+This is the most commonly asked question. The answer:
+
+- **Gearless scooter/moped (under 50cc)**: Generally allowed with just a car licence in most states
+- **Gearless motorcycle above 50cc**: Technically requires separate MCWOG endorsement
+- **Geared motorcycle**: Requires separate MCWG licence
+
+In practice, many car licence holders ride gearless scooters — but legally, you should have the appropriate endorsement.
+
+---
+
+## Adding a New Vehicle Category
+
+Already have a car licence? You can add a bike licence without giving the written test again:
+1. Apply at RTO with existing DL + standard documents
+2. Appear only for the **driving test** (not the written test)
+3. New category endorsed on existing licence
+
+---
+
+## Smart Tip: Start with LMV + MCWG Combined
+
+If you're getting your first licence and plan to use both car and motorcycle, apply for **both categories simultaneously**. You pay a combined fee (usually ₹800–1,200 total vs ₹1,200–1,600 separately), and you only appear for one LL test.
+
+---
+
+Preparing for the RTO written test? [Practice free →](/rto-test)
+    `,
+  },
+  {
+    slug: "driving-tips-beginners-india",
+    title: "10 Essential Driving Tips for Beginners in India",
+    description:
+      "New to driving in India? These 10 practical tips will help you go from nervous first-timer to confident driver — covering Indian traffic, clutch control, and more.",
+    category: "Driving Basics",
+    readTime: 6,
+    date: "2025-03-10",
+    author: "LearnDrive Team",
+    tags: ["driving tips beginners", "learn driving India", "how to drive"],
+    content: `
+## 10 Driving Tips Every Beginner in India Needs
+
+Learning to drive in India is a unique challenge. Traffic here is unpredictable, infrastructure varies wildly, and the rules are sometimes optional (for everyone but you). Here's what will actually help you.
+
+---
+
+## 1. Get Comfortable with the Clutch Before Anything Else
+
+This is the single biggest hurdle for beginners on manual transmission cars. The clutch is what makes or breaks your driving in stop-go Indian traffic.
+
+**Practice this**: Sit in a parked car with engine off. Find the **bite point** — the moment the clutch starts engaging. Lift slowly from the floor and feel that slight resistance change. That bite point is your best friend.
+
+Once you're comfortable, practice slow-moving without braking — let the engine pull you at idle speed through the clutch alone.
+
+---
+
+## 2. Learn to Drive Slow Before Driving Fast
+
+Every beginner wants to get on the main road immediately. Don't.
+
+Spend your first 3–4 sessions in an empty ground or parking lot:
+- Circles and figure-8s
+- Forward parking into marked bays
+- Reversing in a straight line
+- Short stops from 20 km/h
+
+This builds muscle memory. When you're on the main road, your hands and feet react automatically.
+
+---
+
+## 3. The Mirror-Signal-Manoeuvre Habit
+
+This is non-negotiable for safe driving — and for passing your RTO test:
+1. **Mirror** — check rear and side mirrors
+2. **Signal** — indicate your intention
+3. **Manoeuvre** — execute turn/lane change
+
+Build this as a reflex from day one. It takes 3–4 seconds and saves lives.
+
+---
+
+## 4. Keep a 3-Second Following Distance
+
+In Indian traffic, everyone drives bumper-to-bumper. Don't follow that habit.
+
+Pick a fixed object on the road (pole, road marking). When the car in front passes it, count "one thousand one, one thousand two, one thousand three." If you reach it before finishing the count, you're too close.
+
+At highway speeds, increase to 4–5 seconds.
+
+---
+
+## 5. Anticipate, Don't React
+
+Indian roads are full of surprises — pedestrians crossing mid-road, bikes cutting lanes, cattle on highways. The difference between good and bad drivers is anticipation.
+
+**Train your eyes to look further ahead** — not just the car in front, but 4–5 cars ahead. Spot the slowing traffic, the pedestrian about to step off the footpath, the pothole at the speed bump.
+
+---
+
+## 6. Master Hill Starts Before Going on Hills
+
+Hill starts (moving forward from a stopped position on a slope) are tricky. Without the right technique, you roll backwards.
+
+The sequence:
+1. Footbrake on + handbrake engaged
+2. Engage first gear
+3. Find clutch bite point (feel engine resistance)
+4. Simultaneously release handbrake + gently accelerate
+5. Release clutch smoothly as car moves forward
+
+Practice this 20 times before you ever stop on a slope in real traffic.
+
+---
+
+## 7. Use Lower Gears in City Traffic
+
+Many beginners try to stay in 3rd or 4th gear in city traffic to "save petrol." This is wrong — it strains the engine and reduces control.
+
+**General rule**:
+- 1st gear: 0–10 km/h, parking, very slow traffic
+- 2nd gear: 10–20 km/h, dense traffic, tight turns
+- 3rd gear: 20–40 km/h, moderate traffic
+- 4th gear: 40–60 km/h, open roads
+- 5th gear: 60+ km/h, highways
+
+---
+
+## 8. Night Driving Is a Skill You Must Learn Separately
+
+Day driving and night driving feel completely different. Depth perception changes, headlight glare from oncoming vehicles is blinding, pedestrians are harder to spot.
+
+Practice night driving with your trainer for at least 2–3 sessions. Specific things to practice:
+- Dipping headlights when vehicles approach
+- Speed management on unlit roads
+- Judging road edges without lane markings
+
+---
+
+## 9. Rain Driving Has Different Rules
+
+The first monsoon after getting a licence catches most new drivers off guard.
+
+Key rules for rain:
+- Reduce speed by 30–40% (wet roads reduce tyre grip dramatically)
+- Increase following distance to 5–6 seconds
+- Avoid puddles — they can be deeper than they look, and can cause skids
+- Headlights on even in daytime rain
+- Avoid hard braking — use gentle, progressive pressure
+
+---
+
+## 10. The Fastest Way to Improve: Get a Good Trainer
+
+Nothing replaces quality instruction. A certified trainer:
+- Has dual controls (can brake from their side in emergencies)
+- Gives real-time feedback as you make mistakes
+- Teaches RTO-test-specific skills
+- Has patience (and insurance)
+
+Don't learn from family members unless they're trained instructors — their habits (good and bad) transfer directly to you.
+
+[Find a certified trainer near you →](/trainers)
+    `,
+  },
+  {
+    slug: "how-to-choose-driving-trainer",
+    title: "How to Choose a Good Driving Trainer (Without Getting Ripped Off)",
+    description:
+      "What separates a great driving trainer from a bad one — 7 criteria to check before booking, questions to ask, and red flags to avoid.",
+    category: "Trainer Tips",
+    readTime: 5,
+    date: "2025-03-12",
+    author: "LearnDrive Team",
+    tags: ["driving trainer tips", "best driving trainer", "choose driving instructor"],
+    content: `
+## How to Choose the Right Driving Trainer in India
+
+The driving trainer you choose will shape your driving habits for life. A good trainer creates confident, safe drivers. A bad one creates anxious, bad-habit-laden ones. Here's how to tell the difference.
+
+---
+
+## 7 Criteria to Evaluate a Driving Trainer
+
+### 1. Valid Commercial Driving Licence
+A professional driving trainer must hold a **commercial/transport driving licence** — not just a regular LMV licence. This indicates they've passed the higher-level driving test and understand advanced vehicle handling.
+
+Ask to see their DL card. The category section should show **LMV-T** or **HMV** in addition to personal vehicle categories.
+
+### 2. Teaching Vehicle Type
+Verify:
+- **Dual controls**: Professional training cars have a second brake pedal on the passenger side. This is non-negotiable for beginners
+- **Vehicle condition**: AC should work (you'll be stressed enough), windows should be functional, mirrors should be properly adjusted
+- **Manual or automatic**: Make sure the vehicle matches what you'll be driving/tested in
+
+### 3. Experience with Your Specific RTO
+Different RTOs have different test tracks and requirements. A trainer who regularly takes students to **your specific RTO** will know:
+- Which manoeuvres examiners focus on
+- Common reasons students fail at that RTO
+- How to navigate the test-day process
+
+Always ask: "How many students have you taken to [your RTO] in the last 6 months?"
+
+### 4. Teaching Style and Patience
+During your **first trial session**, observe:
+- Do they explain *why* before telling you *what*?
+- Do they grab the wheel/shout when you make a mistake?
+- Are they on their phone while you're driving?
+- Can they communicate clearly in the language you prefer?
+
+Nervous learners need calm instructors. If you feel more stressed *after* the session, that's a red flag.
+
+### 5. Structured Curriculum
+A professional trainer should have a **lesson plan**, not random sessions. Ask:
+
+*"What will I learn in each of the sessions?"*
+
+A good answer covers: vehicle familiarization → slow control → parking → traffic → highway → night driving → RTO prep.
+
+A bad answer: "Don't worry, I'll teach you everything."
+
+### 6. Reviews and References
+Ask for the phone number of 2–3 recent students you can call. Anyone confident in their work will provide this without hesitation.
+
+If they can't or won't provide references, rely on verified online reviews — on Google Maps, LearnDrive profiles, or Justdial.
+
+### 7. Transparent Pricing
+Pricing should be clear:
+- Fixed package price (not per-session, which leads to dragging out sessions)
+- What's included (RTO test preparation? Accompanying to RTO?)
+- Cancellation policy (what if you need to reschedule?)
+- Any extra charges (fuel? Parking at RTO?)
+
+---
+
+## Red Flags to Watch For
+
+- **"I'll make sure you pass the RTO test"** — implying bribing the examiner. This is illegal and you won't actually learn to drive
+- **No receipt or invoice** — no accountability, no consumer protection
+- **Unwilling to let you verify their DL** — potential fraud
+- **Training on only one road, repeatedly** — you won't be prepared for the test or real driving
+- **Aggressive behaviour when you make mistakes** — you'll stop asking questions and stop learning
+
+---
+
+## Questions to Ask Before Booking
+
+1. What vehicle will we train in? Does it have dual controls?
+2. How many sessions are in the package?
+3. Will you accompany me to the RTO for my test?
+4. What's your cancellation/rescheduling policy?
+5. Can I call one of your previous students for a reference?
+
+---
+
+## The Easiest Way to Find Verified Trainers
+
+LearnDrive trainers are:
+- Background verified with ID check
+- Licence verified (commercial DL confirmed)
+- Rated by actual students with verified reviews
+- Bookable online with instant confirmation
+- Cancellable for full refund 24 hours in advance
+
+[Browse verified trainers near you →](/trainers)
+    `,
+  },
+  {
+    slug: "traffic-rules-india-every-driver-must-know",
+    title: "Traffic Rules Every Driver in India Must Know (2025)",
+    description:
+      "Essential Indian traffic rules — speed limits, right of way, mobile phone laws, seatbelt rules, drunk driving penalties, and overtaking laws. Updated for 2025.",
+    category: "Traffic Rules",
+    readTime: 7,
+    date: "2025-03-14",
+    author: "LearnDrive Team",
+    tags: ["traffic rules India", "road rules India", "Motor Vehicles Act", "traffic fines 2025"],
+    content: `
+## Traffic Rules Every Driver in India Must Know
+
+The Motor Vehicles (Amendment) Act 2019 dramatically increased penalties for traffic violations. Ignorance is no longer a defence — and with e-challans and cameras everywhere, violations are tracked automatically.
+
+---
+
+## Speed Limits
+
+| Road Type | Car / Jeep | Motorcycle | Bus/Truck |
+|-----------|-----------|------------|-----------|
+| Urban/city roads | 50 km/h | 40 km/h | 40 km/h |
+| State highway | 100 km/h | 80 km/h | 80 km/h |
+| National highway | 120 km/h | 100 km/h | 100 km/h |
+| School zone | 25 km/h | 25 km/h | 25 km/h |
+| Expressway | 120 km/h | 100 km/h | 80 km/h |
+
+**Penalty for speeding**: ₹1,000–₹2,000 for first offence; ₹2,000–₹4,000 for repeat.
+
+---
+
+## Seatbelt Rules
+
+- **Mandatory for**: Driver + all passengers, front and rear seats
+- **Children under 14**: Must be in the rear seat; seat belt mandatory
+- **Infant/toddler**: Child safety seat required
+- **Penalty**: ₹1,000 per person not wearing a seatbelt
+
+Many people still don't buckle rear passengers. A rear-seat passenger without a seatbelt becomes a 70kg projectile in a collision.
+
+---
+
+## Helmet Rules (Two-Wheelers)
+
+- **Mandatory for**: Rider and pillion passenger
+- **Quality**: Must be ISI-certified (BIS mark)
+- **Buckle must be fastened** (not just helmet on head)
+- **Penalty**: ₹1,000 + possible disqualification from getting DL for 3 months
+
+---
+
+## Mobile Phone While Driving
+
+Using a mobile phone while driving (including speaking, texting, checking notifications) is:
+- **Penalty**: ₹1,000–₹5,000
+- **Hands-free is allowed** but earphones/AirPods in both ears is not
+- **Dashcam / navigation on mount**: Legal, as long as you don't handle the phone
+
+---
+
+## Drunk Driving (DUI)
+
+This carries the harshest penalties:
+- **BAC limit**: 30mg per 100ml blood (very strict — even 1 large beer may exceed this)
+- **First offence**: ₹10,000 fine + up to 6 months imprisonment
+- **Second offence**: ₹15,000 + up to 2 years imprisonment
+- **Licence suspension**: Immediate on arrest
+
+There is **no safe threshold** for alcohol before driving. A single drink affects reaction time by 20–30%.
+
+---
+
+## Overtaking Rules
+
+- **Overtake only from the right** (right side = fast lane in India)
+- **Never overtake**:
+  - On a bend or crest of a hill
+  - Near a pedestrian crossing
+  - At intersections
+  - When there's a solid yellow line (no-overtaking zone)
+  - Emergency vehicle is approaching
+- **Penalty**: ₹500–₹1,000; up to ₹5,000 for dangerous overtaking
+
+---
+
+## Right of Way Rules
+
+At intersections without signals:
+1. **Emergency vehicles** always have priority (ambulance, fire truck, police)
+2. **Vehicle already in the intersection** has priority
+3. **Vehicle on the right** has priority (right-of-way rule)
+4. **Larger vehicle** does NOT automatically have priority (but does in practice — stay safe)
+
+At zebra crossings:
+- **Pedestrians have absolute right of way** once they step onto the crossing
+- **Penalty for not stopping**: ₹5,000–₹10,000 (updated 2023)
+
+---
+
+## Red Light Rules
+
+- **Red light**: Full stop, behind the stop line
+- **Amber**: Slow and stop if safe to do so (not speed up)
+- **Green arrow**: Proceed in the indicated direction only
+- **Flashing amber**: Proceed with caution
+- **Penalty for jumping red light**: ₹1,000–₹5,000 + 3-month suspension
+
+---
+
+## Lane Discipline
+
+- **Slow vehicles**: Left lane
+- **Overtaking**: Right lane only, then move back left
+- **Wrong way driving**: ₹5,000 penalty
+- **Driving on footpath**: ₹5,000 penalty
+
+---
+
+## Documents to Carry While Driving
+
+You must carry:
+1. **Driving Licence** (original or DigiLocker/mParivahan digital copy — legally valid)
+2. **RC (Registration Certificate)**
+3. **Insurance certificate** (third-party minimum; comprehensive preferred)
+4. **PUC certificate** (Pollution Under Control)
+
+**mParivahan app** stores digital versions of all documents — legally accepted by police since 2018.
+
+**Penalty for missing documents**: ₹500–₹5,000 per document; vehicle may be impounded.
+
+---
+
+## Emergency Vehicle Priority
+
+When you hear a siren:
+1. Move to the leftmost lane immediately
+2. Reduce speed or stop if necessary
+3. Do not follow close behind emergency vehicles
+4. Do not block intersection while emergency vehicle is approaching
+
+**Obstruction of emergency vehicle penalty**: ₹10,000
+
+---
+
+Practice the traffic rules section in our [free RTO test →](/rto-test)
+    `,
+  },
   // ─── VEHICLE-SPECIFIC (5) ───
   {
     slug: "automatic-vs-manual-car-india",
@@ -2071,4 +3036,24 @@ Slot booking via Parivahan.gov.in. Alternatively, Telangana has its own [Transpo
 [Find certified trainers in Hyderabad →](/trainers?city=hyderabad)
     `,
   },
-];
+].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+export function getBlogPost(slug: string): BlogPost | undefined {
+  return blogPosts.find((p) => p.slug === slug);
+}
+
+export function getBlogPostsByCategory(category: string): BlogPost[] {
+  if (category === "All") return blogPosts;
+  return blogPosts.filter((p) => p.category === category);
+}
+
+export function searchBlogPosts(query: string): BlogPost[] {
+  const q = query.toLowerCase();
+  return blogPosts.filter(
+    (p) =>
+      p.title.toLowerCase().includes(q) ||
+      p.description.toLowerCase().includes(q) ||
+      p.tags.some((t) => t.toLowerCase().includes(q)) ||
+      p.category.toLowerCase().includes(q)
+  );
+}
