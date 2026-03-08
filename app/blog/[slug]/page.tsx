@@ -63,7 +63,7 @@ function renderMarkdown(content: string): string {
     // Clean up empty paragraphs
     .replace(/<p class="md-p"><\/p>/g, '')
     // Wrap table content
-    .replace(/(<tr>.*<\/tr>\n?)+/gs, '<div class="md-table-wrap"><table class="md-table">$&</table></div>');
+    .replace(/(<tr>[\s\S]*?<\/tr>\n?)+/g, '<div class="md-table-wrap"><table class="md-table">$&</table></div>');
 }
 
 export default function BlogPostPage({ params }: { params: { slug: string } }) {
