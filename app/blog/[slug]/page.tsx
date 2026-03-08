@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { getBlogPost, blogPosts } from "@/lib/blog-data-original";
+import { getBlogPost, blogPosts } from "@/lib/blog-data";
 import type { Metadata } from "next";
 
 export async function generateStaticParams() {

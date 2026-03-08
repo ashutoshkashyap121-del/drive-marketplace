@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import { blogPosts, categories, searchBlogPosts, getBlogPostsByCategory } from "@/lib/blog-data-original";
+import { blogPosts, categories, searchBlogPosts, getBlogPostsByCategory } from "@/lib/blog-data";
 
 const categoryIcons: Record<string, string> = {
   All: "📚",
