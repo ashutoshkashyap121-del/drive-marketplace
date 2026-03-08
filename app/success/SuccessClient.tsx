@@ -100,12 +100,17 @@ export default function SuccessClient() {
         </div>
 
         {/* Support note */}
-        <p style={{ textAlign: "center", fontSize: "0.75rem", color: "#94A3B8", marginTop: 16 }}>
-          Questions? Email{" "}
-          <a href="mailto:support@learndrive.in" style={{ color: "#F59E0B", textDecoration: "none" }}>
-            support@learndrive.in
-          </a>
-        </p>
+        <div style={{ textAlign: "center", marginTop: 16 }}>
+          <p style={{ fontSize: "0.75rem", color: "#94A3B8", marginBottom: 6 }}>Need help?</p>
+          <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+            <a href="mailto:support@learndrive.in" style={{ fontSize: "0.78rem", color: "#F59E0B", textDecoration: "none", fontWeight: 600 }}>
+              📧 support@learndrive.in
+            </a>
+            <a href="tel:+918700896528" style={{ fontSize: "0.78rem", color: "#94A3B8", textDecoration: "none", fontWeight: 600 }}>
+              📞 +91 87008 96528
+            </a>
+          </div>
+        </div>
       </div>
     </main>
   );

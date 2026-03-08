@@ -123,6 +123,7 @@ export default function HelpPage() {
             { icon: "💰", label: "Refund Policy", href: "/refund", color: "#FEF3C7", border: "#FDE68A", text: "#92400E" },
             { icon: "🔍", label: "Find a Trainer", href: "/trainers", color: "#EFF6FF", border: "#BFDBFE", text: "#1E40AF" },
             { icon: "📧", label: "Email Support", href: "mailto:support@learndrive.in", color: "#F0FDF4", border: "#BBF7D0", text: "#166534" },
+            { icon: "📞", label: "Call Support", href: "tel:+918700896528", color: "#F5F3FF", border: "#DDD6FE", text: "#5B21B6" },
           ].map((item) => (
             <a key={item.label} href={item.href}
               style={{ background: item.color, border: `1px solid ${item.border}`, borderRadius: 14, padding: "16px", textAlign: "center", textDecoration: "none", transition: "transform 0.15s", display: "block" }}>
@@ -163,10 +164,16 @@ export default function HelpPage() {
           <p style={{ color: "rgba(255,255,255,0.5)", fontSize: "0.88rem", marginBottom: 24 }}>
             Our support team typically responds within 24 hours.
           </p>
-          <a href="mailto:support@learndrive.in"
-            style={{ display: "inline-block", padding: "12px 28px", background: "#F59E0B", color: "#0F172A", fontFamily: "'Sora', sans-serif", fontWeight: 700, fontSize: "0.9rem", borderRadius: 12, textDecoration: "none" }}>
-            Email support@learndrive.in →
-          </a>
+          <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+            <a href="mailto:support@learndrive.in"
+              style={{ display: "inline-block", padding: "12px 24px", background: "#F59E0B", color: "#0F172A", fontFamily: "'Sora', sans-serif", fontWeight: 700, fontSize: "0.9rem", borderRadius: 12, textDecoration: "none" }}>
+              📧 support@learndrive.in
+            </a>
+            <a href="tel:+918700896528"
+              style={{ display: "inline-block", padding: "12px 24px", background: "rgba(255,255,255,0.1)", color: "#fff", fontFamily: "'Sora', sans-serif", fontWeight: 700, fontSize: "0.9rem", borderRadius: 12, textDecoration: "none", border: "1px solid rgba(255,255,255,0.2)" }}>
+              📞 +91 87008 96528
+            </a>
+          </div>
         </div>
 
         {/* Footer links */}
