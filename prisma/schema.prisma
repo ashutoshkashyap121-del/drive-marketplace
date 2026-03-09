@@ -180,3 +180,14 @@ model Waitlist {
 
   @@index([createdAt])
 }
+model StudentWaitlist {
+  id        String   @id @default(cuid())
+  name      String?
+  phone     String   @unique
+  email     String?
+  city      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("student_waitlist")
+}
