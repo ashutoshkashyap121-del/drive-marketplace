@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
     const trainers = await prisma.trainer.findMany({
       where: {
         city: { contains: city, mode: "insensitive" },
-        status: "ACTIVE",
+        status: "ACTIVE" as const,
       },
       select: {
         id: true,
