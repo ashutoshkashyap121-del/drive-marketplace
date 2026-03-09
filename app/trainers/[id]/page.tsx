@@ -12,7 +12,7 @@ export default async function TrainerPage({ params }: Props) {
 
   try {
     trainer = await prisma.trainer.findUnique({
-      where: { id: params.id },
+      where: { id: parseInt(params.id) },
     });
   } catch (err) {
     console.error("Trainer fetch error:", err);
