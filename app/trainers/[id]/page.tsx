@@ -4,14 +4,15 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 
 interface Props {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 export default async function TrainerPage({ params }: Props) {
+  const { id: idStr } = await params;
   let trainer = null;
   try {
     trainer = await prisma.trainer.findUnique({
-      where: { id: parseInt(params.id) },
+      where: { id: parseInt(idStr) },
     });
   } catch (err) {
     console.error("Trainer fetch error:", err);
