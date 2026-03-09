@@ -1,7 +1,7 @@
 // app/api/trainers/by-city/route.ts
-import { TrainerStatus } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { TrainerStatus } from "@prisma/client";
 
 export async function GET(req: NextRequest) {
   const city = req.nextUrl.searchParams.get("city");
