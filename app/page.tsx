@@ -3,18 +3,15 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 
-// ─── Types ──────────────────────────────────────────────────────────────────
 interface Trainer {
-  id: string;
+  id: number;
   name: string;
   city: string;
-  areas: string;
   basePrice: number;
   experience: number;
   languages: string[];
   vehicleTypes: string[];
   rating?: number;
-  reviewCount?: number;
 }
 
 interface BlogPost {
@@ -25,7 +22,6 @@ interface BlogPost {
   readTime: number;
 }
 
-// ─── Constants ───────────────────────────────────────────────────────────────
 const TOP_CITIES = [
   "Delhi NCR", "Mumbai", "Bangalore", "Hyderabad", "Chennai",
   "Pune", "Kolkata", "Jaipur", "Chandigarh", "Kochi",
@@ -49,24 +45,9 @@ const STATS = [
 ];
 
 const HOW_IT_WORKS = [
-  {
-    step: "01",
-    icon: "📍",
-    title: "Pick your city",
-    desc: "Search from 50+ cities across India. We'll show trainers covering your area.",
-  },
-  {
-    step: "02",
-    icon: "👤",
-    title: "Choose your trainer",
-    desc: "See experience, areas covered, pricing, and languages. Pick the right fit.",
-  },
-  {
-    step: "03",
-    icon: "📅",
-    title: "Book a slot",
-    desc: "Schedule your first session online. Pay securely. Start learning.",
-  },
+  { step: "01", icon: "📍", title: "Pick your city", desc: "Search from 50+ cities across India. We'll show trainers covering your area." },
+  { step: "02", icon: "👤", title: "Choose your trainer", desc: "See experience, areas covered, pricing, and languages. Pick the right fit." },
+  { step: "03", icon: "📅", title: "Book a slot", desc: "Schedule your first session online. Pay securely. Start learning." },
 ];
 
 const FEATURES = [
@@ -78,10 +59,8 @@ const FEATURES = [
   { icon: "⭐", title: "Rated & reviewed", desc: "Real ratings from verified students" },
 ];
 
-// ─── Component ────────────────────────────────────────────────────────────────
 export default function HomePage() {
   const [query, setQuery] = useState("");
-  const [selectedCity, setSelectedCity] = useState("");
   const [showCityDropdown, setShowCityDropdown] = useState(false);
   const [searchState, setSearchState] = useState<"idle" | "loading" | "trainers" | "waitlist">("idle");
   const [trainers, setTrainers] = useState<Trainer[]>([]);
@@ -101,39 +80,30 @@ export default function HomePage() {
     c.toLowerCase().includes(query.toLowerCase())
   ).slice(0, 8);
 
-  // Close dropdown on outside click
   useEffect(() => {
-    const handler = (e: MouseEvent) => {
+    const handleClick = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setShowCityDropdown(false);
       }
     };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
-  // Fetch recent blog posts
   useEffect(() => {
-    fetch("/api/blog/posts?limit=3")
+    fetch("/api/blogs/recent")
       .then((r) => r.json())
-      .then((data) => {
-        if (Array.isArray(data.posts)) setRecentBlogs(data.posts);
-      })
+      .then((d) => setRecentBlogs(d.posts || []))
       .catch(() => {});
   }, []);
 
   const handleSearch = async (city: string) => {
-    if (!city) return;
-    setSelectedCity(city);
-    setQuery(city);
-    setShowCityDropdown(false);
+    if (!city.trim()) return;
     setSearchState("loading");
-    setWlDone(false);
-
+    setShowCityDropdown(false);
     try {
       const res = await fetch(`/api/trainers/by-city?city=${encodeURIComponent(city)}`);
       const data = await res.json();
-
       if (data.trainers && data.trainers.length > 0) {
         setTrainers(data.trainers);
         setSearchState("trainers");
@@ -142,244 +112,103 @@ export default function HomePage() {
         setWaitlistCount(data.waitlistCount || 0);
         setSearchState("waitlist");
       }
-
-      setTimeout(() => {
-        resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-      }, 100);
     } catch {
       setSearchState("idle");
     }
+    setTimeout(() => resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
   };
 
-  const handleWaitlistSubmit = async () => {
-    if (!wlPhone || !/^[6-9]\d{9}$/.test(wlPhone)) {
-      setWlError("Enter a valid 10-digit mobile number");
-      return;
-    }
-    setWlSubmitting(true);
-    setWlError("");
+  const handleWaitlist = async () => {
+    if (!wlPhone || wlPhone.length < 10) { setWlError("Enter a valid 10-digit mobile number"); return; }
+    setWlSubmitting(true); setWlError("");
     try {
       const res = await fetch("/api/waitlist/student", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: wlName, phone: wlPhone, email: wlEmail, city: waitlistCity }),
       });
-      if (res.ok) {
-        setWlDone(true);
-      } else {
-        const d = await res.json();
-        setWlError(d.error || "Something went wrong. Please try again.");
-      }
-    } catch {
-      setWlError("Network error. Please try again.");
-    } finally {
-      setWlSubmitting(false);
-    }
+      if (res.ok) { setWlDone(true); }
+      else { const d = await res.json(); setWlError(d.error || "Something went wrong"); }
+    } catch { setWlError("Network error. Try again."); }
+    finally { setWlSubmitting(false); }
   };
 
-  const vehicleLabel = (v: string) =>
-    v === "CAR" ? "🚗 Car" : v === "BIKE_GEARED" ? "🏍️ Bike" : "🛵 Scooter";
-
-  // ─── Render ────────────────────────────────────────────────────────────────
   return (
-    <div
-      className="min-h-screen text-white"
-      style={{
-        background: "#08111f",
-        fontFamily: "'DM Sans', system-ui, sans-serif",
-      }}
-    >
-      {/* Fonts via link tags — more reliable than @import */}
-      <>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap" rel="stylesheet" />
-      </>
+    <div style={{ minHeight: "100vh", background: "#F8F7F4", fontFamily: "'DM Sans', 'Segoe UI', sans-serif", color: "#0F172A" }}>
       <style>{`
-        .font-display { font-family: 'Syne', sans-serif; }
-        .animate-fade-up {
-          animation: fadeUp 0.6s ease both;
-        }
-        @keyframes fadeUp {
-          from { opacity: 0; transform: translateY(20px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-        .delay-1 { animation-delay: 0.1s; }
-        .delay-2 { animation-delay: 0.2s; }
-        .delay-3 { animation-delay: 0.3s; }
-        .delay-4 { animation-delay: 0.4s; }
-        .card-hover {
-          transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-        }
-        .card-hover:hover {
-          transform: translateY(-3px);
-          border-color: rgba(251,191,36,0.4) !important;
-          box-shadow: 0 12px 32px rgba(0,0,0,0.4);
-        }
-        .city-pill {
-          transition: all 0.15s ease;
-        }
-        .city-pill:hover {
-          background: rgba(251,191,36,0.12);
-          border-color: rgba(251,191,36,0.5);
-          color: #fbbf24;
-        }
-        /* Noise texture overlay */
-        .noise::before {
-          content: '';
-          position: absolute;
-          inset: 0;
-          background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
-          pointer-events: none;
-          border-radius: inherit;
-        }
+        @import url('https://fonts.googleapis.com/css2?family=Sora:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap');
+        .font-display { font-family: 'Sora', sans-serif; }
+        .fade-up { animation: fadeUp 0.5s ease both; }
+        @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+        .d1 { animation-delay: 0.05s; }
+        .d2 { animation-delay: 0.12s; }
+        .d3 { animation-delay: 0.2s; }
+        .card-hover { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+        .card-hover:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(0,0,0,0.1); }
+        .city-chip:hover { background: #FEF3C7 !important; border-color: #F59E0B !important; color: #B45309 !important; }
+        input:focus { outline: none; border-color: #F59E0B !important; }
       `}</style>
 
-      {/* ── NAV ─────────────────────────────────────────────────────────────── */}
-      <nav
-        className="sticky top-0 z-50 px-5 py-4 flex items-center justify-between"
-        style={{
-          background: "rgba(8,17,31,0.92)",
-          backdropFilter: "blur(16px)",
-          borderBottom: "1px solid rgba(255,255,255,0.06)",
-        }}
-      >
-        <Link href="/" className="flex items-center gap-2.5">
-          <div
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold"
-            style={{ background: "#fbbf24", color: "#08111f" }}
-          >
-            LD
-          </div>
-          <span className="font-display text-lg font-bold tracking-tight text-white">
-            LearnDrive
-          </span>
-        </Link>
-        <div className="flex items-center gap-3">
-          <Link
-            href="/blog"
-            className="hidden sm:block text-sm text-slate-400 hover:text-white transition-colors px-3 py-1.5"
-          >
-            Blog
+      {/* ── NAV ── */}
+      <nav style={{ background: "#FFFFFF", borderBottom: "1px solid #E2E8F0", position: "sticky", top: 0, zIndex: 50, padding: "0 5%" }}>
+        <div style={{ maxWidth: 1100, margin: "0 auto", display: "flex", alignItems: "center", height: 64, gap: 8 }}>
+          <Link href="/" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
+            <div style={{ width: 36, height: 36, borderRadius: 10, background: "#F59E0B", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, color: "#fff", fontSize: 14 }}>LD</div>
+            <span className="font-display" style={{ color: "#0F172A", fontSize: 18, fontWeight: 700 }}>LearnDrive</span>
           </Link>
-          <Link
-            href="/rto-test/practice"
-            className="hidden sm:block text-sm text-slate-400 hover:text-white transition-colors px-3 py-1.5"
-          >
-            RTO Test
-          </Link>
-          <Link
-            href="/trainers/register"
-            className="text-sm font-semibold px-4 py-2 rounded-xl transition-all"
-            style={{
-              background: "rgba(251,191,36,0.1)",
-              border: "1px solid rgba(251,191,36,0.3)",
-              color: "#fbbf24",
-            }}
-          >
+          <div style={{ flex: 1 }} />
+          <Link href="/blog" style={{ color: "#64748B", textDecoration: "none", fontSize: 14, fontWeight: 500, padding: "6px 12px" }}>Blog</Link>
+          <Link href="/rto-test/practice" style={{ color: "#64748B", textDecoration: "none", fontSize: 14, fontWeight: 500, padding: "6px 12px" }}>RTO Test</Link>
+          <Link href="/trainers/register" style={{ background: "#F59E0B", color: "#fff", textDecoration: "none", fontSize: 14, fontWeight: 700, padding: "8px 18px", borderRadius: 10 }}>
             Become a trainer
           </Link>
         </div>
       </nav>
 
-      {/* ── HERO ─────────────────────────────────────────────────────────────── */}
-      <section
-        className="relative overflow-hidden px-5 pt-20 pb-16 text-center"
-        style={{
-          background:
-            "radial-gradient(ellipse 80% 60% at 50% -10%, rgba(251,191,36,0.12) 0%, transparent 70%)",
-        }}
-      >
-        {/* Grid pattern */}
-        <div
-          className="absolute inset-0 opacity-20"
-          style={{
-            backgroundImage:
-              "linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)",
-            backgroundSize: "40px 40px",
-          }}
-        />
-
-        <div className="relative max-w-3xl mx-auto">
-          <div
-            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold mb-6 animate-fade-up"
-            style={{
-              background: "rgba(251,191,36,0.1)",
-              border: "1px solid rgba(251,191,36,0.25)",
-              color: "#fbbf24",
-            }}
-          >
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+      {/* ── HERO ── */}
+      <div style={{ background: "linear-gradient(145deg, #0B1437 0%, #1A2B5F 100%)", padding: "72px 5% 64px" }}>
+        <div style={{ maxWidth: 700, margin: "0 auto", textAlign: "center" }}>
+          <div className="fade-up" style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "rgba(245,158,11,0.15)", border: "1px solid rgba(245,158,11,0.3)", color: "#FCD34D", borderRadius: 99, padding: "5px 14px", fontSize: 13, fontWeight: 600, marginBottom: 28 }}>
+            <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#F59E0B", display: "inline-block" }} />
             Now live in 50+ cities across India
           </div>
 
-          <h1
-            className="font-display text-5xl sm:text-6xl md:text-7xl font-extrabold leading-none tracking-tight mb-6 animate-fade-up delay-1"
-            style={{ color: "#fff" }}
-          >
-            Find a driving
-            <br />
-            <span style={{ color: "#fbbf24" }}>trainer near you</span>
+          <h1 className="font-display fade-up d1" style={{ fontSize: "clamp(2.4rem, 6vw, 4rem)", fontWeight: 800, color: "#FFFFFF", lineHeight: 1.1, marginBottom: 18 }}>
+            Find a driving<br />
+            <span style={{ color: "#F59E0B" }}>trainer near you</span>
           </h1>
 
-          <p
-            className="text-slate-400 text-lg sm:text-xl max-w-xl mx-auto mb-10 leading-relaxed animate-fade-up delay-2"
-          >
+          <p className="fade-up d2" style={{ color: "rgba(255,255,255,0.65)", fontSize: 18, marginBottom: 36, lineHeight: 1.6 }}>
             Verified trainers. Dual-control cars. Book online in 60 seconds.
           </p>
 
-          {/* City Search Box */}
-          <div
-            className="max-w-md mx-auto relative animate-fade-up delay-3"
-            ref={dropdownRef}
-          >
-            <div
-              className="flex gap-2 p-2 rounded-2xl"
-              style={{
-                background: "rgba(255,255,255,0.05)",
-                border: "1px solid rgba(255,255,255,0.1)",
-                backdropFilter: "blur(8px)",
-              }}
-            >
+          {/* Search bar */}
+          <div className="fade-up d3" style={{ position: "relative", maxWidth: 520, margin: "0 auto" }} ref={dropdownRef}>
+            <div style={{ display: "flex", background: "#FFFFFF", borderRadius: 14, overflow: "hidden", boxShadow: "0 8px 32px rgba(0,0,0,0.2)" }}>
               <input
-                type="text"
                 value={query}
-                onChange={(e) => {
-                  setQuery(e.target.value);
-                  setShowCityDropdown(true);
-                }}
+                onChange={(e) => { setQuery(e.target.value); setShowCityDropdown(true); }}
                 onFocus={() => setShowCityDropdown(true)}
+                onKeyDown={(e) => e.key === "Enter" && query.trim() && handleSearch(query.trim())}
                 placeholder="Enter your city..."
-                className="flex-1 bg-transparent px-3 py-2.5 text-white placeholder-slate-500 focus:outline-none text-sm"
+                style={{ flex: 1, padding: "15px 18px", border: "none", fontSize: 15, color: "#0F172A", background: "transparent", outline: "none" }}
               />
               <button
-                onClick={() => handleSearch(selectedCity || query)}
-                disabled={!query}
-                className="px-5 py-2.5 rounded-xl text-sm font-bold transition-all disabled:opacity-40"
-                style={{ background: "#fbbf24", color: "#08111f" }}
+                onClick={() => query.trim() && handleSearch(query.trim())}
+                style={{ background: "#F59E0B", color: "#fff", border: "none", padding: "0 24px", fontSize: 15, fontWeight: 700, cursor: "pointer" }}
               >
                 Search
               </button>
             </div>
-
-            {/* Dropdown */}
             {showCityDropdown && filteredCities.length > 0 && (
-              <div
-                className="absolute top-full left-0 right-0 mt-2 rounded-xl overflow-hidden z-50"
-                style={{
-                  background: "#0f1d33",
-                  border: "1px solid rgba(255,255,255,0.1)",
-                  boxShadow: "0 20px 40px rgba(0,0,0,0.5)",
-                }}
-              >
-                {filteredCities.map((city) => (
-                  <button
-                    key={city}
-                    onClick={() => handleSearch(city)}
-                    className="w-full text-left px-4 py-3 text-sm text-slate-300 hover:bg-amber-400/10 hover:text-amber-300 transition-colors flex items-center gap-2"
+              <div style={{ position: "absolute", top: "calc(100% + 6px)", left: 0, right: 0, background: "#fff", borderRadius: 12, boxShadow: "0 8px 32px rgba(0,0,0,0.15)", zIndex: 100, overflow: "hidden" }}>
+                {filteredCities.map((c) => (
+                  <button key={c} onClick={() => { setQuery(c); handleSearch(c); setShowCityDropdown(false); }}
+                    style={{ display: "block", width: "100%", textAlign: "left", padding: "11px 16px", background: "none", border: "none", fontSize: 14, cursor: "pointer", color: "#0F172A", borderBottom: "1px solid #F1F5F9" }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = "#FEF3C7")}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = "none")}
                   >
-                    <span className="text-slate-500 text-xs">📍</span>
-                    {city}
+                    📍 {c}
                   </button>
                 ))}
               </div>
@@ -387,538 +216,234 @@ export default function HomePage() {
           </div>
 
           {/* Quick city pills */}
-          <div className="flex flex-wrap justify-center gap-2 mt-5 animate-fade-up delay-4">
-            {TOP_CITIES.slice(0, 8).map((city) => (
-              <button
-                key={city}
-                onClick={() => handleSearch(city)}
-                className="city-pill px-3 py-1.5 rounded-full text-xs text-slate-400 border border-slate-700"
-              >
-                {city}
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center", marginTop: 20 }}>
+            {TOP_CITIES.slice(0, 8).map((c) => (
+              <button key={c} className="city-chip" onClick={() => { setQuery(c); handleSearch(c); }}
+                style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", color: "rgba(255,255,255,0.75)", borderRadius: 99, padding: "5px 14px", fontSize: 13, cursor: "pointer", transition: "all 0.15s" }}>
+                {c}
               </button>
             ))}
           </div>
         </div>
-      </section>
+      </div>
 
-      {/* ── SEARCH RESULTS ───────────────────────────────────────────────────── */}
+      {/* ── SEARCH RESULTS ── */}
       <div ref={resultRef}>
-        {/* Loading */}
         {searchState === "loading" && (
-          <section className="py-16 text-center px-5">
-            <div
-              className="inline-block w-10 h-10 rounded-full border-2 border-amber-400 border-t-transparent animate-spin mb-4"
-            />
-            <p className="text-slate-400">Finding trainers in {query}…</p>
-          </section>
+          <div style={{ textAlign: "center", padding: "48px 5%", color: "#64748B" }}>
+            <div style={{ fontSize: 28, marginBottom: 8 }}>🔍</div>
+            Finding trainers in {query}…
+          </div>
         )}
 
-        {/* Trainers Found */}
         {searchState === "trainers" && (
-          <section className="max-w-5xl mx-auto px-5 py-12">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h2 className="font-display text-2xl font-bold text-white">
-                  Trainers in {selectedCity}
-                </h2>
-                <p className="text-slate-500 text-sm mt-1">
-                  {trainers.length} trainer{trainers.length !== 1 ? "s" : ""} available
-                </p>
-              </div>
-              <button
-                onClick={() => setSearchState("idle")}
-                className="text-sm text-slate-500 hover:text-slate-300 transition-colors"
-              >
-                ← Change city
+          <div style={{ maxWidth: 1100, margin: "0 auto", padding: "48px 5%" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
+              <h2 className="font-display" style={{ fontSize: 22, fontWeight: 800 }}>
+                {trainers.length} trainer{trainers.length !== 1 ? "s" : ""} in {query}
+              </h2>
+              <button onClick={() => { setSearchState("idle"); setQuery(""); }} style={{ background: "none", border: "1px solid #E2E8F0", borderRadius: 8, padding: "6px 14px", fontSize: 13, cursor: "pointer", color: "#64748B" }}>
+                ✕ Clear
               </button>
             </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 20 }}>
               {trainers.map((t) => (
-                <div
-                  key={t.id}
-                  className="card-hover rounded-2xl p-5 relative overflow-hidden"
-                  style={{
-                    background: "rgba(255,255,255,0.03)",
-                    border: "1px solid rgba(255,255,255,0.08)",
-                  }}
-                >
-                  <div className="flex items-start justify-between mb-3">
-                    <div
-                      className="w-11 h-11 rounded-xl flex items-center justify-center font-bold text-lg"
-                      style={{ background: "rgba(251,191,36,0.15)", color: "#fbbf24" }}
-                    >
-                      {t.name.charAt(0)}
+                <div key={t.id} className="card-hover" style={{ background: "#FFFFFF", borderRadius: 18, border: "1px solid #E2E8F0", padding: 24 }}>
+                  <div style={{ display: "flex", gap: 14, alignItems: "flex-start", marginBottom: 16 }}>
+                    <div style={{ width: 48, height: 48, borderRadius: 12, background: "#FEF3C7", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, flexShrink: 0 }}>🧑‍🏫</div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: 700, fontSize: 16, color: "#0F172A", marginBottom: 2 }}>{t.name}</div>
+                      <div style={{ color: "#64748B", fontSize: 13 }}>📍 {t.city} · {t.experience} yrs</div>
                     </div>
-                    <div className="text-right">
-                      <div className="text-amber-400 font-bold text-lg">
-                        ₹{t.basePrice.toLocaleString()}
-                      </div>
-                      <div className="text-slate-500 text-xs">per hour</div>
+                    <div style={{ textAlign: "right" }}>
+                      <div style={{ color: "#F59E0B", fontWeight: 800, fontSize: 18, fontFamily: "'Sora', sans-serif" }}>₹{t.basePrice?.toLocaleString("en-IN")}</div>
+                      <div style={{ color: "#94A3B8", fontSize: 11 }}>/ session</div>
                     </div>
                   </div>
-
-                  <h3 className="font-semibold text-white mb-0.5">{t.name}</h3>
-                  <p className="text-slate-500 text-xs mb-3 line-clamp-1">{t.areas}</p>
-
-                  <div className="flex flex-wrap gap-1.5 mb-4">
-                    {t.vehicleTypes.map((v) => (
-                      <span
-                        key={v}
-                        className="text-xs px-2 py-0.5 rounded-full"
-                        style={{ background: "rgba(255,255,255,0.06)", color: "#94a3b8" }}
-                      >
-                        {vehicleLabel(v)}
-                      </span>
-                    ))}
-                    <span
-                      className="text-xs px-2 py-0.5 rounded-full"
-                      style={{ background: "rgba(255,255,255,0.06)", color: "#94a3b8" }}
-                    >
-                      {t.experience}yr exp
-                    </span>
-                  </div>
-
                   {t.rating && (
-                    <div className="flex items-center gap-1 mb-3 text-xs text-slate-400">
-                      <span className="text-amber-400">★</span>
-                      <span className="font-semibold text-white">{t.rating}</span>
-                      <span className="text-slate-600">({t.reviewCount} reviews)</span>
+                    <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 12 }}>
+                      <span style={{ color: "#F59E0B" }}>★</span>
+                      <span style={{ fontWeight: 600, color: "#0F172A", fontSize: 14 }}>{t.rating}</span>
                     </div>
                   )}
-
-                  <Link
-                    href={`/trainers/${t.id}`}
-                    className="block w-full text-center py-2.5 rounded-xl text-sm font-semibold transition-all hover:opacity-90"
-                    style={{ background: "#fbbf24", color: "#08111f" }}
-                  >
+                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 16 }}>
+                    {(t.vehicleTypes as string[]).map((v) => (
+                      <span key={v} style={{ background: "#EFF6FF", color: "#2563EB", borderRadius: 6, padding: "2px 10px", fontSize: 12, fontWeight: 600 }}>{v}</span>
+                    ))}
+                    {(t.languages as string[]).slice(0, 2).map((l) => (
+                      <span key={l} style={{ background: "#F1F5F9", color: "#475569", borderRadius: 6, padding: "2px 10px", fontSize: 12 }}>{l}</span>
+                    ))}
+                  </div>
+                  <Link href={`/trainers/${t.id}`} style={{ display: "block", textAlign: "center", background: "#F59E0B", color: "#fff", padding: "10px", borderRadius: 10, fontWeight: 700, fontSize: 14, textDecoration: "none" }}>
                     View & Book
                   </Link>
                 </div>
               ))}
             </div>
-          </section>
+          </div>
         )}
 
-        {/* Waitlist Fallback */}
         {searchState === "waitlist" && (
-          <section className="max-w-lg mx-auto px-5 py-16 text-center">
-            <div
-              className="rounded-3xl p-8 sm:p-10 relative overflow-hidden"
-              style={{
-                background: "rgba(255,255,255,0.03)",
-                border: "1px solid rgba(251,191,36,0.2)",
-              }}
-            >
-              {/* Glow */}
-              <div
-                className="absolute inset-0 rounded-3xl pointer-events-none"
-                style={{
-                  background:
-                    "radial-gradient(ellipse 80% 60% at 50% 0%, rgba(251,191,36,0.07) 0%, transparent 70%)",
-                }}
-              />
-              <div className="relative">
-                <div className="text-5xl mb-4">🚀</div>
-                <h2 className="font-display text-2xl font-bold text-white mb-2">
-                  Coming to {waitlistCity} soon!
-                </h2>
-                <p className="text-slate-400 text-sm mb-1">
-                  We're onboarding trainers in {waitlistCity} right now.
+          <div style={{ maxWidth: 480, margin: "0 auto", padding: "48px 5%" }}>
+            <div style={{ background: "#FFFFFF", borderRadius: 20, border: "1px solid #E2E8F0", padding: 32, textAlign: "center" }}>
+              <div style={{ fontSize: 36, marginBottom: 12 }}>🚀</div>
+              <h2 className="font-display" style={{ fontSize: 20, fontWeight: 800, marginBottom: 8 }}>
+                Coming to {waitlistCity} soon!
+              </h2>
+              {waitlistCount > 0 && (
+                <p style={{ color: "#F59E0B", fontWeight: 600, fontSize: 14, marginBottom: 8 }}>
+                  {waitlistCount} student{waitlistCount !== 1 ? "s" : ""} already waiting
                 </p>
-                {waitlistCount > 0 && (
-                  <p className="text-amber-400 font-semibold text-sm mb-6">
-                    Join {waitlistCount.toLocaleString()}+ students already waiting
-                  </p>
-                )}
-                {!waitlistCount && (
-                  <p className="text-slate-500 text-sm mb-6">
-                    Be first in line — we'll notify you the moment trainers are ready.
-                  </p>
-                )}
-
-                {!wlDone ? (
-                  <div className="space-y-3 text-left">
-                    <input
-                      type="text"
-                      value={wlName}
-                      onChange={(e) => setWlName(e.target.value)}
-                      placeholder="Your name (optional)"
-                      className="w-full px-4 py-3 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 transition-all"
-                      style={{
-                        background: "rgba(15,23,42,0.8)",
-                        border: "1px solid rgba(255,255,255,0.1)",
-                      }}
-                    />
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm font-mono">
-                        +91
-                      </span>
-                      <input
-                        type="tel"
-                        value={wlPhone}
-                        onChange={(e) =>
-                          setWlPhone(e.target.value.replace(/\D/g, "").slice(0, 10))
-                        }
-                        placeholder="Mobile number *"
-                        maxLength={10}
-                        className="w-full pl-12 pr-4 py-3 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 transition-all"
-                        style={{
-                          background: "rgba(15,23,42,0.8)",
-                          border: "1px solid rgba(255,255,255,0.1)",
-                        }}
-                      />
-                    </div>
-                    <input
-                      type="email"
-                      value={wlEmail}
-                      onChange={(e) => setWlEmail(e.target.value)}
-                      placeholder="Email (optional)"
-                      className="w-full px-4 py-3 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 transition-all"
-                      style={{
-                        background: "rgba(15,23,42,0.8)",
-                        border: "1px solid rgba(255,255,255,0.1)",
-                      }}
-                    />
-                    {wlError && (
-                      <p className="text-red-400 text-xs">⚠ {wlError}</p>
-                    )}
-                    <button
-                      onClick={handleWaitlistSubmit}
-                      disabled={wlSubmitting}
-                      className="w-full py-3 rounded-xl font-bold text-sm transition-all disabled:opacity-60"
-                      style={{ background: "#fbbf24", color: "#08111f" }}
-                    >
-                      {wlSubmitting ? "Joining…" : "Notify me when ready →"}
-                    </button>
-                    <p className="text-slate-600 text-xs text-center">
-                      No spam. We'll text you once when trainers go live.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="text-center py-4">
-                    <div className="text-4xl mb-3">✅</div>
-                    <p className="text-green-400 font-semibold mb-1">You're on the list!</p>
-                    <p className="text-slate-400 text-sm">
-                      We'll WhatsApp you when trainers are ready in {waitlistCity}.
-                    </p>
-                  </div>
-                )}
-
-                <button
-                  onClick={() => setSearchState("idle")}
-                  className="mt-4 text-xs text-slate-600 hover:text-slate-400 transition-colors"
-                >
-                  ← Search another city
-                </button>
-              </div>
-            </div>
-          </section>
-        )}
-      </div>
-
-      {/* ── STATS BAR ────────────────────────────────────────────────────────── */}
-      <section
-        className="px-5 py-10"
-        style={{ borderTop: "1px solid rgba(255,255,255,0.05)", borderBottom: "1px solid rgba(255,255,255,0.05)" }}
-      >
-        <div className="max-w-4xl mx-auto grid grid-cols-2 sm:grid-cols-4 gap-6">
-          {STATS.map((s) => (
-            <div key={s.label} className="text-center">
-              <div className="font-display text-3xl font-extrabold text-amber-400 mb-1">
-                {s.value}
-              </div>
-              <div className="text-slate-500 text-sm">{s.label}</div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ── HOW IT WORKS ─────────────────────────────────────────────────────── */}
-      <section className="px-5 py-20 max-w-5xl mx-auto">
-        <div className="text-center mb-12">
-          <p className="text-amber-400 text-xs font-semibold tracking-widest uppercase mb-3">
-            Simple process
-          </p>
-          <h2 className="font-display text-3xl sm:text-4xl font-bold text-white">
-            How LearnDrive works
-          </h2>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-          {HOW_IT_WORKS.map((step, i) => (
-            <div
-              key={step.step}
-              className="relative rounded-2xl p-6"
-              style={{
-                background: "rgba(255,255,255,0.025)",
-                border: "1px solid rgba(255,255,255,0.07)",
-              }}
-            >
-              <div
-                className="text-xs font-bold mb-4 font-mono"
-                style={{ color: "rgba(251,191,36,0.5)" }}
-              >
-                {step.step}
-              </div>
-              <div className="text-3xl mb-3">{step.icon}</div>
-              <h3 className="font-semibold text-white text-lg mb-2">{step.title}</h3>
-              <p className="text-slate-500 text-sm leading-relaxed">{step.desc}</p>
-              {i < HOW_IT_WORKS.length - 1 && (
-                <div
-                  className="hidden sm:block absolute top-1/2 -right-3 text-slate-700 text-xl z-10"
-                  style={{ transform: "translateY(-50%)" }}
-                >
-                  →
+              )}
+              <p style={{ color: "#64748B", fontSize: 14, marginBottom: 24 }}>
+                Be the first to know when trainers are available in your city.
+              </p>
+              {!wlDone ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                  <input value={wlName} onChange={(e) => setWlName(e.target.value)} placeholder="Your name (optional)"
+                    style={{ padding: "12px 14px", borderRadius: 10, border: "1px solid #E2E8F0", fontSize: 14, color: "#0F172A" }} />
+                  <input value={wlPhone} onChange={(e) => setWlPhone(e.target.value.replace(/\D/g, ""))} placeholder="Mobile number *" maxLength={10} inputMode="numeric"
+                    style={{ padding: "12px 14px", borderRadius: 10, border: "1px solid #E2E8F0", fontSize: 14, color: "#0F172A" }} />
+                  <input value={wlEmail} onChange={(e) => setWlEmail(e.target.value)} placeholder="Email (optional)" type="email"
+                    style={{ padding: "12px 14px", borderRadius: 10, border: "1px solid #E2E8F0", fontSize: 14, color: "#0F172A" }} />
+                  {wlError && <p style={{ color: "#EF4444", fontSize: 13 }}>⚠ {wlError}</p>}
+                  <button onClick={handleWaitlist} disabled={wlSubmitting}
+                    style={{ background: "#F59E0B", color: "#fff", border: "none", padding: "13px", borderRadius: 10, fontWeight: 700, fontSize: 15, cursor: wlSubmitting ? "not-allowed" : "pointer", opacity: wlSubmitting ? 0.7 : 1 }}>
+                    {wlSubmitting ? "Joining…" : "Notify Me When Available →"}
+                  </button>
+                </div>
+              ) : (
+                <div style={{ color: "#16A34A", fontWeight: 600, fontSize: 15 }}>
+                  ✅ You're on the list! We'll notify you.
                 </div>
               )}
             </div>
+          </div>
+        )}
+      </div>
+
+      {/* ── STATS ── */}
+      <div style={{ background: "#FFFFFF", borderTop: "1px solid #E2E8F0", borderBottom: "1px solid #E2E8F0", padding: "32px 5%" }}>
+        <div style={{ maxWidth: 800, margin: "0 auto", display: "flex", justifyContent: "space-around", flexWrap: "wrap", gap: 24 }}>
+          {STATS.map((s) => (
+            <div key={s.label} style={{ textAlign: "center" }}>
+              <div className="font-display" style={{ fontSize: 28, fontWeight: 800, color: "#F59E0B" }}>{s.value}</div>
+              <div style={{ color: "#64748B", fontSize: 14, marginTop: 2 }}>{s.label}</div>
+            </div>
           ))}
         </div>
-      </section>
+      </div>
 
-      {/* ── FEATURES ─────────────────────────────────────────────────────────── */}
-      <section
-        className="px-5 py-20"
-        style={{ background: "rgba(255,255,255,0.015)", borderTop: "1px solid rgba(255,255,255,0.05)", borderBottom: "1px solid rgba(255,255,255,0.05)" }}
-      >
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-12">
-            <p className="text-amber-400 text-xs font-semibold tracking-widest uppercase mb-3">
-              Why LearnDrive
-            </p>
-            <h2 className="font-display text-3xl sm:text-4xl font-bold text-white">
-              Safe, simple, trusted
-            </h2>
-          </div>
+      {/* ── HOW IT WORKS ── */}
+      <div style={{ padding: "72px 5%", maxWidth: 1100, margin: "0 auto" }}>
+        <h2 className="font-display" style={{ textAlign: "center", fontSize: "clamp(1.6rem, 3vw, 2.2rem)", fontWeight: 800, marginBottom: 48 }}>
+          How it works
+        </h2>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 32 }}>
+          {HOW_IT_WORKS.map((item) => (
+            <div key={item.step} style={{ textAlign: "center" }}>
+              <div style={{ width: 64, height: 64, borderRadius: 18, background: "#FEF3C7", border: "2px solid #FDE68A", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, margin: "0 auto 16px" }}>
+                {item.icon}
+              </div>
+              <div style={{ color: "#F59E0B", fontSize: 12, fontWeight: 700, letterSpacing: "1px", marginBottom: 6 }}>STEP {item.step}</div>
+              <h3 className="font-display" style={{ fontSize: 18, fontWeight: 800, marginBottom: 8 }}>{item.title}</h3>
+              <p style={{ color: "#64748B", fontSize: 14, lineHeight: 1.7 }}>{item.desc}</p>
+            </div>
+          ))}
+        </div>
+      </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+      {/* ── FEATURES ── */}
+      <div style={{ background: "#FFFFFF", padding: "72px 5%", borderTop: "1px solid #E2E8F0" }}>
+        <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+          <h2 className="font-display" style={{ textAlign: "center", fontSize: "clamp(1.6rem, 3vw, 2.2rem)", fontWeight: 800, marginBottom: 48 }}>
+            Why LearnDrive?
+          </h2>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 24 }}>
             {FEATURES.map((f) => (
-              <div
-                key={f.title}
-                className="rounded-2xl p-5 card-hover"
-                style={{
-                  background: "rgba(255,255,255,0.03)",
-                  border: "1px solid rgba(255,255,255,0.07)",
-                }}
-              >
-                <div className="text-2xl mb-3">{f.icon}</div>
-                <h3 className="font-semibold text-white text-sm mb-1">{f.title}</h3>
-                <p className="text-slate-500 text-xs leading-relaxed">{f.desc}</p>
+              <div key={f.title} className="card-hover" style={{ background: "#F8F7F4", borderRadius: 16, border: "1px solid #E2E8F0", padding: 24 }}>
+                <div style={{ fontSize: 28, marginBottom: 12 }}>{f.icon}</div>
+                <h3 style={{ fontWeight: 700, fontSize: 16, marginBottom: 6 }}>{f.title}</h3>
+                <p style={{ color: "#64748B", fontSize: 14, lineHeight: 1.6 }}>{f.desc}</p>
               </div>
             ))}
           </div>
         </div>
-      </section>
+      </div>
 
-      {/* ── FOR TRAINERS CTA ─────────────────────────────────────────────────── */}
-      <section className="px-5 py-20 max-w-5xl mx-auto">
-        <div
-          className="rounded-3xl p-8 sm:p-12 flex flex-col sm:flex-row items-center gap-8 relative overflow-hidden"
-          style={{
-            background: "linear-gradient(135deg, rgba(251,191,36,0.1) 0%, rgba(251,191,36,0.04) 100%)",
-            border: "1px solid rgba(251,191,36,0.2)",
-          }}
-        >
-          <div
-            className="absolute inset-0 rounded-3xl pointer-events-none"
-            style={{
-              background:
-                "radial-gradient(ellipse 60% 80% at 100% 50%, rgba(251,191,36,0.06) 0%, transparent 70%)",
-            }}
-          />
-          <div className="relative flex-1">
-            <p className="text-amber-400 text-xs font-bold tracking-widest uppercase mb-3">
-              Driving trainers
-            </p>
-            <h2 className="font-display text-3xl sm:text-4xl font-bold text-white mb-3">
-              Get 10–15 extra students per month
-            </h2>
-            <p className="text-slate-400 text-sm leading-relaxed max-w-md">
-              List your profile free. Keep 85% of every booking. No joining fee, no monthly subscription.
-              Register in 5 minutes — students find you.
-            </p>
+      {/* ── TRAINER CTA ── */}
+      <div style={{ background: "linear-gradient(145deg, #0B1437 0%, #1A2B5F 100%)", padding: "72px 5%", textAlign: "center" }}>
+        <div style={{ maxWidth: 600, margin: "0 auto" }}>
+          <div style={{ fontSize: 40, marginBottom: 16 }}>🧑‍🏫</div>
+          <h2 className="font-display" style={{ color: "#FFFFFF", fontSize: "clamp(1.6rem, 3vw, 2.2rem)", fontWeight: 800, marginBottom: 14 }}>
+            Are you a driving trainer?
+          </h2>
+          <p style={{ color: "rgba(255,255,255,0.65)", fontSize: 16, marginBottom: 32, lineHeight: 1.7 }}>
+            Join India's fastest-growing driving instructor marketplace. No joining fee. Keep 85% of every booking.
+          </p>
+          <Link href="/trainers/register" style={{ display: "inline-block", background: "#F59E0B", color: "#fff", textDecoration: "none", padding: "14px 36px", borderRadius: 12, fontWeight: 700, fontSize: 16, boxShadow: "0 4px 20px rgba(245,158,11,0.4)" }}>
+            Register as a Trainer →
+          </Link>
+        </div>
+      </div>
+
+      {/* ── BLOG ── */}
+      {recentBlogs.length > 0 && (
+        <div style={{ padding: "72px 5%", maxWidth: 1100, margin: "0 auto" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 36, flexWrap: "wrap", gap: 12 }}>
+            <h2 className="font-display" style={{ fontSize: "clamp(1.4rem, 3vw, 2rem)", fontWeight: 800 }}>Driving Tips & Guides</h2>
+            <Link href="/blog" style={{ color: "#F59E0B", fontWeight: 600, fontSize: 14, textDecoration: "none" }}>View all →</Link>
           </div>
-          <div className="relative flex-shrink-0">
-            <Link
-              href="/trainers/register"
-              className="inline-block px-8 py-4 rounded-2xl font-bold text-base transition-all hover:opacity-90 hover:scale-105"
-              style={{ background: "#fbbf24", color: "#08111f" }}
-            >
-              Register as trainer →
-            </Link>
-            <p className="text-slate-600 text-xs text-center mt-3">Free to join • 5 minutes</p>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 24 }}>
+            {recentBlogs.slice(0, 3).map((post) => (
+              <Link key={post.slug} href={`/blog/${post.slug}`} style={{ textDecoration: "none", color: "inherit" }}>
+                <div className="card-hover" style={{ background: "#FFFFFF", borderRadius: 16, border: "1px solid #E2E8F0", padding: 24, height: "100%" }}>
+                  <div style={{ display: "inline-block", background: "#FEF3C7", color: "#92400E", borderRadius: 6, padding: "3px 10px", fontSize: 12, fontWeight: 600, marginBottom: 12 }}>{post.category}</div>
+                  <h3 style={{ fontWeight: 700, fontSize: 16, lineHeight: 1.45, color: "#0F172A", marginBottom: 10 }}>{post.title}</h3>
+                  <p style={{ color: "#64748B", fontSize: 13, lineHeight: 1.6, marginBottom: 14 }}>{post.description.slice(0, 90)}…</p>
+                  <div style={{ color: "#94A3B8", fontSize: 12 }}>{post.readTime} min read</div>
+                </div>
+              </Link>
+            ))}
           </div>
         </div>
-      </section>
-
-      {/* ── BLOG PREVIEW ─────────────────────────────────────────────────────── */}
-      {recentBlogs.length > 0 && (
-        <section
-          className="px-5 py-20"
-          style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}
-        >
-          <div className="max-w-5xl mx-auto">
-            <div className="flex items-center justify-between mb-10">
-              <div>
-                <p className="text-amber-400 text-xs font-semibold tracking-widest uppercase mb-2">
-                  Driving guides
-                </p>
-                <h2 className="font-display text-3xl font-bold text-white">
-                  Latest from the blog
-                </h2>
-              </div>
-              <Link
-                href="/blog"
-                className="hidden sm:block text-sm font-semibold text-amber-400 hover:text-amber-300 transition-colors"
-              >
-                View all →
-              </Link>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {recentBlogs.map((post) => (
-                <Link
-                  key={post.slug}
-                  href={`/blog/${post.slug}`}
-                  className="block rounded-2xl p-5 card-hover group"
-                  style={{
-                    background: "rgba(255,255,255,0.025)",
-                    border: "1px solid rgba(255,255,255,0.07)",
-                  }}
-                >
-                  <div
-                    className="inline-block text-xs px-2.5 py-1 rounded-full mb-4 font-medium"
-                    style={{
-                      background: "rgba(251,191,36,0.1)",
-                      color: "#fbbf24",
-                      border: "1px solid rgba(251,191,36,0.2)",
-                    }}
-                  >
-                    {post.category}
-                  </div>
-                  <h3 className="font-semibold text-white text-sm leading-snug mb-2 group-hover:text-amber-300 transition-colors line-clamp-2">
-                    {post.title}
-                  </h3>
-                  <p className="text-slate-500 text-xs leading-relaxed line-clamp-2 mb-3">
-                    {post.description}
-                  </p>
-                  <span className="text-xs text-slate-600">{post.readTime} min read</span>
-                </Link>
-              ))}
-            </div>
-
-            <div className="text-center mt-6 sm:hidden">
-              <Link
-                href="/blog"
-                className="text-sm font-semibold text-amber-400"
-              >
-                View all articles →
-              </Link>
-            </div>
-          </div>
-        </section>
       )}
 
-      {/* ── FOOTER ───────────────────────────────────────────────────────────── */}
-      <footer
-        className="px-5 py-12"
-        style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}
-      >
-        <div className="max-w-5xl mx-auto">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-8 mb-10">
-            <div className="col-span-2 sm:col-span-1">
-              <div className="flex items-center gap-2 mb-3">
-                <div
-                  className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold"
-                  style={{ background: "#fbbf24", color: "#08111f" }}
-                >
-                  LD
+      {/* ── FOOTER ── */}
+      <footer style={{ background: "#0B1437", color: "rgba(255,255,255,0.6)", padding: "48px 5% 32px", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+        <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 32, marginBottom: 40 }}>
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+                <div style={{ width: 32, height: 32, borderRadius: 8, background: "#F59E0B", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, color: "#fff", fontSize: 12 }}>LD</div>
+                <span className="font-display" style={{ color: "#fff", fontWeight: 700, fontSize: 16 }}>LearnDrive</span>
+              </div>
+              <p style={{ fontSize: 13, lineHeight: 1.7 }}>India's trusted marketplace for driving instructors and learners.</p>
+            </div>
+            <div>
+              <div style={{ color: "#fff", fontWeight: 600, fontSize: 14, marginBottom: 12 }}>Quick Links</div>
+              {[["Find Trainers", "/trainers"], ["Become a Trainer", "/trainers/register"], ["RTO Mock Test", "/rto-test/practice"], ["Blog", "/blog"]].map(([label, href]) => (
+                <div key={href} style={{ marginBottom: 8 }}>
+                  <Link href={href} style={{ color: "rgba(255,255,255,0.55)", textDecoration: "none", fontSize: 13 }}>{label}</Link>
                 </div>
-                <span className="font-display font-bold text-white">LearnDrive</span>
-              </div>
-              <p className="text-slate-600 text-xs leading-relaxed">
-                India's driving trainer marketplace. Find, book, and review verified driving trainers near you.
-              </p>
+              ))}
             </div>
-
             <div>
-              <p className="text-slate-400 text-xs font-semibold uppercase tracking-wider mb-3">
-                Students
-              </p>
-              <div className="space-y-2">
-                {[
-                  ["Find a trainer", "/trainers"],
-                  ["RTO practice test", "/rto-test/practice"],
-                  ["DL expiry check", "/dl-expiry"],
-                  ["RTO offices", "/rto-offices"],
-                ].map(([label, href]) => (
-                  <Link
-                    key={label}
-                    href={href}
-                    className="block text-slate-500 text-xs hover:text-slate-300 transition-colors"
-                  >
-                    {label}
-                  </Link>
-                ))}
-              </div>
+              <div style={{ color: "#fff", fontWeight: 600, fontSize: 14, marginBottom: 12 }}>Support</div>
+              {[["Help & FAQ", "/help"], ["Refund Policy", "/refund"], ["Terms of Service", "/terms"], ["Privacy Policy", "/privacy"]].map(([label, href]) => (
+                <div key={href} style={{ marginBottom: 8 }}>
+                  <Link href={href} style={{ color: "rgba(255,255,255,0.55)", textDecoration: "none", fontSize: 13 }}>{label}</Link>
+                </div>
+              ))}
             </div>
-
             <div>
-              <p className="text-slate-400 text-xs font-semibold uppercase tracking-wider mb-3">
-                Trainers
-              </p>
-              <div className="space-y-2">
-                {[
-                  ["Register as trainer", "/trainers/register"],
-                  ["Trainer benefits", "/for-trainers"],
-                  ["Help & Support", "/help"],
-                ].map(([label, href]) => (
-                  <Link
-                    key={label}
-                    href={href}
-                    className="block text-slate-500 text-xs hover:text-slate-300 transition-colors"
-                  >
-                    {label}
-                  </Link>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <p className="text-slate-400 text-xs font-semibold uppercase tracking-wider mb-3">
-                Company
-              </p>
-              <div className="space-y-2">
-                {[
-                  ["Blog", "/blog"],
-                  ["Privacy Policy", "/privacy"],
-                  ["Terms of Service", "/terms"],
-                  ["Refund Policy", "/refund-policy"],
-                  ["Contact us", "/contact"],
-                ].map(([label, href]) => (
-                  <Link
-                    key={label}
-                    href={href}
-                    className="block text-slate-500 text-xs hover:text-slate-300 transition-colors"
-                  >
-                    {label}
-                  </Link>
-                ))}
-              </div>
+              <div style={{ color: "#fff", fontWeight: 600, fontSize: 14, marginBottom: 12 }}>Contact</div>
+              <p style={{ fontSize: 13, marginBottom: 6 }}>support@learndrive.in</p>
+              <p style={{ fontSize: 13 }}>+91 87008 96528</p>
             </div>
           </div>
-
-          <div
-            className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-8"
-            style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}
-          >
-            <p className="text-slate-700 text-xs">
-              © {new Date().getFullYear()} LearnDrive. All rights reserved.
-            </p>
-            <p className="text-slate-700 text-xs">
-              support@learndrive.in · +91 87008 96528
-            </p>
+          <div style={{ borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: 24, textAlign: "center", fontSize: 12 }}>
+            © 2025 LearnDrive. All rights reserved.
           </div>
         </div>
       </footer>
