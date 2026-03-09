@@ -40,8 +40,8 @@ const ALL_CITIES = [
 const STATS = [
   { value: "50+", label: "Cities" },
   { value: "2,400+", label: "Students waitlisted" },
-  { value: "85%", label: "Trainer payout" },
-  { value: "₹0", label: "Joining fee" },
+  { value: "₹299", label: "Trial class" },
+  { value: "4.8★", label: "Avg trainer rating" },
 ];
 
 const HOW_IT_WORKS = [
@@ -368,22 +368,6 @@ export default function HomePage() {
               </div>
             ))}
           </div>
-        </div>
-      </div>
-
-      {/* ── TRAINER CTA ── */}
-      <div style={{ background: "linear-gradient(145deg, #0B1437 0%, #1A2B5F 100%)", padding: "72px 5%", textAlign: "center" }}>
-        <div style={{ maxWidth: 600, margin: "0 auto" }}>
-          <div style={{ fontSize: 40, marginBottom: 16 }}>🧑‍🏫</div>
-          <h2 className="font-display" style={{ color: "#FFFFFF", fontSize: "clamp(1.6rem, 3vw, 2.2rem)", fontWeight: 800, marginBottom: 14 }}>
-            Are you a driving trainer?
-          </h2>
-          <p style={{ color: "rgba(255,255,255,0.65)", fontSize: 16, marginBottom: 32, lineHeight: 1.7 }}>
-            Join India's fastest-growing driving instructor marketplace. No joining fee. Keep 85% of every booking.
-          </p>
-          <Link href="/trainers/register" style={{ display: "inline-block", background: "#F59E0B", color: "#fff", textDecoration: "none", padding: "14px 36px", borderRadius: 12, fontWeight: 700, fontSize: 16, boxShadow: "0 4px 20px rgba(245,158,11,0.4)" }}>
-            Register as a Trainer →
-          </Link>
         </div>
       </div>
 
