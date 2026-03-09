@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import Image from "next/image";
 
 interface Trainer {
   id: number;
@@ -153,7 +154,7 @@ export default function HomePage() {
       <nav style={{ background: "#FFFFFF", borderBottom: "1px solid #E2E8F0", position: "sticky", top: 0, zIndex: 50, padding: "0 5%" }}>
         <div style={{ maxWidth: 1100, margin: "0 auto", display: "flex", alignItems: "center", height: 64, gap: 8 }}>
           <Link href="/" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
-            <div style={{ width: 36, height: 36, borderRadius: 10, background: "#F59E0B", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, color: "#fff", fontSize: 14 }}>LD</div>
+            <Image src="/logo.png" alt="LearnDrive" width={120} height={36} style={{ objectFit: "contain" }} />
             <span className="font-display" style={{ color: "#0F172A", fontSize: 18, fontWeight: 700 }}>LearnDrive</span>
           </Link>
           <div style={{ flex: 1 }} />
@@ -399,7 +400,7 @@ export default function HomePage() {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 32, marginBottom: 40 }}>
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-                <div style={{ width: 32, height: 32, borderRadius: 8, background: "#F59E0B", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, color: "#fff", fontSize: 12 }}>LD</div>
+                <Image src="/logo.png" alt="LearnDrive" width={100} height={30} style={{ objectFit: "contain" }} />
                 <span className="font-display" style={{ color: "#fff", fontWeight: 700, fontSize: 16 }}>LearnDrive</span>
               </div>
               <p style={{ fontSize: 13, lineHeight: 1.7 }}>India's trusted marketplace for driving instructors and learners.</p>

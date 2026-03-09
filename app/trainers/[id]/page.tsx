@@ -1,6 +1,7 @@
 // app/trainers/[id]/page.tsx
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { prisma } from "@/lib/prisma";
 
 interface Props {
@@ -31,8 +32,7 @@ export default async function TrainerPage({ params }: Props) {
       <nav style={{ background: "#FFFFFF", borderBottom: "1px solid #E2E8F0", padding: "0 5%" }}>
         <div style={{ maxWidth: 900, margin: "0 auto", display: "flex", alignItems: "center", height: 64, gap: 12 }}>
           <Link href="/" style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none" }}>
-            <div style={{ width: 34, height: 34, borderRadius: 9, background: "#F59E0B", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, color: "#fff", fontSize: 13 }}>LD</div>
-            <span style={{ fontFamily: "'Sora', sans-serif", color: "#0F172A", fontSize: 17, fontWeight: 700 }}>LearnDrive</span>
+            <Image src="/logo.png" alt="LearnDrive" width={110} height={34} style={{ objectFit: "contain" }} />
           </Link>
           <div style={{ flex: 1 }} />
           <Link href="/trainers" style={{ color: "#64748B", textDecoration: "none", fontSize: 14 }}>← All Trainers</Link>
