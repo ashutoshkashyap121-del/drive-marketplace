@@ -6,19 +6,16 @@ import { useRouter } from "next/navigation";
 type VehicleType = "CAR" | "BIKE_GEARED" | "BIKE_NON_GEARED";
 
 interface FormData {
-  // Step 1 — Who are you
   name: string;
   phone: string;
   email: string;
-  // Step 2 — Where
   city: string;
-  areas: string;
-  // Step 3 — What you teach
+  pincode: string;
+  serviceArea: string[];
   vehicleTypes: VehicleType[];
   yearsExp: string;
   pricePerHour: string;
   languages: string[];
-  // Step 4 — Verify
   licenseNo: string;
   agreedToTerms: boolean;
 }
@@ -52,18 +49,14 @@ const STEPS = [
 
 const INITIAL_DATA: FormData = {
   name: "", phone: "", email: "",
-  city: "", areas: "",
+  city: "", pincode: "", serviceArea: [],
   vehicleTypes: [], yearsExp: "", pricePerHour: "", languages: [],
   licenseNo: "", agreedToTerms: false,
 };
 
 function FieldError({ msg }: { msg?: string }) {
   if (!msg) return null;
-  return (
-    <p className="mt-1.5 text-xs text-red-400 flex items-center gap-1">
-      <span>⚠</span>{msg}
-    </p>
-  );
+  return <p className="mt-1.5 text-xs text-red-400 flex items-center gap-1"><span>⚠</span>{msg}</p>;
 }
 
 function validateStep(step: number, data: FormData): Partial<Record<keyof FormData, string>> {
@@ -77,7 +70,8 @@ function validateStep(step: number, data: FormData): Partial<Record<keyof FormDa
 
   if (step === 2) {
     if (!data.city) errors.city = "Select your city";
-    if (!data.areas.trim()) errors.areas = "Enter the areas / localities you cover";
+    if (!data.pincode || !/^\d{6}$/.test(data.pincode)) errors.pincode = "Enter your 6-digit home pincode";
+    if (data.serviceArea.length === 0) errors.serviceArea = "Add at least one service pincode";
   }
 
   if (step === 3) {
@@ -107,6 +101,8 @@ export default function TrainerRegisterPage() {
   const [submitError, setSubmitError] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [citySearch, setCitySearch] = useState("");
+  const [pincodeInput, setPincodeInput] = useState("");
+  const [pincodeError, setPincodeError] = useState("");
 
   const onChange = useCallback((key: keyof FormData, value: any) => {
     setData((prev) => ({ ...prev, [key]: value }));
@@ -121,6 +117,20 @@ export default function TrainerRegisterPage() {
   const toggleLang = (l: string) => {
     const current = data.languages;
     onChange("languages", current.includes(l) ? current.filter((x) => x !== l) : [...current, l]);
+  };
+
+  const addPincode = () => {
+    const p = pincodeInput.trim();
+    if (!/^\d{6}$/.test(p)) { setPincodeError("Enter a valid 6-digit pincode"); return; }
+    if (data.serviceArea.includes(p)) { setPincodeError("Pincode already added"); return; }
+    if (data.serviceArea.length >= 10) { setPincodeError("Maximum 10 pincodes allowed"); return; }
+    onChange("serviceArea", [...data.serviceArea, p]);
+    setPincodeInput("");
+    setPincodeError("");
+  };
+
+  const removePincode = (p: string) => {
+    onChange("serviceArea", data.serviceArea.filter((x) => x !== p));
   };
 
   const goNext = () => {
@@ -151,13 +161,13 @@ export default function TrainerRegisterPage() {
           mobile: data.phone,
           bio: "",
           city: data.city,
-          areas: data.areas,
+          pincode: data.pincode,
+          serviceArea: data.serviceArea,
           vehicleTypes: data.vehicleTypes,
           experience: Number(data.yearsExp),
           languages: data.languages,
           basePrice: Number(data.pricePerHour),
           licenseNumber: data.licenseNo,
-          // Documents collected later via WhatsApp/email after approval
           documents: {},
         }),
       });
@@ -181,7 +191,7 @@ export default function TrainerRegisterPage() {
 
   const progress = (step / STEPS.length) * 100;
 
-  // ── Success Screen ───────────────────────────────────────────────
+  // ── Success Screen ──
   if (submitted) {
     return (
       <div className="min-h-screen flex items-center justify-center px-4"
@@ -196,7 +206,7 @@ export default function TrainerRegisterPage() {
             Thanks, <span className="text-amber-300 font-semibold">{data.name}</span>!
             Our team will call you on{" "}
             <span className="text-amber-300 font-mono">+91 {data.phone}</span>{" "}
-            within <strong className="text-white">24 hours</strong> to complete your profile setup.
+            within <strong className="text-white">24 hours</strong>.
           </p>
           <div className="rounded-2xl p-5 mb-8 text-left space-y-3"
             style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
@@ -207,7 +217,7 @@ export default function TrainerRegisterPage() {
               <span className="text-slate-600">○</span>Our team calls you within 24 hours
             </div>
             <div className="flex items-center gap-3 text-sm text-slate-400">
-              <span className="text-slate-600">○</span>Quick document verification via WhatsApp
+              <span className="text-slate-600">○</span>Quick document check via WhatsApp
             </div>
             <div className="flex items-center gap-3 text-sm text-slate-400">
               <span className="text-slate-600">○</span>Profile goes live — students start booking!
@@ -223,11 +233,10 @@ export default function TrainerRegisterPage() {
     );
   }
 
-  // ── Main Form ────────────────────────────────────────────────────
+  // ── Main Form ──
   return (
     <div className="min-h-screen" style={{ background: "linear-gradient(135deg, #0a1628 0%, #0f2040 50%, #1a1a2e 100%)" }}>
 
-      {/* Header */}
       <header className="sticky top-0 z-50 px-4 py-4 flex items-center justify-between"
         style={{ background: "rgba(10,22,40,0.9)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
         <button onClick={() => router.push("/")}
@@ -241,7 +250,6 @@ export default function TrainerRegisterPage() {
         </div>
       </header>
 
-      {/* Progress bar */}
       <div className="h-0.5 bg-slate-800">
         <div className="h-full bg-amber-400 transition-all duration-500 ease-out" style={{ width: `${progress}%` }} />
       </div>
@@ -253,11 +261,7 @@ export default function TrainerRegisterPage() {
           {STEPS.map((s, i) => (
             <div key={s.id} className="flex items-center flex-1">
               <div className={`flex items-center justify-center w-8 h-8 rounded-full text-xs font-bold transition-all duration-300 flex-shrink-0 ${
-                step > s.id
-                  ? "bg-amber-400"
-                  : step === s.id
-                  ? "bg-amber-400/20 border-2 border-amber-400 text-amber-400"
-                  : "bg-slate-800 border border-slate-600 text-slate-500"
+                step > s.id ? "bg-amber-400" : step === s.id ? "bg-amber-400/20 border-2 border-amber-400 text-amber-400" : "bg-slate-800 border border-slate-600 text-slate-500"
               }`} style={{ color: step > s.id ? "#0f172a" : undefined }}>
                 {step > s.id ? "✓" : s.id}
               </div>
@@ -268,11 +272,8 @@ export default function TrainerRegisterPage() {
           ))}
         </div>
 
-        {/* Step heading */}
         <div className="mb-8">
-          <p className="text-amber-400 text-sm font-semibold tracking-widest uppercase mb-2">
-            Trainer Registration
-          </p>
+          <p className="text-amber-400 text-sm font-semibold tracking-widest uppercase mb-2">Trainer Registration</p>
           <h1 className="text-3xl font-bold text-white leading-tight">
             {step === 1 && "Let's start with you"}
             {step === 2 && "Where do you teach?"}
@@ -281,72 +282,45 @@ export default function TrainerRegisterPage() {
           </h1>
           <p className="text-slate-400 mt-2 text-sm">
             {step === 1 && "Just your name and number — takes 30 seconds"}
-            {step === 2 && "Tell us your city and the areas you cover"}
+            {step === 2 && "Your city and pincodes you cover — so students find you"}
             {step === 3 && "Vehicle types, experience, and your pricing"}
             {step === 4 && "One last thing and you're in"}
           </p>
         </div>
 
-        {/* Step content */}
         <div className="rounded-2xl p-6 sm:p-8"
           style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", backdropFilter: "blur(8px)" }}>
 
-          {/* ── STEP 1: Personal ── */}
+          {/* ── STEP 1 ── */}
           {step === 1 && (
             <div className="space-y-5">
               <div>
-                <label className="block text-sm font-semibold text-slate-300 mb-1.5">
-                  Full Name <span className="text-amber-400">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={data.name}
-                  onChange={(e) => onChange("name", e.target.value)}
-                  placeholder="Rajesh Kumar"
+                <label className="block text-sm font-semibold text-slate-300 mb-1.5">Full Name <span className="text-amber-400">*</span></label>
+                <input type="text" value={data.name} onChange={(e) => onChange("name", e.target.value)} placeholder="Rajesh Kumar"
                   className="w-full border border-slate-600 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-all"
-                  style={{ background: "rgba(15,23,42,0.8)" }}
-                />
+                  style={{ background: "rgba(15,23,42,0.8)" }} />
                 <FieldError msg={errors.name} />
               </div>
-
               <div>
-                <label className="block text-sm font-semibold text-slate-300 mb-1.5">
-                  Mobile Number <span className="text-amber-400">*</span>
-                </label>
+                <label className="block text-sm font-semibold text-slate-300 mb-1.5">Mobile Number <span className="text-amber-400">*</span></label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-mono">+91</span>
-                  <input
-                    type="tel"
-                    value={data.phone}
-                    onChange={(e) => onChange("phone", e.target.value.replace(/\D/g, "").slice(0, 10))}
-                    placeholder="9876543210"
-                    maxLength={10}
+                  <input type="tel" value={data.phone} onChange={(e) => onChange("phone", e.target.value.replace(/\D/g, "").slice(0, 10))}
+                    placeholder="9876543210" maxLength={10}
                     className="w-full border border-slate-600 rounded-xl pl-12 pr-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-all"
-                    style={{ background: "rgba(15,23,42,0.8)" }}
-                  />
+                    style={{ background: "rgba(15,23,42,0.8)" }} />
                 </div>
                 <p className="mt-1 text-xs text-slate-500">We'll call you on this number within 24 hours</p>
                 <FieldError msg={errors.phone} />
               </div>
-
               <div>
-                <label className="block text-sm font-semibold text-slate-300 mb-1.5">
-                  Email Address <span className="text-slate-500 font-normal">(optional)</span>
-                </label>
-                <input
-                  type="email"
-                  value={data.email}
-                  onChange={(e) => onChange("email", e.target.value)}
-                  placeholder="rajesh@example.com"
-                  className="w-full border border-slate-600 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-all"
-                  style={{ background: "rgba(15,23,42,0.8)" }}
-                />
+                <label className="block text-sm font-semibold text-slate-300 mb-1.5">Email <span className="text-slate-500 font-normal">(optional)</span></label>
+                <input type="email" value={data.email} onChange={(e) => onChange("email", e.target.value)} placeholder="rajesh@example.com"
+                  className="w-full border border-slate-600 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 transition-all"
+                  style={{ background: "rgba(15,23,42,0.8)" }} />
                 <FieldError msg={errors.email} />
               </div>
-
-              {/* Trust signal */}
-              <div className="rounded-xl p-4 border border-amber-400/15 mt-2"
-                style={{ background: "rgba(251,191,36,0.04)" }}>
+              <div className="rounded-xl p-4 border border-amber-400/15 mt-2" style={{ background: "rgba(251,191,36,0.04)" }}>
                 <p className="text-sm font-semibold text-amber-300 mb-2">Why join LearnDrive?</p>
                 <div className="space-y-1.5 text-xs text-slate-400">
                   <p>✅ Get 10–15 extra students per month</p>
@@ -358,84 +332,95 @@ export default function TrainerRegisterPage() {
             </div>
           )}
 
-          {/* ── STEP 2: Location ── */}
+          {/* ── STEP 2 ── */}
           {step === 2 && (
-            <div className="space-y-5">
+            <div className="space-y-6">
+              {/* City */}
               <div>
-                <label className="block text-sm font-semibold text-slate-300 mb-1.5">
-                  Your City <span className="text-amber-400">*</span>
-                </label>
-                {/* City search */}
-                <input
-                  type="text"
-                  value={citySearch}
-                  onChange={(e) => setCitySearch(e.target.value)}
-                  placeholder="Search city..."
+                <label className="block text-sm font-semibold text-slate-300 mb-1.5">Your City <span className="text-amber-400">*</span></label>
+                <input type="text" value={citySearch} onChange={(e) => setCitySearch(e.target.value)} placeholder="Search city..."
                   className="w-full border border-slate-600 rounded-xl px-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 transition-all mb-2 text-sm"
-                  style={{ background: "rgba(15,23,42,0.8)" }}
-                />
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-52 overflow-y-auto pr-1">
+                  style={{ background: "rgba(15,23,42,0.8)" }} />
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-48 overflow-y-auto pr-1">
                   {filteredCities.map((city) => (
-                    <button
-                      key={city}
-                      type="button"
-                      onClick={() => onChange("city", city)}
+                    <button key={city} type="button" onClick={() => onChange("city", city)}
                       className={`px-3 py-2.5 rounded-xl border text-sm font-medium text-left transition-all ${
-                        data.city === city
-                          ? "border-amber-400 bg-amber-400/10 text-amber-300"
-                          : "border-slate-700 text-slate-400 hover:border-slate-500 hover:text-slate-300"
-                      }`}
-                      style={{ background: data.city === city ? "rgba(251,191,36,0.1)" : "rgba(15,23,42,0.6)" }}
-                    >
-                      {data.city === city && <span className="text-amber-400 mr-1">✓</span>}
-                      {city}
+                        data.city === city ? "border-amber-400 bg-amber-400/10 text-amber-300" : "border-slate-700 text-slate-400 hover:border-slate-500 hover:text-slate-300"
+                      }`} style={{ background: data.city === city ? "rgba(251,191,36,0.1)" : "rgba(15,23,42,0.6)" }}>
+                      {data.city === city && <span className="text-amber-400 mr-1">✓</span>}{city}
                     </button>
                   ))}
-                  {filteredCities.length === 0 && (
-                    <p className="col-span-3 text-sm text-slate-500 py-3 text-center">
-                      City not listed? Type it in the areas box below.
-                    </p>
-                  )}
                 </div>
                 <FieldError msg={errors.city} />
               </div>
 
+              {/* Home pincode */}
               <div>
                 <label className="block text-sm font-semibold text-slate-300 mb-1.5">
-                  Areas / Localities You Cover <span className="text-amber-400">*</span>
+                  Your Home Pincode <span className="text-amber-400">*</span>
                 </label>
-                <input
-                  type="text"
-                  value={data.areas}
-                  onChange={(e) => onChange("areas", e.target.value)}
-                  placeholder="e.g. Dwarka, Janakpuri, Uttam Nagar, Vikaspuri"
-                  className="w-full border border-slate-600 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-all"
-                  style={{ background: "rgba(15,23,42,0.8)" }}
-                />
-                <p className="mt-1 text-xs text-slate-500">
-                  Separate multiple areas with commas
+                <input type="text" value={data.pincode}
+                  onChange={(e) => onChange("pincode", e.target.value.replace(/\D/g, "").slice(0, 6))}
+                  placeholder="e.g. 110045" maxLength={6} inputMode="numeric"
+                  className="w-full border border-slate-600 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-all font-mono"
+                  style={{ background: "rgba(15,23,42,0.8)" }} />
+                <p className="mt-1 text-xs text-slate-500">The pincode of the area where you are based</p>
+                <FieldError msg={errors.pincode} />
+              </div>
+
+              {/* Service pincodes */}
+              <div>
+                <label className="block text-sm font-semibold text-slate-300 mb-1">
+                  Pincodes You Serve <span className="text-amber-400">*</span>
+                </label>
+                <p className="text-xs text-slate-500 mb-3">
+                  Add all pincodes you can travel to for training. Students search by pincode — more pincodes = more visibility.
                 </p>
-                <FieldError msg={errors.areas} />
+                <div className="flex gap-2">
+                  <input type="text" value={pincodeInput}
+                    onChange={(e) => { setPincodeInput(e.target.value.replace(/\D/g, "").slice(0, 6)); setPincodeError(""); }}
+                    onKeyDown={(e) => e.key === "Enter" && addPincode()}
+                    placeholder="110001" maxLength={6} inputMode="numeric"
+                    className="flex-1 border border-slate-600 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 transition-all font-mono text-sm"
+                    style={{ background: "rgba(15,23,42,0.8)" }} />
+                  <button type="button" onClick={addPincode}
+                    className="px-5 py-3 bg-amber-400 hover:bg-amber-300 font-bold rounded-xl text-sm transition-all flex-shrink-0"
+                    style={{ color: "#0f172a" }}>
+                    + Add
+                  </button>
+                </div>
+                {pincodeError && <p className="mt-1 text-xs text-red-400">⚠ {pincodeError}</p>}
+
+                {data.serviceArea.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    {data.serviceArea.map((p) => (
+                      <span key={p} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-mono font-medium"
+                        style={{ background: "rgba(251,191,36,0.1)", border: "1px solid rgba(251,191,36,0.3)", color: "#fcd34d" }}>
+                        📍 {p}
+                        <button type="button" onClick={() => removePincode(p)}
+                          className="text-slate-400 hover:text-red-400 transition-colors ml-0.5 text-xs">✕</button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                <p className="mt-2 text-xs text-slate-600">{data.serviceArea.length}/10 pincodes added</p>
+                <FieldError msg={errors.serviceArea} />
               </div>
             </div>
           )}
 
-          {/* ── STEP 3: Expertise ── */}
+          {/* ── STEP 3 ── */}
           {step === 3 && (
             <div className="space-y-6">
-              {/* Vehicle types */}
               <div>
-                <label className="block text-sm font-semibold text-slate-300 mb-2">
-                  Vehicle Types You Train <span className="text-amber-400">*</span>
-                </label>
+                <label className="block text-sm font-semibold text-slate-300 mb-2">Vehicle Types You Train <span className="text-amber-400">*</span></label>
                 <div className="grid grid-cols-1 gap-3">
                   {VEHICLE_OPTIONS.map((v) => {
                     const selected = data.vehicleTypes.includes(v.value);
                     return (
                       <button key={v.value} type="button" onClick={() => toggleVehicle(v.value)}
-                        className={`flex items-center gap-4 px-4 py-4 rounded-xl border text-left transition-all ${
-                          selected ? "border-amber-400 bg-amber-400/10" : "border-slate-600 hover:border-slate-500"
-                        }`}
+                        className={`flex items-center gap-4 px-4 py-4 rounded-xl border text-left transition-all ${selected ? "border-amber-400 bg-amber-400/10" : "border-slate-600 hover:border-slate-500"}`}
                         style={{ background: selected ? "rgba(251,191,36,0.1)" : "rgba(15,23,42,0.8)" }}>
                         <span className="text-2xl">{v.icon}</span>
                         <div className="flex-1">
@@ -452,58 +437,35 @@ export default function TrainerRegisterPage() {
                 <FieldError msg={errors.vehicleTypes} />
               </div>
 
-              {/* Experience + Price */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-slate-300 mb-1.5">
-                    Years Experience <span className="text-amber-400">*</span>
-                  </label>
-                  <input
-                    type="number"
-                    value={data.yearsExp}
-                    onChange={(e) => onChange("yearsExp", e.target.value)}
-                    placeholder="5"
-                    min="1"
+                  <label className="block text-sm font-semibold text-slate-300 mb-1.5">Years Experience <span className="text-amber-400">*</span></label>
+                  <input type="number" value={data.yearsExp} onChange={(e) => onChange("yearsExp", e.target.value)} placeholder="5" min="1"
                     className="w-full border border-slate-600 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 transition-all"
-                    style={{ background: "rgba(15,23,42,0.8)" }}
-                  />
+                    style={{ background: "rgba(15,23,42,0.8)" }} />
                   <FieldError msg={errors.yearsExp} />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-slate-300 mb-1.5">
-                    Price per Hour <span className="text-amber-400">*</span>
-                  </label>
+                  <label className="block text-sm font-semibold text-slate-300 mb-1.5">Price per Hour <span className="text-amber-400">*</span></label>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-semibold">₹</span>
-                    <input
-                      type="number"
-                      value={data.pricePerHour}
-                      onChange={(e) => onChange("pricePerHour", e.target.value)}
-                      placeholder="500"
-                      min={200}
-                      max={5000}
+                    <input type="number" value={data.pricePerHour} onChange={(e) => onChange("pricePerHour", e.target.value)} placeholder="500" min={200} max={5000}
                       className="w-full border border-slate-600 rounded-xl pl-8 pr-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 transition-all"
-                      style={{ background: "rgba(15,23,42,0.8)" }}
-                    />
+                      style={{ background: "rgba(15,23,42,0.8)" }} />
                   </div>
                   <p className="mt-1 text-xs text-slate-500">₹200 – ₹5,000</p>
                   <FieldError msg={errors.pricePerHour} />
                 </div>
               </div>
 
-              {/* Languages */}
               <div>
-                <label className="block text-sm font-semibold text-slate-300 mb-2">
-                  Teaching Languages <span className="text-amber-400">*</span>
-                </label>
+                <label className="block text-sm font-semibold text-slate-300 mb-2">Teaching Languages <span className="text-amber-400">*</span></label>
                 <div className="flex flex-wrap gap-2">
                   {LANGUAGES.map((lang) => {
                     const selected = data.languages.includes(lang);
                     return (
                       <button key={lang} type="button" onClick={() => toggleLang(lang)}
-                        className={`px-3 py-1.5 rounded-lg border text-sm font-medium transition-all ${
-                          selected ? "border-amber-400 bg-amber-400/10 text-amber-300" : "border-slate-600 text-slate-400 hover:border-slate-500"
-                        }`}
+                        className={`px-3 py-1.5 rounded-lg border text-sm font-medium transition-all ${selected ? "border-amber-400 bg-amber-400/10 text-amber-300" : "border-slate-600 text-slate-400 hover:border-slate-500"}`}
                         style={{ background: selected ? "rgba(251,191,36,0.1)" : "transparent" }}>
                         {selected && "✓ "}{lang}
                       </button>
@@ -515,75 +477,53 @@ export default function TrainerRegisterPage() {
             </div>
           )}
 
-          {/* ── STEP 4: Confirm ── */}
+          {/* ── STEP 4 ── */}
           {step === 4 && (
             <div className="space-y-5">
               <div className="rounded-xl p-4 border border-blue-500/20 text-sm text-blue-300"
                 style={{ background: "rgba(59,130,246,0.07)" }}>
-                🔒 Your DL number is used only for verification. Never shared publicly.
+                🔒 Your DL number is for verification only. Never shared publicly.
               </div>
-
               <div>
-                <label className="block text-sm font-semibold text-slate-300 mb-1.5">
-                  Driving Licence Number <span className="text-amber-400">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={data.licenseNo}
-                  onChange={(e) => onChange("licenseNo", e.target.value.toUpperCase())}
-                  placeholder="DL0120230001234"
+                <label className="block text-sm font-semibold text-slate-300 mb-1.5">Driving Licence Number <span className="text-amber-400">*</span></label>
+                <input type="text" value={data.licenseNo} onChange={(e) => onChange("licenseNo", e.target.value.toUpperCase())} placeholder="DL0120230001234"
                   className="w-full border border-slate-600 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-all font-mono"
-                  style={{ background: "rgba(15,23,42,0.8)" }}
-                />
-                <p className="mt-1 text-xs text-slate-500">
-                  Must cover the vehicle types you selected
-                </p>
+                  style={{ background: "rgba(15,23,42,0.8)" }} />
+                <p className="mt-1 text-xs text-slate-500">Must cover the vehicle types you selected</p>
                 <FieldError msg={errors.licenseNo} />
               </div>
 
-              {/* Summary */}
-              <div className="rounded-xl p-4 border border-slate-700 space-y-2"
-                style={{ background: "rgba(255,255,255,0.02)" }}>
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Your Application Summary</p>
+              <div className="rounded-xl p-4 border border-slate-700 space-y-2" style={{ background: "rgba(255,255,255,0.02)" }}>
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Summary</p>
                 <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                  <span className="text-slate-500">Name</span>
-                  <span className="text-slate-200 font-medium">{data.name}</span>
-                  <span className="text-slate-500">Phone</span>
-                  <span className="text-slate-200 font-mono">+91 {data.phone}</span>
-                  <span className="text-slate-500">City</span>
-                  <span className="text-slate-200">{data.city}</span>
-                  <span className="text-slate-500">Vehicles</span>
-                  <span className="text-slate-200">{data.vehicleTypes.join(", ")}</span>
-                  <span className="text-slate-500">Experience</span>
-                  <span className="text-slate-200">{data.yearsExp} years</span>
-                  <span className="text-slate-500">Price</span>
-                  <span className="text-slate-200">₹{data.pricePerHour}/hr</span>
+                  <span className="text-slate-500">Name</span><span className="text-slate-200 font-medium">{data.name}</span>
+                  <span className="text-slate-500">Phone</span><span className="text-slate-200 font-mono">+91 {data.phone}</span>
+                  <span className="text-slate-500">City</span><span className="text-slate-200">{data.city}</span>
+                  <span className="text-slate-500">Pincodes</span><span className="text-slate-200 font-mono text-xs">{data.serviceArea.join(", ")}</span>
+                  <span className="text-slate-500">Vehicles</span><span className="text-slate-200">{data.vehicleTypes.join(", ")}</span>
+                  <span className="text-slate-500">Experience</span><span className="text-slate-200">{data.yearsExp} years</span>
+                  <span className="text-slate-500">Price</span><span className="text-slate-200">₹{data.pricePerHour}/hr</span>
                 </div>
               </div>
 
-              {/* Terms */}
               <button type="button" onClick={() => onChange("agreedToTerms", !data.agreedToTerms)}
                 className="flex items-start gap-3 group w-full text-left">
-                <div className={`mt-0.5 w-5 h-5 rounded border-2 flex-shrink-0 flex items-center justify-center transition-all ${
-                  data.agreedToTerms ? "border-amber-400 bg-amber-400" : "border-slate-500 group-hover:border-slate-400"}`}>
+                <div className={`mt-0.5 w-5 h-5 rounded border-2 flex-shrink-0 flex items-center justify-center transition-all ${data.agreedToTerms ? "border-amber-400 bg-amber-400" : "border-slate-500 group-hover:border-slate-400"}`}>
                   {data.agreedToTerms && <span className="text-xs font-bold" style={{ color: "#0f172a" }}>✓</span>}
                 </div>
                 <span className="text-sm text-slate-300 leading-relaxed">
                   I confirm all information is accurate. I agree to LearnDrive's{" "}
-                  <a href="/terms" target="_blank" className="text-amber-400 underline">Terms of Service</a>{" "}
-                  and{" "}
+                  <a href="/terms" target="_blank" className="text-amber-400 underline">Terms</a> and{" "}
                   <a href="/privacy" target="_blank" className="text-amber-400 underline">Privacy Policy</a>.
                 </span>
               </button>
               <FieldError msg={errors.agreedToTerms} />
 
-              {/* What happens next */}
-              <div className="rounded-xl p-4 border border-amber-400/15"
-                style={{ background: "rgba(251,191,36,0.04)" }}>
+              <div className="rounded-xl p-4 border border-amber-400/15" style={{ background: "rgba(251,191,36,0.04)" }}>
                 <p className="text-sm font-semibold text-amber-300 mb-2">📞 What happens next?</p>
                 <div className="space-y-1.5 text-xs text-slate-400">
                   <p>1. Our team calls you within 24 hours</p>
-                  <p>2. Quick document check via WhatsApp (2 minutes)</p>
+                  <p>2. Quick document check via WhatsApp</p>
                   <p>3. Profile goes live — students start finding you!</p>
                 </div>
               </div>
@@ -591,7 +531,6 @@ export default function TrainerRegisterPage() {
           )}
         </div>
 
-        {/* Error */}
         {submitError && (
           <div className="mt-4 rounded-xl px-4 py-3 text-sm text-red-300"
             style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)" }}>
@@ -599,7 +538,6 @@ export default function TrainerRegisterPage() {
           </div>
         )}
 
-        {/* Navigation */}
         <div className="flex items-center justify-between mt-6 gap-4">
           {step > 1 ? (
             <button type="button" onClick={goBack}
@@ -625,9 +563,7 @@ export default function TrainerRegisterPage() {
           )}
         </div>
 
-        <p className="text-center text-xs text-slate-600 mt-8">
-          🔒 Your data is secure and never shared publicly
-        </p>
+        <p className="text-center text-xs text-slate-600 mt-8">🔒 Your data is secure and never shared publicly</p>
       </div>
     </div>
   );
