@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
     const trainers = await prisma.trainer.findMany({
       where: {
         city: { contains: city, mode: "insensitive" },
-        status: TrainerStatus.ACTIVE,
+        status: TrainerStatus.APPROVED,
       },
       select: {
         id: true,
