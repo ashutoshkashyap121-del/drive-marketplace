@@ -1,4 +1,5 @@
 // app/api/trainers/by-city/route.ts
+import { TrainerStatus } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
@@ -13,7 +14,7 @@ export async function GET(req: NextRequest) {
     const trainers = await prisma.trainer.findMany({
       where: {
         city: { contains: city, mode: "insensitive" },
-        status: "ACTIVE" as const,
+        status: TrainerStatus.ACTIVE,
       },
       select: {
         id: true,
