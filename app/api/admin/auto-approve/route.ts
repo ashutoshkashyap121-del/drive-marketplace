@@ -116,7 +116,7 @@ export async function POST(req: NextRequest) {
 
     // Send WhatsApp notification (only for approve/reject, not flag)
     if (review.decision !== "FLAG" && trainer.mobile) {
-      await sendApprovalWhatsApp(trainer.mobile, trainer.name, review.decision === "APPROVE", review.reason);
+      await sendApprovalWhatsApp(trainer.mobile, trainer.name, review.decision === "APPROVE");
     }
 
     return NextResponse.json({ trainerId, ...review, status: newStatus });
@@ -146,9 +146,8 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      // Only notify on approve/reject, flagged stays pending for manual review
       if (review.decision !== "FLAG" && trainer.mobile) {
-        await sendApprovalWhatsApp(trainer.mobile, trainer.name, review.decision === "APPROVE", review.reason);
+        await sendApprovalWhatsApp(trainer.mobile, trainer.name, review.decision === "APPROVE");
       }
 
       results.details.push({
