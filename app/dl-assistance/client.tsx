@@ -130,16 +130,24 @@ export default function DLAssistancePage() {
       <script src="https://checkout.razorpay.com/v1/checkout.js" async />
 
       <div style={{ fontFamily: "'Georgia', serif", background: "#fafaf8", minHeight: "100vh" }}>
+        <style>{`
+          @media (max-width: 640px) {
+            .dl-steps-grid { grid-template-columns: 1fr !important; }
+            .dl-included-grid { grid-template-columns: 1fr !important; }
+            .dl-stats-grid { grid-template-columns: repeat(3,1fr) !important; }
+            .dl-price-card { padding: 20px 16px !important; }
+          }
+        `}</style>
 
         {/* Nav */}
-        <nav style={{ background: "#1a2540", padding: "16px 24px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <Link href="/" style={{ textDecoration: "none" }}>
+        <nav style={{ background: "#1a2540", padding: "12px 20px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <Link href="/" style={{ textDecoration: "none", flexShrink: 0 }}>
             <span style={{ fontSize: 20, fontWeight: 800, color: "#f59e0b" }}>Learn</span>
             <span style={{ fontSize: 20, fontWeight: 800, color: "white" }}>Drive</span>
           </Link>
           <a href="https://wa.me/918700896528" target="_blank" rel="noopener noreferrer"
-            style={{ background: "#25d366", color: "white", padding: "8px 16px", borderRadius: 8, fontSize: 13, fontWeight: 600, textDecoration: "none" }}>
-            💬 WhatsApp Us
+            style={{ background: "#25d366", color: "white", padding: "8px 14px", borderRadius: 8, fontSize: 13, fontWeight: 600, textDecoration: "none", whiteSpace: "nowrap" }}>
+            💬 WhatsApp
           </a>
         </nav>
 
@@ -177,7 +185,7 @@ export default function DLAssistancePage() {
         <div style={{ maxWidth: 900, margin: "0 auto", padding: "0 24px" }}>
 
           {/* Stats */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, margin: "40px 0", textAlign: "center" }}>
+          <div className="dl-stats-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, margin: "32px 0", textAlign: "center" }}>
             {[
               { value: "2,000+", label: "Licences assisted" },
               { value: "96%", label: "Success rate" },
@@ -194,7 +202,7 @@ export default function DLAssistancePage() {
           <div style={{ margin: "56px 0" }}>
             <h2 style={{ fontSize: 28, fontWeight: 800, color: "#1a2540", marginBottom: 8, textAlign: "center" }}>How It Works</h2>
             <p style={{ textAlign: "center", color: "#64748b", marginBottom: 40, fontFamily: "system-ui" }}>6 steps. All handled by AI. You just show up at the RTO.</p>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 20 }}>
+            <div className="dl-steps-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 20 }}>
               {steps.map((step) => (
                 <div key={step.number} style={{ background: "white", borderRadius: 16, padding: "24px", border: "1px solid #e5e7eb" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
@@ -209,7 +217,7 @@ export default function DLAssistancePage() {
           </div>
 
           {/* What's included */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24, margin: "56px 0" }}>
+          <div className="dl-included-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24, margin: "40px 0" }}>
             <div style={{ background: "#f0fdf4", borderRadius: 16, padding: "28px", border: "1px solid #bbf7d0" }}>
               <h3 style={{ fontSize: 16, fontWeight: 700, color: "#166534", marginBottom: 16, fontFamily: "system-ui" }}>✅ What's Included</h3>
               {included.map((item) => (
