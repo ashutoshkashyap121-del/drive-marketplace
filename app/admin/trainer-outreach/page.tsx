@@ -53,6 +53,8 @@ export default function TrainerOutreachPage() {
   const [useCustomMessage, setUseCustomMessage] = useState(false);
   const [sending, setSending] = useState(false);
   const [smsResult, setSmsResult] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [saveResult, setSaveResult] = useState("");
   const [activeTab, setActiveTab] = useState<"search" | "message">("search");
 
   const selectedCity = customCity.trim() || city;
@@ -164,6 +166,42 @@ export default function TrainerOutreachPage() {
       setSmsResult("❌ Network error. Please try again.");
     } finally {
       setSending(false);
+    }
+  };
+
+  const handleSaveToDb = async () => {
+    const withPhone = trainers.filter((t) => t.phone);
+    if (withPhone.length === 0) {
+      setSaveResult("⚠️ No trainers with phone numbers to save.");
+      return;
+    }
+    setSaving(true);
+    setSaveResult("");
+    try {
+      const res = await fetch("/api/trainer-outreach/save-leads", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-secret": adminSecret,
+        },
+        body: JSON.stringify({
+          leads: withPhone.map((t) => ({
+            name: t.name,
+            phone: t.phone,
+            city: selectedCity,
+          })),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        setSaveResult(`❌ Failed: ${data.error}`);
+        return;
+      }
+      setSaveResult(`✅ Saved ${data.saved} new leads to DB (${data.skipped} already existed). Now go to /admin/ai-ops to bulk send!`);
+    } catch {
+      setSaveResult("❌ Network error. Please try again.");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -304,6 +342,13 @@ export default function TrainerOutreachPage() {
               </div>
             )}
 
+            {/* Save Result */}
+            {saveResult && (
+              <div className={`rounded-xl p-4 text-sm font-medium ${saveResult.startsWith("✅") ? "bg-blue-50 text-blue-700 border border-blue-200" : "bg-red-50 text-red-700 border border-red-200"}`}>
+                {saveResult}
+              </div>
+            )}
+
             {/* Trainer List */}
             {trainers.length > 0 && (
               <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
@@ -343,6 +388,16 @@ export default function TrainerOutreachPage() {
                         className="px-4 py-2 bg-green-600 text-white text-sm font-bold rounded-lg hover:bg-green-700 disabled:opacity-50"
                       >
                         {sending ? "Sending..." : `📱 Send SMS (${selectedIds.size})`}
+                      </button>
+                    )}
+                    {trainers.length > 0 && (
+                      <button
+                        onClick={handleSaveToDb}
+                        disabled={saving}
+                        className="px-4 py-2 bg-purple-600 text-white text-sm font-bold rounded-lg hover:bg-purple-700 disabled:opacity-50"
+                        title="Save all found schools to OutreachLead DB so ai-ops can bulk-send automatically"
+                      >
+                        {saving ? "Saving..." : `💾 Save to DB (${trainers.filter(t => t.phone).length})`}
                       </button>
                     )}
                   </div>
