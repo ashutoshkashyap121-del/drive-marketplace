@@ -1,113 +1,28 @@
-// app/blog/[slug]/page.tsx
-// Renders individual blog post from DB
-
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Metadata } from "next";
+import Link from "next/link";
+import { getBlogPost, blogPosts } from "@/lib/blog-data";
+import type { Metadata } from "next";
 
-type Post = {
-  id: string;
-  slug: string;
-  title: string;
-  description: string;
-  content: string;
-  category: string;
-  tags: string;
-  author: string;
-  readTime: number;
-  published: boolean;
-  createdAt: string;
-  updatedAt: string;
-};
-
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://learndrive.in";
-
-async function getPost(slug: string): Promise<Post | null> {
-  try {
-    const res = await fetch(`${baseUrl}/api/blog/posts?slug=${slug}`, {
-      next: { revalidate: 300 },
-    });
-    if (!res.ok) return null;
-    return res.json();
-  } catch {
-    return null;
-  }
+export async function generateStaticParams() {
+  return blogPosts.map((post) => ({ slug: post.slug }));
 }
 
-async function getRelatedPosts(category: string, currentSlug: string): Promise<Post[]> {
-  try {
-    const res = await fetch(
-      `${baseUrl}/api/blog/posts?category=${encodeURIComponent(category)}`,
-      { next: { revalidate: 300 } }
-    );
-    if (!res.ok) return [];
-    const posts: Post[] = await res.json();
-    return posts.filter((p) => p.slug !== currentSlug).slice(0, 3);
-  } catch {
-    return [];
-  }
-}
-
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
-  const post = await getPost(slug);
-  if (!post) return { title: "Article Not Found | LearnDrive" };
-
+  const post = getBlogPost(slug);
+  if (!post) return {};
   return {
-    title: `${post.title} | LearnDrive`,
+    title: `${post.title} | LearnDrive Blog`,
     description: post.description,
     openGraph: {
       title: post.title,
       description: post.description,
-      url: `${baseUrl}/blog/${post.slug}`,
       type: "article",
-      publishedTime: post.createdAt,
-      modifiedTime: post.updatedAt,
+      publishedTime: post.date,
+      authors: [post.author],
+      tags: post.tags,
     },
   };
-}
-
-// Convert markdown to HTML (simple, no external deps)
-function markdownToHtml(md: string): string {
-  return md
-    // Tables
-    .replace(/\|(.+)\|\n\|[-| :]+\|\n((?:\|.+\|\n)*)/g, (_, header, rows) => {
-      const ths = header.split("|").filter(Boolean).map((h: string) => `<th>${h.trim()}</th>`).join("");
-      const trs = rows.trim().split("\n").map((row: string) =>
-        `<tr>${row.split("|").filter(Boolean).map((c: string) => `<td>${c.trim()}</td>`).join("")}</tr>`
-      ).join("");
-      return `<div class="overflow-x-auto my-6"><table><thead><tr>${ths}</tr></thead><tbody>${trs}</tbody></table></div>`;
-    })
-    // H1-H3
-    .replace(/^### (.+)$/gm, "<h3>$1</h3>")
-    .replace(/^## (.+)$/gm, "<h2>$1</h2>")
-    .replace(/^# (.+)$/gm, "<h1>$1</h1>")
-    // Bold / italic
-    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
-    .replace(/\*(.+?)\*/g, "<em>$1</em>")
-    // Unordered lists
-    .replace(/(^- .+$\n?)+/gm, (block) => {
-      const items = block.trim().split("\n").map((l) => `<li>${l.replace(/^- /, "")}</li>`).join("");
-      return `<ul>${items}</ul>`;
-    })
-    // Ordered lists
-    .replace(/(^\d+\. .+$\n?)+/gm, (block) => {
-      const items = block.trim().split("\n").map((l) => `<li>${l.replace(/^\d+\. /, "")}</li>`).join("");
-      return `<ol>${items}</ol>`;
-    })
-    // Inline code
-    .replace(/`([^`]+)`/g, "<code>$1</code>")
-    // Blockquote
-    .replace(/^> (.+)$/gm, "<blockquote>$1</blockquote>")
-    // Paragraphs
-    .replace(/\n\n([^<])/g, "\n\n<p>$1")
-    .replace(/([^>])\n\n/g, "$1</p>\n\n")
-    // Links
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
 }
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -118,26 +33,52 @@ const CATEGORY_COLORS: Record<string, string> = {
   "Traffic Rules": "bg-red-100 text-red-700",
 };
 
-export default async function BlogPostPage({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
+function renderMarkdown(content: string): string {
+  return content
+    .trim()
+    .replace(/^\|(.+)\|$/gm, (line) => {
+      const isHeader = line.includes('---|');
+      if (isHeader) return '';
+      const cells = line.split('|').filter((c) => c.trim());
+      return cells.map((c) => `<td style="padding:10px 16px;border:1px solid #e0d8ce;font-size:14px;">${c.trim()}</td>`).join('');
+    })
+    .replace(/((<td[^>]*>.*<\/td>)+)/g, '<tr>$1</tr>')
+    .replace(/^## (.+)$/gm, '<h2 class="md-h2">$1</h2>')
+    .replace(/^### (.+)$/gm, '<h3 class="md-h3">$1</h3>')
+    .replace(/^#### (.+)$/gm, '<h4 class="md-h4">$1</h4>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="md-link">$1</a>')
+    .replace(/^- (.+)$/gm, '<li>$1</li>')
+    .replace(/(<li>.*<\/li>\n?)+/g, (block) => `<ul class="md-ul">${block}</ul>`)
+    .replace(/^(?!<[hul]|<li|<tr|<td|<strong|\s*$)(.+)$/gm, '<p class="md-p">$1</p>')
+    .replace(/---/g, '<hr class="md-hr" />');
+}
+
+export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const post = await getPost(slug);
+  const post = getBlogPost(slug);
+  if (!post) notFound();
 
-  if (!post || !post.published) notFound();
+  const relatedPosts = blogPosts
+    .filter((p) => p.category === post.category && p.slug !== slug)
+    .slice(0, 3);
 
-  const relatedPosts = await getRelatedPosts(post.category, slug);
-  const htmlContent = markdownToHtml(post.content);
-
-  const tags: string[] = (() => {
-    try { return JSON.parse(post.tags); } catch { return []; }
-  })();
+  const htmlContent = renderMarkdown(post.content);
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Breadcrumb */}
+      <style>{`
+        .md-h2 { font-size:1.4rem;font-weight:800;color:#1a2540;margin:2rem 0 0.75rem; }
+        .md-h3 { font-size:1.15rem;font-weight:700;color:#1a2540;margin:1.5rem 0 0.5rem; }
+        .md-p  { color:#374151;line-height:1.8;margin-bottom:1rem;font-size:1rem; }
+        .md-ul { padding-left:1.5rem;margin-bottom:1rem; }
+        .md-ul li { color:#374151;line-height:1.8;margin-bottom:0.25rem; }
+        .md-link { color:#2563eb;text-decoration:underline; }
+        .md-hr { border:none;border-top:1px solid #e5e7eb;margin:2rem 0; }
+        table { width:100%;border-collapse:collapse;margin-bottom:1.5rem; }
+        tr:nth-child(even) td { background:#fafaf8; }
+      `}</style>
+
       <div className="bg-white border-b border-gray-100 px-4 py-3">
         <div className="max-w-3xl mx-auto">
           <nav className="text-sm text-gray-500 flex items-center gap-2">
@@ -151,7 +92,6 @@ export default async function BlogPostPage({
       </div>
 
       <div className="max-w-3xl mx-auto px-4 py-8">
-        {/* Article header */}
         <header className="mb-8">
           <div className="flex items-center gap-3 mb-4">
             <span className={`text-xs px-3 py-1 rounded-full font-semibold ${CATEGORY_COLORS[post.category] || "bg-gray-100 text-gray-600"}`}>
@@ -159,101 +99,57 @@ export default async function BlogPostPage({
             </span>
             <span className="text-gray-400 text-sm">{post.readTime} min read</span>
           </div>
-          <h1 className="text-2xl md:text-3xl font-extrabold text-gray-900 leading-tight mb-4">
-            {post.title}
-          </h1>
-          <p className="text-gray-500 text-base leading-relaxed mb-4">{post.description}</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 leading-tight mb-4">{post.title}</h1>
+          <p className="text-gray-600 text-base leading-relaxed mb-5">{post.description}</p>
           <div className="flex items-center gap-3 text-sm text-gray-400">
             <span>By {post.author}</span>
             <span>·</span>
-            <time dateTime={post.createdAt}>
-              {new Date(post.createdAt).toLocaleDateString("en-IN", {
-                day: "numeric",
-                month: "long",
-                year: "numeric",
-              })}
-            </time>
-            {post.updatedAt !== post.createdAt && (
-              <>
-                <span>·</span>
-                <span>Updated {new Date(post.updatedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</span>
-              </>
-            )}
+            <span>{new Date(post.date).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}</span>
           </div>
-        </header>
-
-        {/* Article content */}
-        <article
-          className="prose prose-gray max-w-none"
-          dangerouslySetInnerHTML={{ __html: htmlContent }}
-          style={{
-            lineHeight: "1.8",
-          }}
-        />
-
-        {/* Tags */}
-        {tags.length > 0 && (
-          <div className="mt-8 pt-6 border-t border-gray-100">
-            <div className="flex flex-wrap gap-2">
-              {tags.map((tag) => (
-                <Link
-                  key={tag}
-                  href={`/blog?search=${encodeURIComponent(tag)}`}
-                  className="text-xs px-3 py-1.5 bg-gray-100 text-gray-600 rounded-full hover:bg-blue-100 hover:text-blue-700 transition-colors"
-                >
-                  #{tag}
-                </Link>
+          {post.tags?.length > 0 && (
+            <div className="flex flex-wrap gap-2 mt-4">
+              {post.tags.map((tag) => (
+                <span key={tag} className="text-xs bg-gray-100 text-gray-500 px-2 py-1 rounded-full">{tag}</span>
               ))}
             </div>
-          </div>
-        )}
+          )}
+        </header>
 
-        {/* CTA box */}
-        <div className="mt-10 bg-gradient-to-r from-[#1a2540] to-blue-700 rounded-2xl p-6 text-white text-center">
-          <h3 className="font-bold text-lg mb-2">Ready to Start Driving?</h3>
-          <p className="text-blue-200 text-sm mb-4">
-            Find a certified driving trainer near you and book your first lesson today.
-          </p>
-          <Link
-            href="/trainers"
-            className="inline-block bg-white text-[#1a2540] font-bold px-6 py-3 rounded-xl hover:bg-blue-50 transition-colors"
-          >
+        <article className="bg-white rounded-2xl border border-gray-100 p-6 sm:p-8 shadow-sm mb-8"
+          dangerouslySetInnerHTML={{ __html: htmlContent }} />
+
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6 mb-6 text-center">
+          <h3 className="font-bold text-gray-900 text-lg mb-2">Ready to start learning to drive?</h3>
+          <p className="text-gray-600 text-sm mb-4">Find certified driving instructors near you. Trial class from ₹299.</p>
+          <Link href="/trainers" className="inline-block bg-amber-400 text-gray-900 font-bold px-6 py-3 rounded-xl text-sm hover:bg-amber-500 transition-colors">
             Find Trainers Near Me →
           </Link>
         </div>
 
-        {/* DL Assistance CTA */}
-        <div className="mt-8 rounded-2xl overflow-hidden" style={{ background: "linear-gradient(135deg, #1a2540 0%, #2d3f6b 100%)" }}>
+        <div className="rounded-2xl overflow-hidden mb-8" style={{ background: "linear-gradient(135deg, #1a2540 0%, #2d3f6b 100%)" }}>
           <div className="p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
               <div className="text-xs font-bold mb-2" style={{ color: "#f59e0b" }}>🆕 NEW SERVICE</div>
               <h3 className="font-bold text-white text-lg mb-1">Get Your Driving Licence Without the RTO Confusion</h3>
-              <p className="text-sm" style={{ color: "#94a3b8" }}>
-                AI fills your form, books your RTO slot, sends document checklist & reminders. Just ₹499.
-              </p>
+              <p className="text-sm" style={{ color: "#94a3b8" }}>AI fills your form, books your RTO slot, sends document checklist & reminders. Just ₹499.</p>
             </div>
-            <Link
-              href="/dl-assistance"
-              className="whitespace-nowrap flex-shrink-0"
-              style={{ background: "#f59e0b", color: "#1a2540", padding: "12px 24px", borderRadius: 10, fontWeight: 800, fontSize: 14, textDecoration: "none" }}
-            >
+            <Link href="/dl-assistance" style={{ background: "#f59e0b", color: "#1a2540", padding: "12px 24px", borderRadius: 10, fontWeight: 800, fontSize: 14, textDecoration: "none", whiteSpace: "nowrap" }}>
               Get Started →
             </Link>
           </div>
         </div>
+
         {relatedPosts.length > 0 && (
-          <div className="mt-12">
+          <div className="mt-4">
             <h2 className="text-xl font-bold text-gray-900 mb-5">Related Articles</h2>
             <div className="grid sm:grid-cols-3 gap-4">
               {relatedPosts.map((related) => (
-                <Link key={related.id} href={`/blog/${related.slug}`}>
-                  <div className="bg-white rounded-xl border border-gray-100 p-4 hover:shadow-md hover:border-blue-100 transition-all h-full">
+                <Link key={related.slug} href={`/blog/${related.slug}`}>
+                  <div className="bg-white rounded-xl border border-gray-100 p-4 hover:shadow-md transition-all h-full">
                     <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${CATEGORY_COLORS[related.category] || "bg-gray-100 text-gray-600"}`}>
                       {related.category}
                     </span>
-                    <h4 className="font-semibold text-gray-900 text-sm mt-2 leading-snug">
-                      {related.title}
-                    </h4>
+                    <h4 className="font-semibold text-gray-900 text-sm mt-2 leading-snug">{related.title}</h4>
                     <p className="text-gray-400 text-xs mt-2">{related.readTime} min read</p>
                   </div>
                 </Link>
@@ -262,35 +158,23 @@ export default async function BlogPostPage({
           </div>
         )}
 
-        {/* Back link */}
         <div className="mt-10 pt-6 border-t border-gray-100">
-          <Link href="/blog" className="text-blue-600 font-medium hover:text-blue-700">
-            ← Back to all articles
-          </Link>
+          <Link href="/blog" className="text-blue-600 font-medium hover:text-blue-700">← Back to all articles</Link>
         </div>
       </div>
 
-      {/* Article schema */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "Article",
-            headline: post.title,
-            description: post.description,
-            author: { "@type": "Organization", name: post.author },
-            publisher: {
-              "@type": "Organization",
-              name: "LearnDrive",
-              url: baseUrl,
-            },
-            datePublished: post.createdAt,
-            dateModified: post.updatedAt,
-            mainEntityOfPage: { "@type": "WebPage", "@id": `${baseUrl}/blog/${post.slug}` },
-          }),
-        }}
-      />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{
+        __html: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "Article",
+          headline: post.title,
+          description: post.description,
+          author: { "@type": "Organization", name: post.author },
+          publisher: { "@type": "Organization", name: "LearnDrive", url: "https://learndrive.in" },
+          datePublished: post.date,
+          mainEntityOfPage: { "@type": "WebPage", "@id": `https://learndrive.in/blog/${post.slug}` },
+        }),
+      }} />
     </div>
   );
 }
