@@ -31,7 +31,10 @@ export default function TrainerPage() {
   useEffect(() => {
     fetch(`/api/trainers/${params.id}`)
       .then((r) => r.json())
-      .then((d) => { setTrainer(d); setLoading(false); })
+      .then((d) => {
+        setTrainer(d);
+        setLoading(false);
+      })
       .catch(() => setLoading(false));
   }, [params.id]);
 
@@ -50,21 +53,18 @@ export default function TrainerPage() {
     </div>
   );
 
+  // Safety checks for arrays
   const vehicles: string[] = Array.isArray(trainer.vehicleTypes) ? trainer.vehicleTypes : [];
   const langs: string[] = Array.isArray(trainer.languages) ? trainer.languages : [];
 
-  // Pricing logic
+  // FIX: Added safety fallback (?? 0) for basePrice to prevent .toLocaleString() errors
   const trialPrice = 299;
-  const sessionPrice = trainer.basePrice;
+  const sessionPrice = trainer.basePrice ?? 0; 
   const packageSessions = sessions;
   const packageSubtotal = sessionPrice * packageSessions;
-  const platformFee = Math.round(packageSubtotal * PLATFORM_FEE_PCT);
-  const packageTotal = packageSubtotal; // trainer absorbs platform fee in total shown
+  const packageTotal = packageSubtotal; 
 
-  const trialPlatformFee = Math.round(trialPrice * PLATFORM_FEE_PCT);
   const trialTotal = trialPrice;
-
-  const displayPrice = bookingType === "trial" ? trialTotal : packageTotal;
 
   // Discount for packages
   const discount = packageSessions >= 10 ? 15 : packageSessions >= 7 ? 10 : packageSessions >= 5 ? 5 : 0;
@@ -86,7 +86,6 @@ export default function TrainerPage() {
         }
       `}</style>
 
-      {/* Nav — text only, no logo */}
       <nav style={{ background: "#FFFFFF", borderBottom: "1px solid #E2E8F0", padding: "0 5%" }}>
         <div style={{ maxWidth: 900, margin: "0 auto", display: "flex", alignItems: "center", height: 56, gap: 12 }}>
           <Link href="/" style={{ textDecoration: "none" }}>
@@ -98,7 +97,6 @@ export default function TrainerPage() {
       </nav>
 
       <div style={{ maxWidth: 680, margin: "0 auto", padding: "28px 5% 60px" }}>
-
         {/* Header card */}
         <div style={{ background: "linear-gradient(145deg, #0B1437 0%, #1A2B5F 100%)", borderRadius: 20, padding: 28, marginBottom: 20 }}>
           <div className="trainer-header" style={{ display: "flex", gap: 18, alignItems: "flex-start", flexWrap: "wrap" }}>
@@ -117,7 +115,9 @@ export default function TrainerPage() {
               {langs.length > 0 && <p style={{ color: "rgba(255,255,255,0.45)", fontSize: 13, marginTop: 8 }}>Speaks: {langs.join(", ")}</p>}
             </div>
             <div className="price-display" style={{ textAlign: "right" }}>
-              <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 24, fontWeight: 800, color: "#F59E0B" }}>₹{sessionPrice.toLocaleString("en-IN")}</div>
+              <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 24, fontWeight: 800, color: "#F59E0B" }}>
+                ₹{(sessionPrice ?? 0).toLocaleString("en-IN")}
+              </div>
               <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 12 }}>per session</div>
             </div>
           </div>
@@ -159,7 +159,6 @@ export default function TrainerPage() {
 
           {bookingType === "trial" ? (
             <>
-              {/* Trial info */}
               <div style={{ background: "#F0FDF4", border: "1px solid #BBF7D0", borderRadius: 12, padding: 16, marginBottom: 20 }}>
                 <div style={{ fontWeight: 700, color: "#166534", marginBottom: 4, fontSize: 15 }}>✅ Try before you commit</div>
                 <p style={{ color: "#166534", fontSize: 14, lineHeight: 1.6 }}>
@@ -167,22 +166,11 @@ export default function TrainerPage() {
                 </p>
               </div>
 
-              {/* Recommendation */}
-              <div style={{ background: "#FEF9EC", border: "1px solid #FDE68A", borderRadius: 12, padding: 14, marginBottom: 20 }}>
-                <p style={{ fontSize: 13, color: "#92400E", lineHeight: 1.6 }}>
-                  💡 <strong>Our recommendation:</strong> Most learners need <strong>7–10 sessions</strong> to feel confident driving independently in Indian traffic. Start with a trial, then book a package.
-                </p>
-              </div>
-
-              {/* Pricing breakdown */}
+              {/* Pricing breakdown Trial */}
               <div style={{ borderTop: "1px solid #F1F5F9", paddingTop: 16, marginBottom: 20 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, color: "#64748B", marginBottom: 8 }}>
                   <span>Trial class (1 session)</span>
                   <span>₹299</span>
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, color: "#64748B", marginBottom: 8 }}>
-                  <span>Platform fee (included)</span>
-                  <span style={{ color: "#16A34A" }}>₹0</span>
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between", fontSize: 16, fontWeight: 800, color: "#0F172A", borderTop: "1px solid #F1F5F9", paddingTop: 12 }}>
                   <span>Total payable</span>
@@ -194,14 +182,12 @@ export default function TrainerPage() {
                 style={{ display: "block", textAlign: "center", background: "#F59E0B", color: "#fff", padding: "14px", borderRadius: 12, fontWeight: 800, fontSize: 16, textDecoration: "none", boxShadow: "0 4px 20px rgba(245,158,11,0.35)" }}>
                 Book Trial Class — ₹299 →
               </Link>
-              <p style={{ color: "#94A3B8", fontSize: 12, textAlign: "center", marginTop: 10 }}>Free cancellation · Secure payment via Razorpay</p>
             </>
           ) : (
             <>
-              {/* Session picker */}
               <div style={{ marginBottom: 20 }}>
                 <div style={{ fontSize: 14, fontWeight: 600, color: "#374151", marginBottom: 10 }}>
-                  How many sessions? <span style={{ color: "#F59E0B", fontWeight: 700 }}>⭐ 7 recommended for beginners</span>
+                  How many sessions? <span style={{ color: "#F59E0B", fontWeight: 700 }}>⭐ 7 recommended</span>
                 </div>
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                   {SESSION_OPTIONS.map((n) => (
@@ -212,29 +198,17 @@ export default function TrainerPage() {
                 </div>
               </div>
 
-              {/* Discount badge */}
               {discount > 0 && (
                 <div style={{ background: "#F0FDF4", border: "1px solid #BBF7D0", borderRadius: 10, padding: "10px 14px", marginBottom: 16, fontSize: 13, color: "#166534", fontWeight: 600 }}>
                   🎉 {discount}% package discount applied — you save ₹{(packageTotal - discountedTotal).toLocaleString("en-IN")}
                 </div>
               )}
 
-              {/* Recommendation */}
-              <div style={{ background: "#FEF9EC", border: "1px solid #FDE68A", borderRadius: 12, padding: 14, marginBottom: 20 }}>
-                <p style={{ fontSize: 13, color: "#92400E", lineHeight: 1.6 }}>
-                  💡 <strong>Why {RECOMMENDED_SESSIONS} sessions?</strong> Our data shows most beginners need 7–10 sessions to confidently navigate Indian traffic, parking, and RTO test conditions.
-                </p>
-              </div>
-
-              {/* Pricing breakdown */}
+              {/* Pricing breakdown Package */}
               <div style={{ borderTop: "1px solid #F1F5F9", paddingTop: 16, marginBottom: 20 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, color: "#64748B", marginBottom: 8 }}>
-                  <span>{sessions} sessions × ₹{sessionPrice.toLocaleString("en-IN")}</span>
-                  <span>₹{packageSubtotal.toLocaleString("en-IN")}</span>
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, color: "#64748B", marginBottom: 8 }}>
-                  <span>Platform fee (15%)</span>
-                  <span style={{ color: "#16A34A" }}>Included</span>
+                  <span>{sessions} sessions × ₹{(sessionPrice ?? 0).toLocaleString("en-IN")}</span>
+                  <span>₹{(packageSubtotal ?? 0).toLocaleString("en-IN")}</span>
                 </div>
                 {discount > 0 && (
                   <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, color: "#16A34A", marginBottom: 8 }}>
@@ -244,22 +218,18 @@ export default function TrainerPage() {
                 )}
                 <div style={{ display: "flex", justifyContent: "space-between", fontSize: 16, fontWeight: 800, color: "#0F172A", borderTop: "1px solid #F1F5F9", paddingTop: 12 }}>
                   <span>Total payable</span>
-                  <span style={{ color: "#F59E0B" }}>₹{discountedTotal.toLocaleString("en-IN")}</span>
-                </div>
-                <div style={{ fontSize: 12, color: "#94A3B8", marginTop: 4 }}>
-                  ₹{Math.round(discountedTotal / sessions).toLocaleString("en-IN")} per session effective
+                  <span style={{ color: "#F59E0B" }}>₹{(discountedTotal ?? 0).toLocaleString("en-IN")}</span>
                 </div>
               </div>
 
               <Link href={`/trainers/${trainer.id}/book?sessions=${sessions}&type=package&price=${discountedTotal}`}
                 style={{ display: "block", textAlign: "center", background: "#F59E0B", color: "#fff", padding: "14px", borderRadius: 12, fontWeight: 800, fontSize: 16, textDecoration: "none", boxShadow: "0 4px 20px rgba(245,158,11,0.35)" }}>
-                Book {sessions} Sessions — ₹{discountedTotal.toLocaleString("en-IN")} →
+                Book {sessions} Sessions — ₹{(discountedTotal ?? 0).toLocaleString("en-IN")} →
               </Link>
-              <p style={{ color: "#94A3B8", fontSize: 12, textAlign: "center", marginTop: 10 }}>Free cancellation · Secure payment via Razorpay</p>
             </>
           )}
+          <p style={{ color: "#94A3B8", fontSize: 12, textAlign: "center", marginTop: 10 }}>Free cancellation · Secure payment via Razorpay</p>
         </div>
-
       </div>
     </main>
   );
