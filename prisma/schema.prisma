@@ -77,6 +77,9 @@ model Trainer {
   aadharIV        String?
   aadharAuthTag   String?
 
+  // Admin
+  adminNotes     String?
+
   // Relations
   vehicles       Vehicle[]
   bookings       Booking[]
@@ -171,7 +174,6 @@ model AdminAuditLog {
   @@index([entityType])
   @@index([createdAt])
 }
-// Add this model to the bottom of your prisma/schema.prisma file
 
 model Waitlist {
   id        Int      @id @default(autoincrement())
@@ -180,6 +182,7 @@ model Waitlist {
 
   @@index([createdAt])
 }
+
 model StudentWaitlist {
   id        String   @id @default(cuid())
   name      String?
@@ -190,4 +193,21 @@ model StudentWaitlist {
   updatedAt DateTime @updatedAt
 
   @@map("student_waitlist")
+}
+
+model OutreachLead {
+  id               Int       @id @default(autoincrement())
+  name             String
+  phone            String    @unique
+  city             String
+  source           String    @default("manual") // manual, gmaps, justdial
+  outreachStatus   String    @default("PENDING") // PENDING, CONTACTED, FAILED, REGISTERED
+  whatsappSent     Boolean   @default(false)
+  smsSent          Boolean   @default(false)
+  lastContactedAt  DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@index([outreachStatus])
+  @@index([city])
 }
