@@ -29,7 +29,7 @@ export default function TrainerPage() {
   useEffect(() => {
     fetch(`/api/trainers/${params.id}`)
       .then((r) => r.json())
-      .then((d) => { setTrainer(d); setLoading(false); })
+      .then((d) => { setTrainer(d.trainer ?? d); setLoading(false); })
       .catch(() => setLoading(false));
   }, [params.id]);
 
