@@ -158,6 +158,7 @@ export default function HomePage() {
           <div style={{ flex: 1 }} />
           <Link href="/blog" style={{ color: "#64748B", textDecoration: "none", fontSize: 14, fontWeight: 500, padding: "6px 12px" }}>Blog</Link>
           <Link href="/rto-test/practice" style={{ color: "#64748B", textDecoration: "none", fontSize: 14, fontWeight: 500, padding: "6px 12px" }}>RTO Test</Link>
+          <Link href="/dl-assistance" style={{ color: "#64748B", textDecoration: "none", fontSize: 14, fontWeight: 500, padding: "6px 12px" }}>DL Assistance</Link>
           <Link href="/trainers/register" style={{ background: "#F59E0B", color: "#fff", textDecoration: "none", fontSize: 14, fontWeight: 700, padding: "8px 18px", borderRadius: 10 }}>
             Become a trainer
           </Link>
@@ -370,6 +371,39 @@ export default function HomePage() {
         </div>
       </div>
 
+      {/* ── DL ASSISTANCE BANNER ── */}
+      <div style={{ background: "linear-gradient(135deg, #1a2540 0%, #2d3f6b 100%)", padding: "56px 5%" }}>
+        <div style={{ maxWidth: 1100, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 32 }}>
+          <div style={{ maxWidth: 560 }}>
+            <div style={{ display: "inline-block", background: "rgba(245,158,11,0.2)", color: "#f59e0b", padding: "4px 14px", borderRadius: 20, fontSize: 12, fontWeight: 600, marginBottom: 16, border: "1px solid rgba(245,158,11,0.3)" }}>
+              🆕 New Service
+            </div>
+            <h2 style={{ fontSize: "clamp(1.4rem, 3vw, 2rem)", fontWeight: 800, color: "#fff", marginBottom: 12, lineHeight: 1.3 }}>
+              Get Your Driving Licence<br />Without the RTO Confusion
+            </h2>
+            <p style={{ color: "#94a3b8", fontSize: 15, lineHeight: 1.7, marginBottom: 8 }}>
+              Our AI fills your Sarathi form, books your RTO slot, sends your document checklist and reminds you till test day.
+            </p>
+            <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 24 }}>
+              {["✅ Form 4 filled automatically", "📅 RTO slot booked", "📋 Document checklist", "🔔 Reminders till test day"].map((item) => (
+                <span key={item} style={{ color: "#cbd5e1", fontSize: 13 }}>{item}</span>
+              ))}
+            </div>
+            <Link href="/dl-assistance" style={{ display: "inline-block", background: "#f59e0b", color: "#1a2540", padding: "14px 32px", borderRadius: 12, fontWeight: 800, fontSize: 15, textDecoration: "none" }}>
+              Get Started — ₹499 →
+            </Link>
+          </div>
+          <div style={{ background: "rgba(255,255,255,0.05)", borderRadius: 20, padding: "28px 32px", border: "1px solid rgba(255,255,255,0.1)", minWidth: 200, textAlign: "center" }}>
+            <div style={{ fontSize: 48, fontWeight: 900, color: "#f59e0b" }}>96%</div>
+            <div style={{ color: "#94a3b8", fontSize: 13, marginBottom: 20 }}>Success rate</div>
+            <div style={{ fontSize: 48, fontWeight: 900, color: "#f59e0b" }}>2,000+</div>
+            <div style={{ color: "#94a3b8", fontSize: 13, marginBottom: 20 }}>Licences assisted</div>
+            <div style={{ fontSize: 48, fontWeight: 900, color: "#f59e0b" }}>₹499</div>
+            <div style={{ color: "#94a3b8", fontSize: 13 }}>All inclusive</div>
+          </div>
+        </div>
+      </div>
+
       {/* ── BLOG ── */}
       {recentBlogs.length > 0 && (
         <div style={{ padding: "72px 5%", maxWidth: 1100, margin: "0 auto" }}>
@@ -404,7 +438,7 @@ export default function HomePage() {
             </div>
             <div>
               <div style={{ color: "#fff", fontWeight: 600, fontSize: 14, marginBottom: 12 }}>Quick Links</div>
-              {[["Find Trainers", "/trainers"], ["Become a Trainer", "/trainers/register"], ["RTO Mock Test", "/rto-test/practice"], ["Blog", "/blog"]].map(([label, href]) => (
+              {[["Find Trainers", "/trainers"], ["Become a Trainer", "/trainers/register"], ["DL Assistance", "/dl-assistance"], ["RTO Mock Test", "/rto-test/practice"], ["Blog", "/blog"]].map(([label, href]) => (
                 <div key={href} style={{ marginBottom: 8 }}>
                   <Link href={href} style={{ color: "rgba(255,255,255,0.55)", textDecoration: "none", fontSize: 13 }}>{label}</Link>
                 </div>
