@@ -138,6 +138,12 @@ export default function HomePage() {
         .card-hover:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(0,0,0,0.1); }
         .city-chip:hover { background: #FEF3C7 !important; border-color: #F59E0B !important; color: #B45309 !important; }
         input:focus { outline: none; border-color: #F59E0B !important; }
+        .nav-links { display: flex; align-items: center; gap: 2px; }
+        .nav-trainer-btn { white-space: nowrap !important; flex-shrink: 0 !important; }
+        @media (max-width: 600px) {
+          .nav-links { display: none !important; }
+          .nav-trainer-btn { font-size: 12px !important; padding: 7px 10px !important; }
+        }
       `}</style>
 
       {/* ── NAV ── */}
@@ -152,8 +158,8 @@ export default function HomePage() {
             <Link href="/rto-test/practice" style={{ color: "#64748B", textDecoration: "none", fontSize: 14, fontWeight: 500, padding: "6px 12px" }}>RTO Test</Link>
             <Link href="/dl-assistance" style={{ color: "#64748B", textDecoration: "none", fontSize: 14, fontWeight: 500, padding: "6px 12px" }}>DL Assistance</Link>
           </div>
-          <Link href="/trainers/register" className="nav-btn" style={{ background: "#F59E0B", color: "#fff", textDecoration: "none", fontSize: 14, fontWeight: 700, padding: "8px 18px", borderRadius: 10 }}>
-            Become a Trainer
+          <Link href="/trainers/register" className="nav-trainer-btn" style={{ background: "#F59E0B", color: "#fff", textDecoration: "none", fontSize: 14, fontWeight: 700, padding: "8px 18px", borderRadius: 10 }}>
+            Join as Trainer
           </Link>
         </div>
       </nav>
