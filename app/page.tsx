@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import { blogPosts } from "@/lib/blog-data";
 
 interface Trainer {
   id: number;
@@ -12,14 +13,6 @@ interface Trainer {
   languages: string[];
   vehicleTypes: string[];
   rating?: number;
-}
-
-interface BlogPost {
-  slug: string;
-  title: string;
-  description: string;
-  category: string;
-  readTime: number;
 }
 
 const TOP_CITIES = [
@@ -72,7 +65,7 @@ export default function HomePage() {
   const [wlSubmitting, setWlSubmitting] = useState(false);
   const [wlDone, setWlDone] = useState(false);
   const [wlError, setWlError] = useState("");
-  const [recentBlogs, setRecentBlogs] = useState<BlogPost[]>([]);
+  const [recentBlogs] = useState(blogPosts.slice(0, 3));
   const resultRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -88,13 +81,6 @@ export default function HomePage() {
     };
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
-  }, []);
-
-  useEffect(() => {
-    fetch("/api/blogs/recent")
-      .then((r) => r.json())
-      .then((d) => setRecentBlogs(d.posts || []))
-      .catch(() => {});
   }, []);
 
   const handleSearch = async (city: string) => {
