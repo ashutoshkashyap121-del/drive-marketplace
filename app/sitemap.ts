@@ -152,6 +152,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE}/blog`, priority: 0.9, changeFrequency: "daily", lastModified: new Date() },
     { url: `${BASE}/rto-finder`, priority: 0.7, changeFrequency: "monthly", lastModified: new Date() },
     { url: `${BASE}/dl-expiry`, priority: 0.7, changeFrequency: "monthly", lastModified: new Date() },
+    { url: `${BASE}/dl-assistance`, priority: 0.9, changeFrequency: "monthly", lastModified: new Date() },
     { url: `${BASE}/privacy`, priority: 0.3, changeFrequency: "yearly", lastModified: new Date() },
     { url: `${BASE}/terms`, priority: 0.3, changeFrequency: "yearly", lastModified: new Date() },
     { url: `${BASE}/help`, priority: 0.5, changeFrequency: "monthly", lastModified: new Date() },
