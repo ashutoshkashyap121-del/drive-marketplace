@@ -2,7 +2,12 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { blogPosts } from "@/lib/blog-data";
+
+const RECENT_BLOGS = [
+  { slug: "how-to-get-driving-licence-india", title: "How to Get a Driving Licence in India (2025 Complete Guide)", description: "Step-by-step guide to getting your driving licence in India – from learner's licence to permanent licence, RTO test tips, and documents checklist.", category: "Licence Guide", readTime: 8 },
+  { slug: "driving-licence-documents-required", title: "Documents Required for Driving Licence in India", description: "Complete list of documents needed for learner's licence and permanent driving licence application at RTO offices across India.", category: "Licence Guide", readTime: 5 },
+  { slug: "rto-mock-test-india", title: "RTO Mock Test India – Practice Driving Test Questions", description: "Practice with 100+ RTO exam questions covering traffic rules, road signs, and driving regulations to pass your driving licence test.", category: "RTO Tips", readTime: 6 },
+];
 
 interface Trainer {
   id: number;
@@ -65,7 +70,7 @@ export default function HomePage() {
   const [wlSubmitting, setWlSubmitting] = useState(false);
   const [wlDone, setWlDone] = useState(false);
   const [wlError, setWlError] = useState("");
-  const [recentBlogs] = useState(blogPosts.slice(0, 3));
+  const recentBlogs = RECENT_BLOGS;
   const resultRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
