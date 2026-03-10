@@ -1,13 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 
-// Razorpay types
 declare global {
-  interface Window {
-    Razorpay: any;
-  }
+  interface Window { Razorpay: any; }
 }
 
 interface Trainer {
@@ -15,6 +12,7 @@ interface Trainer {
   name: string;
   city: string;
   basePrice: number | null;
+  price?: number | null;
   vehicleTypes: string[];
   experience: number;
 }
@@ -30,6 +28,15 @@ interface FormErrors {
 export default function BookingPage() {
   const { id } = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Read everything passed from the trainer page
+  const sessions = parseInt(searchParams.get("sessions") || "1");
+  const bookingType = searchParams.get("type") || "trial";
+  const priceFromUrl = parseInt(searchParams.get("price") || "0");
+  const trainerNameFromUrl = searchParams.get("trainerName") || "";
+  const trainerCityFromUrl = searchParams.get("trainerCity") || "";
+
   const [trainer, setTrainer] = useState<Trainer | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -57,11 +64,20 @@ export default function BookingPage() {
     fetch(`/api/trainers/${id}`)
       .then((r) => r.json())
       .then((data) => {
-        setTrainer(data.trainer);
+        // FIX: API returns the trainer object directly, not nested under .trainer
+        const t = data.trainer ?? data;
+        setTrainer(t);
         setLoading(false);
       })
       .catch(() => setLoading(false));
   }, [id]);
+
+  // FIX: Use URL price if API returns zero/null basePrice
+  const trainerName = trainer?.name || trainerNameFromUrl;
+  const trainerCity = trainer?.city || trainerCityFromUrl;
+  const sessionPrice = trainer?.basePrice || trainer?.price || 0;
+  // Use the price calculated on the trainer page (includes discounts, sessions)
+  const totalAmount = priceFromUrl > 0 ? priceFromUrl : sessionPrice * sessions;
 
   function validate(): boolean {
     const e: FormErrors = {};
@@ -79,28 +95,29 @@ export default function BookingPage() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setForm({
-      ...form,
-      [name]: name === "mobile" || name === "pincode" ? value.replace(/\D/g, "") : value,
-    });
+    setForm({ ...form, [name]: name === "mobile" || name === "pincode" ? value.replace(/\D/g, "") : value });
     setErrors((prev) => ({ ...prev, [name]: undefined }));
     setSubmitError("");
   };
 
   const handleSubmit = async () => {
-    if (!validate() || !trainer) return;
+    if (!validate()) return;
+    if (totalAmount <= 0) {
+      setSubmitError("Invalid amount. Please go back and select a session again.");
+      return;
+    }
     setSubmitting(true);
     setSubmitError("");
 
     try {
-      // ── Step 1: Create Razorpay order ──────────────────────────────────────
+      // Step 1: Create Razorpay order with the CORRECT total amount
       const orderRes = await fetch("/api/razorpay/order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          amount: trainer.basePrice ?? 0,
+          amount: totalAmount,
           customerName: form.customerName,
-          trainerName: trainer.name,
+          trainerName,
         }),
       });
 
@@ -112,22 +129,22 @@ export default function BookingPage() {
         return;
       }
 
-      // ── Step 2: Open Razorpay checkout popup ───────────────────────────────
+      // Step 2: Open Razorpay checkout
       const options = {
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
         amount: orderData.amount,
         currency: orderData.currency,
         name: "LearnDrive",
-        description: `Driving session with ${trainer.name}`,
+        description: bookingType === "trial"
+          ? `Trial class with ${trainerName}`
+          : `${sessions} sessions with ${trainerName}`,
         order_id: orderData.orderId,
         prefill: {
           name: form.customerName,
           contact: form.mobile,
           email: form.email || "",
         },
-        theme: {
-          color: "#F59E0B",
-        },
+        theme: { color: "#F59E0B" },
         modal: {
           ondismiss: () => {
             setSubmitError("Payment cancelled. Your booking was not confirmed.");
@@ -139,8 +156,8 @@ export default function BookingPage() {
           razorpay_payment_id: string;
           razorpay_signature: string;
         }) => {
-          // ── Step 3: Verify payment + create booking ────────────────────────
           try {
+            // Step 3: Verify payment + create booking
             const verifyRes = await fetch("/api/razorpay/verify", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -152,10 +169,13 @@ export default function BookingPage() {
                 customerName: form.customerName,
                 mobile: form.mobile,
                 email: form.email,
-                city: trainer.city,
+                city: trainerCity,
                 address: form.address,
                 pincode: form.pincode,
                 bookingDate: form.bookingDate,
+                sessions,
+                bookingType,
+                totalAmount,
               }),
             });
 
@@ -167,12 +187,9 @@ export default function BookingPage() {
               return;
             }
 
-            // ✅ Success — redirect to success page
-            router.push(
-              `/success?id=${verifyData.booking.id}&trainer=${encodeURIComponent(trainer.name)}`
-            );
+            router.push(`/success?id=${verifyData.booking.id}&trainer=${encodeURIComponent(trainerName)}`);
           } catch {
-            setSubmitError("Payment received but booking failed. Please contact support with your payment ID: " + response.razorpay_payment_id);
+            setSubmitError("Payment received but booking failed. Contact support with payment ID: " + response.razorpay_payment_id);
             setSubmitting(false);
           }
         },
@@ -189,18 +206,6 @@ export default function BookingPage() {
 
   const todayStr = new Date().toISOString().split("T")[0];
 
-  if (loading) return (
-    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#F8F7F4", fontFamily: "'DM Sans', sans-serif" }}>
-      <p style={{ color: "#64748B" }}>Loading...</p>
-    </div>
-  );
-
-  if (!trainer) return (
-    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#F8F7F4", fontFamily: "'DM Sans', sans-serif" }}>
-      <p style={{ color: "#64748B" }}>Trainer not found.</p>
-    </div>
-  );
-
   const inputStyle = (hasError: boolean) => ({
     width: "100%",
     padding: "13px 16px",
@@ -215,6 +220,25 @@ export default function BookingPage() {
     boxSizing: "border-box" as const,
   });
 
+  if (loading) return (
+    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#F8F7F4" }}>
+      <p style={{ color: "#64748B" }}>Loading...</p>
+    </div>
+  );
+
+  // FIX: Show page even if API fails — we have name/city from URL params
+  if (!trainer && !trainerNameFromUrl) return (
+    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#F8F7F4" }}>
+      <div style={{ textAlign: "center" }}>
+        <p style={{ color: "#64748B", marginBottom: 16 }}>Could not load trainer details.</p>
+        <button onClick={() => router.back()} style={{ color: "#F59E0B", background: "none", border: "none", cursor: "pointer", fontWeight: 700, fontSize: 16 }}>← Go Back</button>
+      </div>
+    </div>
+  );
+
+  const isPackage = bookingType === "package";
+  const perSessionEffective = isPackage && sessions > 1 ? Math.round(totalAmount / sessions) : null;
+
   return (
     <main style={{ minHeight: "100vh", background: "#F8F7F4", fontFamily: "'DM Sans', 'Segoe UI', sans-serif" }}>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Sora:wght@700;800&display=swap');`}</style>
@@ -222,34 +246,49 @@ export default function BookingPage() {
       {/* Header */}
       <div style={{ background: "linear-gradient(145deg, #0B1437 0%, #1A2B5F 100%)", padding: "24px 5%" }}>
         <div style={{ maxWidth: 560, margin: "0 auto" }}>
-          <button onClick={() => router.back()} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.5)", fontSize: "0.85rem", cursor: "pointer", marginBottom: 8, padding: 0 }}>← Back</button>
-          <h1 style={{ fontFamily: "'Sora', sans-serif", fontSize: "1.6rem", fontWeight: 800, color: "#FFFFFF" }}>Book a Session</h1>
+          <button onClick={() => router.back()} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.5)", fontSize: "0.85rem", cursor: "pointer", marginBottom: 8, padding: 0 }}>
+            ← Back
+          </button>
+          <h1 style={{ fontFamily: "'Sora', sans-serif", fontSize: "1.6rem", fontWeight: 800, color: "#FFFFFF" }}>
+            {isPackage ? `Book ${sessions} Sessions` : "Book Trial Class"}
+          </h1>
         </div>
       </div>
 
       <div style={{ maxWidth: 560, margin: "0 auto", padding: "32px 5% 60px" }}>
 
-        {/* Trainer summary card */}
-        <div style={{ background: "#FFFFFF", borderRadius: 20, border: "1px solid #E2E8F0", padding: "20px 24px", marginBottom: 20, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div>
-            <p style={{ fontSize: "0.72rem", color: "#94A3B8", textTransform: "uppercase", letterSpacing: "0.8px", fontWeight: 600, marginBottom: 4 }}>Booking with</p>
-            <h2 style={{ fontFamily: "'Sora', sans-serif", fontSize: "1.1rem", fontWeight: 800, color: "#0F172A", marginBottom: 2 }}>{trainer.name}</h2>
-            <p style={{ fontSize: "0.82rem", color: "#64748B" }}>📍 {trainer.city} · {trainer.experience} yrs exp</p>
-          </div>
-          {trainer.basePrice && (
-            <div style={{ textAlign: "right" }}>
-              <p style={{ fontFamily: "'Sora', sans-serif", fontSize: "1.4rem", fontWeight: 800, color: "#F59E0B" }}>₹{trainer.basePrice.toLocaleString("en-IN")}</p>
-              <p style={{ fontSize: "0.75rem", color: "#94A3B8" }}>per session</p>
+        {/* Trainer + booking summary */}
+        <div style={{ background: "#FFFFFF", borderRadius: 20, border: "1px solid #E2E8F0", padding: "20px 24px", marginBottom: 20 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div>
+              <p style={{ fontSize: "0.72rem", color: "#94A3B8", textTransform: "uppercase", letterSpacing: "0.8px", fontWeight: 600, marginBottom: 4 }}>
+                {isPackage ? `${sessions}-session package with` : "Trial class with"}
+              </p>
+              <h2 style={{ fontFamily: "'Sora', sans-serif", fontSize: "1.1rem", fontWeight: 800, color: "#0F172A", marginBottom: 2 }}>
+                {trainerName}
+              </h2>
+              <p style={{ fontSize: "0.82rem", color: "#64748B" }}>📍 {trainerCity}</p>
             </div>
-          )}
+            <div style={{ textAlign: "right" }}>
+              <p style={{ fontFamily: "'Sora', sans-serif", fontSize: "1.5rem", fontWeight: 800, color: "#F59E0B" }}>
+                ₹{totalAmount.toLocaleString("en-IN")}
+              </p>
+              {perSessionEffective && (
+                <p style={{ fontSize: "0.72rem", color: "#94A3B8" }}>
+                  ₹{perSessionEffective.toLocaleString("en-IN")}/session
+                </p>
+              )}
+              {!isPackage && <p style={{ fontSize: "0.75rem", color: "#94A3B8" }}>1 session</p>}
+            </div>
+          </div>
         </div>
 
-        {/* Payment badge */}
+        {/* Secure payment badge */}
         <div style={{ background: "#F0FDF4", border: "1px solid #BBF7D0", borderRadius: 12, padding: "12px 16px", marginBottom: 20, display: "flex", alignItems: "center", gap: 10 }}>
           <span style={{ fontSize: "1.2rem" }}>🔒</span>
           <div>
             <p style={{ fontSize: "0.82rem", fontWeight: 600, color: "#166534", margin: 0 }}>Secure Payment via Razorpay</p>
-            <p style={{ fontSize: "0.75rem", color: "#4ADE80", margin: 0 }}>UPI · Cards · Net Banking · Wallets accepted</p>
+            <p style={{ fontSize: "0.75rem", color: "#16A34A", margin: 0 }}>UPI · Cards · Net Banking · Wallets accepted</p>
           </div>
         </div>
 
@@ -280,7 +319,9 @@ export default function BookingPage() {
 
           {/* Email */}
           <div style={{ marginBottom: 16 }}>
-            <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 600, color: "#64748B", textTransform: "uppercase", letterSpacing: "0.8px", marginBottom: 8 }}>Email <span style={{ color: "#CBD5E1", fontWeight: 400 }}>(optional)</span></label>
+            <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 600, color: "#64748B", textTransform: "uppercase", letterSpacing: "0.8px", marginBottom: 8 }}>
+              Email <span style={{ color: "#CBD5E1", fontWeight: 400 }}>(optional)</span>
+            </label>
             <input type="email" name="email" value={form.email} onChange={handleChange}
               placeholder="you@example.com" style={inputStyle(false)}
               onFocus={(e) => (e.target.style.borderColor = "#F59E0B")}
@@ -299,7 +340,9 @@ export default function BookingPage() {
 
           {/* Pincode */}
           <div style={{ marginBottom: 16 }}>
-            <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 600, color: "#64748B", textTransform: "uppercase", letterSpacing: "0.8px", marginBottom: 8 }}>Pincode <span style={{ color: "#CBD5E1", fontWeight: 400 }}>(optional)</span></label>
+            <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 600, color: "#64748B", textTransform: "uppercase", letterSpacing: "0.8px", marginBottom: 8 }}>
+              Pincode <span style={{ color: "#CBD5E1", fontWeight: 400 }}>(optional)</span>
+            </label>
             <input type="text" name="pincode" value={form.pincode} onChange={handleChange}
               placeholder="110001" maxLength={6} inputMode="numeric"
               style={inputStyle(!!errors.pincode)}
@@ -310,7 +353,7 @@ export default function BookingPage() {
 
           {/* Date */}
           <div style={{ marginBottom: 24 }}>
-            <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 600, color: "#64748B", textTransform: "uppercase", letterSpacing: "0.8px", marginBottom: 8 }}>Preferred Date *</label>
+            <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 600, color: "#64748B", textTransform: "uppercase", letterSpacing: "0.8px", marginBottom: 8 }}>Preferred Start Date *</label>
             <input type="date" name="bookingDate" value={form.bookingDate} onChange={handleChange}
               min={todayStr} style={inputStyle(!!errors.bookingDate)}
               onFocus={(e) => (e.target.style.borderColor = "#F59E0B")}
@@ -326,23 +369,38 @@ export default function BookingPage() {
 
           {/* Price summary */}
           <div style={{ background: "#F8FAFC", borderRadius: 12, padding: "14px 16px", marginBottom: 20, border: "1px solid #E2E8F0" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", color: "#64748B", marginBottom: 6 }}>
-              <span>Session fee</span>
-              <span>₹{(trainer.basePrice ?? 0).toLocaleString("en-IN")}</span>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", color: "#64748B", marginBottom: 10, paddingBottom: 10, borderBottom: "1px solid #E2E8F0" }}>
-              <span>Platform fee</span>
-              <span>₹{Math.round((trainer.basePrice ?? 0) * 0.15).toLocaleString("en-IN")}</span>
-            </div>
+            {isPackage ? (
+              <>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", color: "#64748B", marginBottom: 6 }}>
+                  <span>{sessions} sessions</span>
+                  <span>₹{totalAmount.toLocaleString("en-IN")}</span>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", color: "#64748B", marginBottom: 10, paddingBottom: 10, borderBottom: "1px solid #E2E8F0" }}>
+                  <span>Platform fee</span>
+                  <span style={{ color: "#16A34A" }}>Included</span>
+                </div>
+              </>
+            ) : (
+              <>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", color: "#64748B", marginBottom: 6 }}>
+                  <span>Trial class (1 session)</span>
+                  <span>₹299</span>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", color: "#64748B", marginBottom: 10, paddingBottom: 10, borderBottom: "1px solid #E2E8F0" }}>
+                  <span>Platform fee</span>
+                  <span style={{ color: "#16A34A" }}>Included</span>
+                </div>
+              </>
+            )}
             <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "'Sora', sans-serif", fontWeight: 800, fontSize: "1rem", color: "#0F172A" }}>
               <span>Total payable</span>
-              <span style={{ color: "#F59E0B" }}>₹{(trainer.basePrice ?? 0).toLocaleString("en-IN")}</span>
+              <span style={{ color: "#F59E0B" }}>₹{totalAmount.toLocaleString("en-IN")}</span>
             </div>
           </div>
 
           <button onClick={handleSubmit} disabled={submitting}
             style={{ width: "100%", padding: "15px", background: submitting ? "#94A3B8" : "linear-gradient(135deg, #F59E0B, #D97706)", color: "#FFFFFF", fontFamily: "'Sora', sans-serif", fontSize: "1rem", fontWeight: 700, border: "none", borderRadius: 12, cursor: submitting ? "not-allowed" : "pointer", boxShadow: "0 4px 16px rgba(245,158,11,0.4)", transition: "all 0.2s" }}>
-            {submitting ? "⏳ Opening Payment..." : `Pay ₹${(trainer.basePrice ?? 0).toLocaleString("en-IN")} & Confirm →`}
+            {submitting ? "⏳ Opening Payment..." : `Pay ₹${totalAmount.toLocaleString("en-IN")} & Confirm →`}
           </button>
 
           <p style={{ textAlign: "center", fontSize: "0.75rem", color: "#94A3B8", marginTop: 14 }}>
