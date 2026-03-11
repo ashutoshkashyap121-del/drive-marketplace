@@ -1,10 +1,11 @@
 "use client";
 // app/trainers/[id]/page.tsx
-// FIXES: removed trial class, shows platform fee split, correct price labels, no fallback packages
 
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface VehicleVariant {
   model: string;
@@ -13,18 +14,18 @@ interface VehicleVariant {
 }
 
 interface TrainerPackage {
-  id: string;
+  id?: string;                  // optional — may not be in DB JSON
   name: string;
   price: number;
-  priceMax?: number;          // for range display e.g. ₹3,000 – ₹5,000
-  days: number;
-  sessionLength: string;
-  distancePerDay: string;
-  includes: string;
+  priceMax?: number;
+  days?: number;
+  sessionLength?: string;
+  distancePerDay?: string;
+  includes?: string | string[]; // DB may store as string or array
   trackFeePerVehicle?: number;
-  acSurcharge?: number;       // extra for AC vehicle
-  vehicleModels?: string;     // comma-separated e.g. "Wagon R, Swift, Dzire"
-  variants?: VehicleVariant[];// vehicle-model-specific prices
+  acSurcharge?: number;
+  vehicleModels?: string;
+  variants?: VehicleVariant[];
 }
 
 interface Trainer {
@@ -42,18 +43,37 @@ interface Trainer {
   bio?: string;
 }
 
-// Platform fee logic — flat ₹500 if package >= ₹2000, else 10%
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
 function computeFees(price: number) {
   const platformFee = price >= 2000 ? 500 : Math.round(price * 0.1);
   const trainerPayout = price - platformFee;
   return { platformFee, trainerPayout };
 }
 
+function formatIncludes(includes?: string | string[]): string {
+  if (!includes) return "";
+  if (Array.isArray(includes)) return includes.join(" · ");
+  return includes;
+}
+
+function parsePackages(raw?: string | null): TrainerPackage[] {
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) return parsed;
+  } catch {}
+  return [];
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
+
 export default function TrainerPage() {
   const params = useParams();
   const [trainer, setTrainer] = useState<Trainer | null>(null);
   const [loading, setLoading] = useState(true);
-  const [selectedPkg, setSelectedPkg] = useState<TrainerPackage | null>(null);
+  // Use index — avoids undefined id matching bug when DB JSON has no id field
+  const [selectedIdx, setSelectedIdx] = useState(0);
 
   useEffect(() => {
     fetch(`/api/trainers/${params.id}`)
@@ -62,12 +82,6 @@ export default function TrainerPage() {
         const t = d.trainer ?? d;
         setTrainer(t);
         setLoading(false);
-        if (t.packagesJson) {
-          try {
-            const pkgs: TrainerPackage[] = JSON.parse(t.packagesJson);
-            if (pkgs.length > 0) setSelectedPkg(pkgs[0]);
-          } catch {}
-        }
       })
       .catch(() => setLoading(false));
   }, [params.id]);
@@ -91,26 +105,17 @@ export default function TrainerPage() {
   const langs: string[] = Array.isArray(trainer.languages) ? trainer.languages : [];
   const bio = trainer.bio || trainer.about || null;
 
-  // Parse packages — NO fallback trial/per-session packages
-  let packages: TrainerPackage[] = [];
-  if (trainer.packagesJson) {
-    try { packages = JSON.parse(trainer.packagesJson); } catch {}
-  }
-
-  // If DB has no packages at all, use basePrice with a booking-forward message
+  let packages: TrainerPackage[] = parsePackages(trainer.packagesJson);
   const fallbackPrice = trainer.basePrice || trainer.price || 0;
   if (packages.length === 0 && fallbackPrice > 0) {
     packages = [{
-      id: "main",
       name: "Training Package",
       price: fallbackPrice,
-      days: 0,
-      sessionLength: "",
-      distancePerDay: "",
       includes: "Book now to confirm your slot — trainer will share full schedule on WhatsApp within 2 hours",
     }];
   }
 
+  const selectedPkg = packages[selectedIdx] ?? null;
   const { platformFee, trainerPayout } = selectedPkg
     ? computeFees(selectedPkg.price)
     : { platformFee: 0, trainerPayout: 0 };
@@ -145,7 +150,7 @@ export default function TrainerPage() {
 
       <div style={{ maxWidth: 680, margin: "0 auto", padding: "28px 5% 60px" }}>
 
-        {/* Header card */}
+        {/* ── Header card ── */}
         <div style={{ background: "linear-gradient(145deg,#0B1437 0%,#1A2B5F 100%)", borderRadius: 20, padding: 28, marginBottom: 20 }}>
           <div style={{ display: "flex", gap: 18, alignItems: "flex-start", flexWrap: "wrap" }}>
             <div style={{ width: 64, height: 64, borderRadius: 16, background: "rgba(245,158,11,0.2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26, flexShrink: 0 }}>
@@ -175,14 +180,13 @@ export default function TrainerPage() {
                   </span>
                 ))}
               </div>
-              {/* All languages shown */}
               {langs.length > 0 && (
                 <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 13, marginTop: 8 }}>
                   🗣 {langs.join(" · ")}
                 </p>
               )}
             </div>
-            {/* Header price — shows selected package price, not /hr */}
+
             {selectedPkg && (
               <div style={{ textAlign: "right", minWidth: 120 }}>
                 {selectedPkg.priceMax ? (
@@ -207,7 +211,7 @@ export default function TrainerPage() {
           </div>
         </div>
 
-        {/* About */}
+        {/* ── About ── */}
         {bio && (
           <div style={{ background: "#FFFFFF", borderRadius: 18, border: "1px solid #E2E8F0", padding: 24, marginBottom: 20 }}>
             <h2 style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 700, marginBottom: 10 }}>About</h2>
@@ -215,7 +219,7 @@ export default function TrainerPage() {
           </div>
         )}
 
-        {/* What's included */}
+        {/* ── What's included ── */}
         <div style={{ background: "#FFFFFF", borderRadius: 18, border: "1px solid #E2E8F0", padding: 24, marginBottom: 20 }}>
           <h2 style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 700, marginBottom: 16 }}>What&apos;s included</h2>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
@@ -227,7 +231,7 @@ export default function TrainerPage() {
           </div>
         </div>
 
-        {/* Booking section — NO trial tab */}
+        {/* ── Package selection ── */}
         <div style={{ background: "#FFFFFF", borderRadius: 18, border: "1px solid #E2E8F0", padding: 28 }}>
           <h2 style={{ fontFamily: "'Sora',sans-serif", fontSize: 18, fontWeight: 800, marginBottom: 6, color: "#0F172A" }}>
             Choose a package
@@ -236,27 +240,27 @@ export default function TrainerPage() {
             Select a training package that suits your needs
           </p>
 
-          {/* Package cards */}
-          {packages.map(pkg => (
+          {packages.map((pkg, idx) => (
             <div
-              key={pkg.id}
-              className={`pkg-card ${selectedPkg?.id === pkg.id ? "selected" : ""}`}
-              onClick={() => setSelectedPkg(pkg)}
+              key={idx}
+              className={`pkg-card ${selectedIdx === idx ? "selected" : ""}`}
+              onClick={() => setSelectedIdx(idx)}
             >
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                   <div style={{
                     width: 20, height: 20, borderRadius: "50%",
-                    border: `2px solid ${selectedPkg?.id === pkg.id ? "#F59E0B" : "#CBD5E1"}`,
-                    background: selectedPkg?.id === pkg.id ? "#F59E0B" : "white",
+                    border: `2px solid ${selectedIdx === idx ? "#F59E0B" : "#CBD5E1"}`,
+                    background: selectedIdx === idx ? "#F59E0B" : "white",
                     display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0
                   }}>
-                    {selectedPkg?.id === pkg.id && <div style={{ width: 8, height: 8, borderRadius: "50%", background: "white" }} />}
+                    {selectedIdx === idx && <div style={{ width: 8, height: 8, borderRadius: "50%", background: "white" }} />}
                   </div>
                   <span style={{ fontFamily: "'Sora',sans-serif", fontWeight: 700, fontSize: 15, color: "#0F172A" }}>
                     {pkg.name}
                   </span>
                 </div>
+
                 <div style={{ textAlign: "right" }}>
                   {pkg.priceMax ? (
                     <>
@@ -270,7 +274,7 @@ export default function TrainerPage() {
                       <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 20, fontWeight: 800, color: "#F59E0B" }}>
                         ₹{pkg.price.toLocaleString("en-IN")}
                       </div>
-                      {pkg.days > 1 && (
+                      {pkg.days && pkg.days > 1 && (
                         <div style={{ fontSize: 11, color: "#94A3B8" }}>
                           ₹{Math.round(pkg.price / pkg.days).toLocaleString("en-IN")}/day
                         </div>
@@ -280,9 +284,8 @@ export default function TrainerPage() {
                 </div>
               </div>
 
-              {/* Package meta */}
               <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: pkg.includes ? 8 : 0 }}>
-                {pkg.days > 1 && (
+                {pkg.days && pkg.days > 1 && (
                   <span style={{ fontSize: 12, color: "#64748B" }}>📅 {pkg.days} days</span>
                 )}
                 {pkg.sessionLength && (
@@ -293,14 +296,10 @@ export default function TrainerPage() {
                 )}
               </div>
 
-              {/* Vehicle models */}
               {pkg.vehicleModels && (
-                <p style={{ fontSize: 12, color: "#64748B", marginBottom: 6 }}>
-                  🚗 {pkg.vehicleModels}
-                </p>
+                <p style={{ fontSize: 12, color: "#64748B", marginBottom: 6 }}>🚗 {pkg.vehicleModels}</p>
               )}
 
-              {/* Vehicle variants table */}
               {pkg.variants && pkg.variants.length > 0 && (
                 <div style={{ marginTop: 8, borderRadius: 8, overflow: "hidden", border: "1px solid #E2E8F0" }}>
                   {pkg.variants.map((v, i) => (
@@ -317,7 +316,7 @@ export default function TrainerPage() {
 
               {pkg.includes && (
                 <p style={{ fontSize: 12, color: "#64748B", lineHeight: 1.5, marginTop: 8 }}>
-                  ✓ {pkg.includes}
+                  ✓ {formatIncludes(pkg.includes)}
                 </p>
               )}
 
@@ -335,7 +334,7 @@ export default function TrainerPage() {
             </div>
           ))}
 
-          {/* Price breakdown — platform fee split visible to customer */}
+          {/* ── Price breakdown ── */}
           {selectedPkg && (
             <>
               <div style={{ marginTop: 20, padding: 16, background: "#F8FAFC", borderRadius: 12, border: "1px solid #E2E8F0" }}>
