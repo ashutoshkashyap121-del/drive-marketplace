@@ -35,7 +35,7 @@ interface Package {
 }
 
 interface Trainer {
-  id: string;
+  id: number;
   name: string;
   city: string;
   experience: number; // Updated from yearsExperience to match backend
