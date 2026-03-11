@@ -1,92 +1,62 @@
+// app/api/trainers/route.ts
+// Main trainer search API used by TrainersClient
+// Returns packagesJson + languages so listing cards can show package details
+
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { TrainerStatus, VehicleType } from "@prisma/client";
 
 export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
-  const city        = searchParams.get("city")       ?? undefined;
-  const pincode     = searchParams.get("pincode")    ?? undefined;
-  // Support both "vehicle" (sent by frontend) and "vehicleType"
-  const vehicleType = searchParams.get("vehicle") ?? searchParams.get("vehicleType") ?? undefined;
-  const maxPrice    = searchParams.get("maxPrice")   ? Number(searchParams.get("maxPrice"))  : undefined;
-  const minRating   = searchParams.get("minRating")  ? Number(searchParams.get("minRating")) : undefined;
-  const lang        = searchParams.get("lang")       ?? undefined;
-  const page        = Math.max(1, Number(searchParams.get("page")  ?? 1));
-  const limit       = Math.min(50, Number(searchParams.get("limit") ?? 20));
+  const { searchParams } = req.nextUrl;
+  const city    = searchParams.get("city");
+  const vehicle = searchParams.get("vehicle");   // "CAR" | "BIKE"
+  const pincode = searchParams.get("pincode");   // optional 6-digit
 
-  const where: Record<string, any> = {
-    status: "APPROVED", // ✅ correct field name (was isApproved: true)
-  };
-
-  // City filter
-  if (city) where.city = city;
-
-  // Pincode — trainer's serviceArea array must contain the searched pincode
-  if (pincode) {
-    where.serviceArea = { has: pincode };
+  if (!city || !vehicle) {
+    return NextResponse.json({ error: "city and vehicle are required" }, { status: 400 });
   }
 
-  // Vehicle type filter — handle both "CAR" and "BIKE" (BIKE matches BIKE_GEARED or BIKE_NON_GEARED)
-  if (vehicleType) {
-    if (vehicleType === "BIKE") {
-      // Learner selects "Bike" — match either bike type
-      where.vehicleTypes = {
-        hasSome: ["BIKE_GEARED", "BIKE_NON_GEARED"],
-      };
-    } else {
-      where.vehicleTypes = { has: vehicleType };
-    }
-  }
+  // Map URL vehicle param to DB enum values
+  const vehicleEnums: VehicleType[] =
+    vehicle === "CAR"
+      ? [VehicleType.CAR]
+      : [VehicleType.BIKE_GEARED, VehicleType.BIKE_NON_GEARED];
 
-  if (maxPrice)   where.basePrice = { lte: maxPrice };
-  if (minRating)  where.rating    = { gte: minRating };
-  if (lang)       where.languages = { has: lang };
-
-  const [total, trainers] = await Promise.all([
-    prisma.trainer.count({ where }),
-    prisma.trainer.findMany({
-      where,
+  try {
+    const trainers = await prisma.trainer.findMany({
+      where: {
+        status: TrainerStatus.APPROVED,
+        city: { contains: city, mode: "insensitive" },
+        vehicleTypes: { hasSome: vehicleEnums },
+        // If pincode supplied, trainer must serve that pincode
+        ...(pincode ? { serviceArea: { has: pincode } } : {}),
+      },
       select: {
-        id:           true,
-        name:         true,
-        bio:          true,
-        city:         true,
-        pincode:      true,
-        serviceArea:  true,
+        id: true,
+        name: true,
+        city: true,
+        experience: true,
+        trainerType: true,
+        rating: true,
+        basePrice: true,
+        packagesJson: true,     // ← needed for package detail cards
+        languages: true,        // ← needed for language badges
         vehicleTypes: true,
-        basePrice:    true,
-        experience:   true,
-        languages:    true,
-        rating:       true,
-        trainerType:  true,
+        verifiedSchool: true,
         vehicles: {
-          select: {
-            type:        true,
-            dualControl: true,
-            insured:     true,
-          },
+          select: { type: true, dualControl: true, insured: true }
         },
       },
       orderBy: [
         { rating: "desc" },
-        { basePrice: "asc" },
+        { createdAt: "desc" },
       ],
-      skip:  (page - 1) * limit,
-      take:  limit,
-    }),
-  ]);
+      take: 20,
+    });
 
-  // Boost trainers whose home pincode exactly matches searched pincode
-  const sorted = pincode
-    ? trainers.sort((a, b) => {
-        const aExact = a.pincode === pincode ? 1 : 0;
-        const bExact = b.pincode === pincode ? 1 : 0;
-        if (bExact !== aExact) return bExact - aExact;
-        return (b.rating ?? 0) - (a.rating ?? 0);
-      })
-    : trainers;
-
-  return NextResponse.json({
-    trainers: sorted,
-    pagination: { total, page, limit, totalPages: Math.ceil(total / limit) },
-  });
+    return NextResponse.json(trainers);
+  } catch (error) {
+    console.error("Trainer search error:", error);
+    return NextResponse.json([], { status: 500 });
+  }
 }

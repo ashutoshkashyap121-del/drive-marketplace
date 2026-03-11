@@ -1,4 +1,5 @@
 "use client";
+// components/TrainersClient.tsx  (or wherever this lives in your project)
 
 import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -9,6 +10,20 @@ type Vehicle = {
   insured: boolean;
 };
 
+interface TrainerPackage {
+  id: string;
+  name: string;
+  price: number;
+  priceMax?: number;
+  days?: number;
+  sessionLength?: string;
+  distancePerDay?: string;
+  includes?: string;
+  trackFeePerVehicle?: number;
+  acSurcharge?: number;
+  vehicleModels?: string;
+}
+
 type Trainer = {
   id: number;
   name: string;
@@ -17,11 +32,30 @@ type Trainer = {
   trainerType: "INDEPENDENT" | "DRIVING_SCHOOL";
   rating: number | null;
   basePrice: number | null;
+  packagesJson: string | null;
+  languages: string[];
   verifiedSchool: boolean;
   vehicles: Vehicle[];
 };
 
-const CITIES = ["Delhi NCR", "Mumbai", "Bangalore"];
+const CITIES = [
+  "Delhi NCR", "Mumbai", "Bangalore", "Hyderabad", "Chennai",
+  "Kolkata", "Pune", "Jaipur", "Noida", "Gurugram",
+];
+
+function parsePackages(json: string | null): TrainerPackage[] {
+  if (!json) return [];
+  try { return JSON.parse(json); } catch { return []; }
+}
+
+// Quick summary line for a package — shown collapsed
+function pkgSummary(pkg: TrainerPackage): string {
+  const parts: string[] = [];
+  if (pkg.days && pkg.days > 1) parts.push(`${pkg.days} days`);
+  if (pkg.sessionLength) parts.push(pkg.sessionLength);
+  if (pkg.distancePerDay) parts.push(`${pkg.distancePerDay}/day`);
+  return parts.join(" · ");
+}
 
 export default function TrainersClient() {
   const searchParams = useSearchParams();
@@ -33,11 +67,10 @@ export default function TrainersClient() {
   const [trainers, setTrainers] = useState<Trainer[]>([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
+  const [expandedId, setExpandedId] = useState<number | null>(null);
 
-  // Fetch whenever city, vehicle, or a complete pincode changes
   useEffect(() => {
     if (!city || !vehicle) return;
-    // Don't fire on partial pincode — only on empty or full 6-digit
     if (pincode.length > 0 && pincode.length < 6) return;
 
     setLoading(true);
@@ -48,126 +81,50 @@ export default function TrainersClient() {
     }`;
 
     fetch(url)
-      .then((res) => res.json())
-      .then((data) => {
+      .then(res => res.json())
+      .then(data => {
         const list = Array.isArray(data) ? data : (data.trainers ?? []);
         setTrainers(list);
         setLoading(false);
       })
-      .catch(() => {
-        setTrainers([]);
-        setLoading(false);
-      });
+      .catch(() => { setTrainers([]); setLoading(false); });
   }, [city, vehicle, pincode]);
 
-  const handleBook = (trainer: Trainer) => {
-    router.push(`/trainers/${trainer.id}/book`);
-  };
-
   return (
-    <main style={{ fontFamily: "'DM Sans', 'Segoe UI', sans-serif", background: "#F8F7F4", minHeight: "100vh" }}>
+    <main style={{ fontFamily: "'DM Sans','Segoe UI',sans-serif", background: "#F8F7F4", minHeight: "100vh" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Sora:wght@700;800&display=swap');
         * { box-sizing: border-box; }
 
-        .top-bar {
-          background: linear-gradient(135deg, #0B1437 0%, #1A2B5F 100%);
-          padding: 20px 5%;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 16px;
-          flex-wrap: wrap;
-        }
-        .brand { font-family: 'Sora', sans-serif; font-weight: 800; font-size: 1.3rem; color: #fff; text-decoration: none; }
+        .top-bar { background: linear-gradient(135deg,#0B1437 0%,#1A2B5F 100%); padding: 20px 5%; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+        .brand { font-family: 'Sora',sans-serif; font-weight: 800; font-size: 1.3rem; color: #fff; text-decoration: none; }
         .brand span { color: #F59E0B; }
 
-        .filter-bar {
-          background: #FFFFFF;
-          border-bottom: 1px solid #E2E8F0;
-          padding: 16px 5%;
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          flex-wrap: wrap;
-        }
+        .filter-bar { background: #FFFFFF; border-bottom: 1px solid #E2E8F0; padding: 16px 5%; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
         .filter-label { font-size: 0.8rem; font-weight: 600; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px; }
-        .filter-select {
-          padding: 9px 14px;
-          border: 2px solid #E2E8F0;
-          border-radius: 10px;
-          font-size: 0.88rem;
-          font-family: inherit;
-          color: #0F172A;
-          background: #F8FAFC;
-          cursor: pointer;
-          appearance: none;
-          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2364748B' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
-          background-repeat: no-repeat;
-          background-position: right 10px center;
-          padding-right: 30px;
-        }
+        .filter-select { padding: 9px 14px; border: 2px solid #E2E8F0; border-radius: 10px; font-size: 0.88rem; font-family: inherit; color: #0F172A; background: #F8FAFC; cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2364748B' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; padding-right: 30px; }
         .filter-select:focus { outline: none; border-color: #F59E0B; }
 
-        .pincode-input {
-          padding: 9px 14px;
-          border: 2px solid #E2E8F0;
-          border-radius: 10px;
-          font-size: 0.88rem;
-          font-family: inherit;
-          color: #0F172A;
-          background: #F8FAFC;
-          width: 150px;
-          transition: border-color 0.2s;
-        }
+        .pincode-input { padding: 9px 14px; border: 2px solid #E2E8F0; border-radius: 10px; font-size: 0.88rem; font-family: inherit; color: #0F172A; background: #F8FAFC; width: 150px; transition: border-color 0.2s; }
         .pincode-input:focus { outline: none; border-color: #F59E0B; }
         .pincode-input::placeholder { color: #CBD5E1; }
 
         .vehicle-toggle { display: flex; gap: 8px; }
-        .vbtn {
-          padding: 9px 18px;
-          border-radius: 10px;
-          border: 2px solid #E2E8F0;
-          background: #F8FAFC;
-          font-family: inherit;
-          font-size: 0.88rem;
-          font-weight: 600;
-          color: #475569;
-          cursor: pointer;
-          transition: all 0.15s;
-        }
+        .vbtn { padding: 9px 18px; border-radius: 10px; border: 2px solid #E2E8F0; background: #F8FAFC; font-family: inherit; font-size: 0.88rem; font-weight: 600; color: #475569; cursor: pointer; transition: all 0.15s; }
         .vbtn.active { border-color: #F59E0B; background: #FFFBEB; color: #92400E; }
 
-        .result-meta {
-          font-size: 0.85rem;
-          color: #64748B;
-          margin-left: auto;
-        }
-
+        .result-meta { font-size: 0.85rem; color: #64748B; margin-left: auto; }
         .cards-area { padding: 28px 5%; max-width: 900px; margin: 0 auto; }
 
-        .trainer-card {
-          background: #FFFFFF;
-          border-radius: 18px;
-          border: 1px solid #E2E8F0;
-          padding: 24px;
-          margin-bottom: 16px;
-          display: grid;
-          grid-template-columns: 1fr auto;
-          gap: 16px;
-          align-items: start;
-          transition: all 0.2s;
-        }
+        /* Card */
+        .trainer-card { background: #FFFFFF; border-radius: 18px; border: 1px solid #E2E8F0; margin-bottom: 16px; overflow: hidden; transition: border-color 0.2s, box-shadow 0.2s; }
         .trainer-card:hover { border-color: #F59E0B; box-shadow: 0 8px 32px rgba(0,0,0,0.08); }
+        .card-top { padding: 24px; display: grid; grid-template-columns: 1fr auto; gap: 16px; align-items: start; }
 
-        .trainer-name { font-family: 'Sora', sans-serif; font-size: 1.1rem; font-weight: 700; color: #0F172A; margin-bottom: 6px; }
+        .trainer-name { font-family: 'Sora',sans-serif; font-size: 1.1rem; font-weight: 700; color: #0F172A; margin-bottom: 6px; }
 
         .badge-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
-        .badge {
-          display: inline-flex; align-items: center; gap: 4px;
-          font-size: 0.72rem; font-weight: 600;
-          padding: 3px 10px; border-radius: 100px;
-        }
+        .badge { display: inline-flex; align-items: center; gap: 4px; font-size: 0.72rem; font-weight: 600; padding: 3px 10px; border-radius: 100px; }
         .badge-green { background: #DCFCE7; color: #166534; }
         .badge-blue { background: #DBEAFE; color: #1E40AF; }
         .badge-amber { background: #FEF3C7; color: #92400E; }
@@ -176,49 +133,54 @@ export default function TrainersClient() {
         .trainer-meta { font-size: 0.85rem; color: #64748B; display: flex; gap: 16px; flex-wrap: wrap; }
         .meta-item { display: flex; align-items: center; gap: 5px; }
 
-        .price-block { text-align: right; }
-        .price-amount { font-family: 'Sora', sans-serif; font-size: 1.4rem; font-weight: 800; color: #0F172A; }
-        .price-note { font-size: 0.72rem; color: #94A3B8; margin-bottom: 12px; }
+        /* Package pills on collapsed card */
+        .pkg-pills { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+        .pkg-pill { font-size: 0.75rem; font-weight: 600; padding: 4px 12px; border-radius: 99px; background: #F1F5F9; color: #374151; border: 1px solid #E2E8F0; }
+        .pkg-pill-price { color: #D97706; font-weight: 700; }
 
-        .book-btn {
-          display: block;
-          background: linear-gradient(135deg, #F59E0B, #D97706);
-          color: #FFFFFF;
-          font-family: 'Sora', sans-serif;
-          font-size: 0.88rem;
-          font-weight: 700;
-          padding: 11px 22px;
-          border-radius: 10px;
-          border: none;
-          cursor: pointer;
-          transition: all 0.2s;
-          white-space: nowrap;
-          box-shadow: 0 3px 12px rgba(245,158,11,0.35);
-        }
+        /* Expand toggle */
+        .expand-btn { display: flex; align-items: center; gap: 4px; margin-top: 10px; font-size: 0.78rem; font-weight: 600; color: #F59E0B; background: none; border: none; cursor: pointer; padding: 0; font-family: inherit; }
+        .expand-btn:hover { color: #D97706; }
+
+        /* Expanded package drawer */
+        .pkg-drawer { border-top: 1px solid #F1F5F9; background: #FAFBFF; padding: 20px 24px; }
+        .pkg-drawer-title { font-size: 0.78rem; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 14px; }
+
+        .pkg-row { border: 1px solid #E2E8F0; border-radius: 12px; padding: 14px 16px; margin-bottom: 10px; background: white; display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: start; }
+        .pkg-name { font-family: 'Sora',sans-serif; font-size: 0.9rem; font-weight: 700; color: #0F172A; margin-bottom: 6px; }
+        .pkg-meta { display: flex; gap: 14px; flex-wrap: wrap; font-size: 0.78rem; color: #64748B; margin-bottom: 6px; }
+        .pkg-meta-item { display: flex; align-items: center; gap: 4px; }
+        .pkg-includes { font-size: 0.78rem; color: #64748B; line-height: 1.5; }
+        .pkg-includes::before { content: "✓ "; color: #16A34A; font-weight: 700; }
+        .pkg-surcharge { font-size: 0.72rem; color: #92400E; background: #FEF9EC; border-radius: 6px; padding: 3px 8px; margin-top: 6px; display: inline-block; }
+        .pkg-price-col { text-align: right; }
+        .pkg-price { font-family: 'Sora',sans-serif; font-size: 1.15rem; font-weight: 800; color: #F59E0B; }
+        .pkg-per-day { font-size: 0.7rem; color: #94A3B8; margin-top: 2px; }
+        .book-pkg-btn { margin-top: 8px; display: block; background: #F59E0B; color: white; font-size: 0.78rem; font-weight: 700; padding: 7px 14px; border-radius: 8px; border: none; cursor: pointer; white-space: nowrap; font-family: inherit; }
+        .book-pkg-btn:hover { background: #D97706; }
+
+        /* Right col price block (collapsed) */
+        .price-block { text-align: right; }
+        .price-amount { font-family: 'Sora',sans-serif; font-size: 1.4rem; font-weight: 800; color: #0F172A; }
+        .price-note { font-size: 0.72rem; color: #94A3B8; margin-bottom: 12px; }
+        .book-btn { display: block; background: linear-gradient(135deg,#F59E0B,#D97706); color: #FFFFFF; font-family: 'Sora',sans-serif; font-size: 0.88rem; font-weight: 700; padding: 11px 22px; border-radius: 10px; border: none; cursor: pointer; transition: all 0.2s; white-space: nowrap; box-shadow: 0 3px 12px rgba(245,158,11,0.35); }
         .book-btn:hover { transform: translateY(-1px); box-shadow: 0 5px 16px rgba(245,158,11,0.45); }
 
-        .rating-star { color: #F59E0B; font-weight: 700; }
-
-        .empty-state {
-          text-align: center;
-          padding: 64px 20px;
-          color: #94A3B8;
-        }
+        .empty-state { text-align: center; padding: 64px 20px; color: #94A3B8; }
         .empty-icon { font-size: 3rem; margin-bottom: 16px; }
-        .empty-title { font-family: 'Sora', sans-serif; font-size: 1.1rem; font-weight: 700; color: #475569; margin-bottom: 8px; }
+        .empty-title { font-family: 'Sora',sans-serif; font-size: 1.1rem; font-weight: 700; color: #475569; margin-bottom: 8px; }
 
-        .skeleton {
-          background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-          background-size: 200% 100%;
-          animation: shimmer 1.5s infinite;
-          border-radius: 18px;
-          height: 140px;
-          margin-bottom: 16px;
-        }
+        .skeleton { background: linear-gradient(90deg,#f0f0f0 25%,#e0e0e0 50%,#f0f0f0 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 18px; height: 140px; margin-bottom: 16px; }
         @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+        @media (max-width: 520px) {
+          .card-top { grid-template-columns: 1fr; }
+          .price-block { text-align: left; display: flex; align-items: center; gap: 16px; }
+          .price-note { margin-bottom: 0; }
+        }
       `}</style>
 
-      {/* Top nav bar */}
+      {/* Top nav */}
       <div className="top-bar">
         <a href="/" className="brand">Learn<span>Drive</span></a>
         <span style={{ color: "rgba(255,255,255,0.5)", fontSize: "0.82rem" }}>
@@ -229,56 +191,25 @@ export default function TrainersClient() {
       {/* Filter bar */}
       <div className="filter-bar">
         <span className="filter-label">Showing:</span>
-
-        {/* City dropdown */}
-        <select
-          className="filter-select"
-          value={city}
-          onChange={(e) => setCity(e.target.value)}
-        >
+        <select className="filter-select" value={city} onChange={e => setCity(e.target.value)}>
           <option value="">Select city</option>
-          {CITIES.map((c) => <option key={c} value={c}>{c}</option>)}
+          {CITIES.map(c => <option key={c} value={c}>{c}</option>)}
         </select>
 
-        {/* Vehicle toggle */}
         <div className="vehicle-toggle">
-          <button className={`vbtn ${vehicle === "CAR" ? "active" : ""}`} onClick={() => setVehicle("CAR")}>
-            🚗 Car
-          </button>
-          <button className={`vbtn ${vehicle === "BIKE" ? "active" : ""}`} onClick={() => setVehicle("BIKE")}>
-            🏍️ Bike
-          </button>
+          <button className={`vbtn ${vehicle === "CAR" ? "active" : ""}`} onClick={() => setVehicle("CAR")}>🚗 Car</button>
+          <button className={`vbtn ${vehicle === "BIKE" ? "active" : ""}`} onClick={() => setVehicle("BIKE")}>🏍️ Bike</button>
         </div>
 
-        {/* Pincode filter — only fires fetch at 6 digits */}
         <input
-          className="pincode-input"
-          type="text"
-          inputMode="numeric"
-          placeholder="📍 Pincode (optional)"
-          value={pincode}
-          maxLength={6}
-          onChange={(e) => setPincode(e.target.value.replace(/\D/g, ""))}
+          className="pincode-input" type="text" inputMode="numeric"
+          placeholder="📍 Pincode (optional)" value={pincode} maxLength={6}
+          onChange={e => setPincode(e.target.value.replace(/\D/g, ""))}
         />
 
-        {/* Clear pincode pill — shown when pincode is active */}
         {pincode.length === 6 && (
-          <button
-            onClick={() => setPincode("")}
-            style={{
-              padding: "6px 12px",
-              borderRadius: 100,
-              border: "none",
-              background: "#FEF3C7",
-              color: "#92400E",
-              fontSize: "0.78rem",
-              fontWeight: 600,
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              gap: 4,
-            }}
-          >
+          <button onClick={() => setPincode("")}
+            style={{ padding: "6px 12px", borderRadius: 100, border: "none", background: "#FEF3C7", color: "#92400E", fontSize: "0.78rem", fontWeight: 600, cursor: "pointer" }}>
             {pincode} ✕
           </button>
         )}
@@ -288,10 +219,8 @@ export default function TrainersClient() {
         )}
       </div>
 
-      {/* Main content */}
+      {/* Cards */}
       <div className="cards-area">
-
-        {/* Prompt to select */}
         {!city || !vehicle ? (
           <div className="empty-state">
             <div className="empty-icon">🔍</div>
@@ -299,70 +228,168 @@ export default function TrainersClient() {
             <p style={{ fontSize: "0.88rem" }}>to see available verified trainers near you</p>
           </div>
         ) : loading ? (
-          <>
-            <div className="skeleton" />
-            <div className="skeleton" style={{ opacity: 0.7 }} />
-            <div className="skeleton" style={{ opacity: 0.4 }} />
-          </>
+          <><div className="skeleton" /><div className="skeleton" style={{ opacity: 0.7 }} /><div className="skeleton" style={{ opacity: 0.4 }} /></>
         ) : trainers.length === 0 ? (
           <div className="empty-state">
             <div className="empty-icon">😕</div>
             <div className="empty-title">No trainers found{pincode.length === 6 ? ` in pincode ${pincode}` : ` in ${city}`}</div>
             <p style={{ fontSize: "0.88rem" }}>
-              {pincode.length === 6
-                ? "Try clearing the pincode filter to see all trainers in your city."
-                : "We're onboarding trainers fast — check back soon or try another city."}
+              {pincode.length === 6 ? "Try clearing the pincode filter to see all trainers in your city." : "We're onboarding trainers fast — check back soon or try another city."}
             </p>
           </div>
         ) : (
-          trainers.map((trainer) => {
+          trainers.map(trainer => {
             const hasVehicle = trainer.vehicles?.find(v => v.type === vehicle);
             const isDualControl = hasVehicle?.dualControl;
             const isInsured = hasVehicle?.insured;
+            const packages = parsePackages(trainer.packagesJson);
+            const isExpanded = expandedId === trainer.id;
+            const langs: string[] = Array.isArray(trainer.languages) ? trainer.languages : [];
+
+            // Display price: first package price or basePrice
+            const displayPrice = packages[0]?.price ?? trainer.basePrice ?? 0;
+            const displayLabel = packages.length > 0
+              ? (packages.length === 1 ? packages[0].name : `from ${packages[0].name}`)
+              : "starting price";
 
             return (
               <div key={trainer.id} className="trainer-card">
-                {/* Left: trainer info */}
-                <div>
-                  <div className="trainer-name">{trainer.name}</div>
+                {/* ── Collapsed top section ── */}
+                <div className="card-top">
+                  <div>
+                    <div className="trainer-name">{trainer.name}</div>
 
-                  <div className="badge-row">
-                    <span className="badge badge-green">✓ RTO Verified</span>
-                    {trainer.verifiedSchool && (
-                      <span className="badge badge-blue">🏫 School</span>
+                    <div className="badge-row">
+                      <span className="badge badge-green">✓ RTO Verified</span>
+                      {trainer.trainerType === "DRIVING_SCHOOL" && (
+                        <span className="badge badge-blue">🏫 Driving School</span>
+                      )}
+                      {isDualControl && <span className="badge badge-amber">🔧 Dual Control</span>}
+                      {isInsured && <span className="badge badge-gray">🛡️ Insured</span>}
+                    </div>
+
+                    <div className="trainer-meta">
+                      <span className="meta-item">📍 {trainer.city}</span>
+                      <span className="meta-item">⏱ {trainer.experience} yr{trainer.experience !== 1 ? "s" : ""} exp</span>
+                      {trainer.rating && trainer.rating > 0
+                        ? <span className="meta-item" style={{ color: "#F59E0B", fontWeight: 700 }}>★ {trainer.rating.toFixed(1)}</span>
+                        : <span className="meta-item" style={{ color: "#CBD5E1" }}>No rating yet</span>
+                      }
+                      {langs.length > 0 && (
+                        <span className="meta-item">🗣 {langs.join(", ")}</span>
+                      )}
+                    </div>
+
+                    {/* Package pills — show all package names + prices at a glance */}
+                    {packages.length > 0 && (
+                      <div className="pkg-pills">
+                        {packages.map(pkg => (
+                          <span key={pkg.id} className="pkg-pill">
+                            {pkg.name}
+                            {" — "}
+                            <span className="pkg-pill-price">
+                              ₹{pkg.price.toLocaleString("en-IN")}
+                              {pkg.priceMax ? `–₹${pkg.priceMax.toLocaleString("en-IN")}` : ""}
+                            </span>
+                          </span>
+                        ))}
+                      </div>
                     )}
-                    {isDualControl && (
-                      <span className="badge badge-amber">🔧 Dual Control</span>
+
+                    {/* Expand toggle */}
+                    {packages.length > 0 && (
+                      <button
+                        className="expand-btn"
+                        onClick={() => setExpandedId(isExpanded ? null : trainer.id)}
+                      >
+                        {isExpanded ? "▲ Hide package details" : "▼ See package details"}
+                      </button>
                     )}
-                    {isInsured && (
-                      <span className="badge badge-gray">🛡️ Insured Vehicle</span>
-                    )}
-                    <span className="badge badge-gray">
-                      {trainer.trainerType === "DRIVING_SCHOOL" ? "🏫 Driving School" : "👤 Independent"}
-                    </span>
                   </div>
 
-                  <div className="trainer-meta">
-                    <span className="meta-item">📍 {trainer.city}</span>
-                    <span className="meta-item">⏱ {trainer.experience} yr{trainer.experience !== 1 ? "s" : ""} experience</span>
-                    {trainer.rating && trainer.rating > 0 ? (
-                      <span className="meta-item rating-star">★ {trainer.rating.toFixed(1)}</span>
-                    ) : (
-                      <span className="meta-item" style={{ color: "#CBD5E1" }}>No rating yet</span>
-                    )}
+                  {/* Right: price + CTA */}
+                  <div className="price-block">
+                    <div className="price-amount">
+                      ₹{displayPrice.toLocaleString("en-IN")}
+                    </div>
+                    <div className="price-note">{displayLabel}</div>
+                    <button className="book-btn" onClick={() => router.push(`/trainers/${trainer.id}`)}>
+                      View & Book →
+                    </button>
                   </div>
                 </div>
 
-                {/* Right: price + book */}
-                <div className="price-block">
-                  <div className="price-amount">
-                    ₹{(trainer.basePrice ?? 5000).toLocaleString("en-IN")}
+                {/* ── Expanded package drawer ── */}
+                {isExpanded && packages.length > 0 && (
+                  <div className="pkg-drawer">
+                    <div className="pkg-drawer-title">Packages offered</div>
+                    {packages.map(pkg => {
+                      const summary = pkgSummary(pkg);
+                      const perDay = pkg.days && pkg.days > 1 ? Math.round(pkg.price / pkg.days) : null;
+                      return (
+                        <div key={pkg.id} className="pkg-row">
+                          <div>
+                            <div className="pkg-name">{pkg.name}</div>
+
+                            {/* Key stats row */}
+                            {summary && (
+                              <div className="pkg-meta">
+                                {pkg.days && pkg.days > 1 && (
+                                  <span className="pkg-meta-item">📅 {pkg.days} days</span>
+                                )}
+                                {pkg.sessionLength && (
+                                  <span className="pkg-meta-item">⏱ {pkg.sessionLength}</span>
+                                )}
+                                {pkg.distancePerDay && (
+                                  <span className="pkg-meta-item">📍 {pkg.distancePerDay}/day</span>
+                                )}
+                              </div>
+                            )}
+
+                            {/* Vehicle models */}
+                            {pkg.vehicleModels && (
+                              <p style={{ fontSize: "0.78rem", color: "#64748B", marginBottom: 4 }}>
+                                🚗 {pkg.vehicleModels}
+                              </p>
+                            )}
+
+                            {/* What's included */}
+                            {pkg.includes && (
+                              <p className="pkg-includes">{pkg.includes}</p>
+                            )}
+
+                            {/* Surcharges */}
+                            {pkg.acSurcharge && (
+                              <span className="pkg-surcharge">❄ AC vehicle: +₹{pkg.acSurcharge.toLocaleString("en-IN")}</span>
+                            )}
+                            {pkg.trackFeePerVehicle && (
+                              <span className="pkg-surcharge" style={{ marginLeft: 6 }}>⚠ Track fee: ₹{pkg.trackFeePerVehicle}/vehicle on test day</span>
+                            )}
+                          </div>
+
+                          {/* Price + book */}
+                          <div className="pkg-price-col">
+                            <div className="pkg-price">
+                              ₹{pkg.price.toLocaleString("en-IN")}
+                              {pkg.priceMax ? `–${pkg.priceMax.toLocaleString("en-IN")}` : ""}
+                            </div>
+                            {perDay && (
+                              <div className="pkg-per-day">₹{perDay.toLocaleString("en-IN")}/day</div>
+                            )}
+                            <button
+                              className="book-pkg-btn"
+                              onClick={() => router.push(
+                                `/trainers/${trainer.id}/book?price=${pkg.price}&pkgName=${encodeURIComponent(pkg.name)}&trainerName=${encodeURIComponent(trainer.name)}&trainerCity=${encodeURIComponent(trainer.city)}`
+                              )}
+                            >
+                              Book this →
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                  <div className="price-note">starting price</div>
-                  <button className="book-btn" onClick={() => handleBook(trainer)}>
-                    Book Now →
-                  </button>
-                </div>
+                )}
               </div>
             );
           })

@@ -97,7 +97,7 @@ export default function TrainerPage() {
     try { packages = JSON.parse(trainer.packagesJson); } catch {}
   }
 
-  // If DB has no packages at all, use a simple per-session based on basePrice only
+  // If DB has no packages at all, use basePrice with a booking-forward message
   const fallbackPrice = trainer.basePrice || trainer.price || 0;
   if (packages.length === 0 && fallbackPrice > 0) {
     packages = [{
@@ -107,7 +107,7 @@ export default function TrainerPage() {
       days: 0,
       sessionLength: "",
       distancePerDay: "",
-      includes: "Contact trainer for full details",
+      includes: "Book now to confirm your slot — trainer will share full schedule on WhatsApp within 2 hours",
     }];
   }
 
