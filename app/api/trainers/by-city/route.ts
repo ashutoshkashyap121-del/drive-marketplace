@@ -24,6 +24,8 @@ export async function GET(req: NextRequest) {
         experience: true,
         languages: true,
         vehicleTypes: true,
+        packagesJson: true,
+        rating: true,
       },
       orderBy: { createdAt: "desc" },
       take: 12,
