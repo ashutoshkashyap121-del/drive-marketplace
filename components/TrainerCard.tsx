@@ -2,26 +2,35 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ChevronDown, ChevronUp, Car, Clock, MapPin, CheckCircle2, Zap, Flag } from "lucide-react";
+import { 
+  ChevronDown, 
+  ChevronUp, 
+  Car, 
+  Clock, 
+  MapPin, 
+  CheckCircle2, 
+  Zap, 
+  Flag 
+} from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface VehicleVariant {
-  model: string;       // e.g. "Wagon R", "Brezza"
+  model: string;
   nonAcPrice: number;
   acPrice?: number;
 }
 
 interface Package {
-  name: string;          // e.g. "LL + DL Package"
-  price: number;         // starting / flat price
-  priceMax?: number;     // if range
+  name: string;
+  price: number;
+  priceMax?: number;
   days?: number;
   sessionLengthMins?: number;
   distancePerDayKm?: number;
-  includes?: string[];   // free-text items trainer typed
-  acSurcharge?: number;  // extra flat ₹ for AC
-  trackFee?: number;     // paid on test day
+  includes?: string[];
+  acSurcharge?: number;
+  trackFee?: number;
   vehicleVariants?: VehicleVariant[];
 }
 
@@ -29,15 +38,15 @@ interface Trainer {
   id: string;
   name: string;
   city: string;
-  yearsExperience: number;
+  experience: number; // Updated from yearsExperience to match backend
   languages: string[];
-  vehicleTypes: string[];   // ["Car", "Bike"]
+  vehicleTypes: string[];
   rating?: number;
   reviewCount?: number;
-  packagesJson: Package[];  // already parsed
+  packagesJson: Package[];
 }
 
-// ─── Helper ───────────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function formatPrice(pkg: Package): string {
   if (pkg.priceMax && pkg.priceMax !== pkg.price) {
@@ -47,33 +56,28 @@ function formatPrice(pkg: Package): string {
 }
 
 function lowestPrice(packages: Package[]): number {
+  if (packages.length === 0) return 0;
   return Math.min(...packages.map((p) => p.price));
 }
 
 // ─── Package Drawer ───────────────────────────────────────────────────────────
 
 function PackageDrawer({ pkg, trainerId }: { pkg: Package; trainerId: string }) {
-  const dailyRate =
-    pkg.days && pkg.price ? Math.round(pkg.price / pkg.days) : null;
+  const dailyRate = pkg.days && pkg.price ? Math.round(pkg.price / pkg.days) : null;
 
   return (
     <div className="border border-[#e8e2d9] rounded-xl overflow-hidden bg-[#fdfcfb]">
-      {/* Package header */}
       <div className="flex items-center justify-between px-4 py-3 bg-[#f5f0e8]">
         <span className="font-semibold text-[#1a1a2e] text-sm">{pkg.name}</span>
         <div className="text-right">
           <span className="text-[#e8821a] font-bold text-base">
             {formatPrice(pkg)}
           </span>
-          {pkg.priceMax && (
-            <span className="text-[#888] text-xs block">range</span>
-          )}
+          {pkg.priceMax && <span className="text-[#888] text-xs block">range</span>}
         </div>
       </div>
 
-      {/* Package body */}
       <div className="px-4 py-3 space-y-3">
-
         {/* Stats row */}
         <div className="grid grid-cols-3 gap-2 text-center">
           {pkg.days !== undefined && (
@@ -157,7 +161,6 @@ function PackageDrawer({ pkg, trainerId }: { pkg: Package; trainerId: string }) 
           )}
         </div>
 
-        {/* Book CTA */}
         <Link
           href={`/trainers/${trainerId}/book?price=${pkg.price}&pkgName=${encodeURIComponent(pkg.name)}`}
           className="block w-full text-center bg-[#e8821a] hover:bg-[#d4741a] text-white font-semibold text-sm rounded-xl py-2.5 transition-colors"
@@ -179,12 +182,9 @@ export default function TrainerCard({ trainer }: { trainer: Trainer }) {
 
   return (
     <div className="bg-white rounded-2xl border border-[#e8e2d9] shadow-sm overflow-hidden">
-      {/* ── Top section ── */}
       <div className="p-5 flex items-start justify-between gap-4">
-
-        {/* Left: avatar + info */}
+        
         <div className="flex items-start gap-3">
-          {/* Avatar */}
           <div className="w-11 h-11 rounded-xl bg-[#f5f0e8] flex items-center justify-center shrink-0 text-lg">
             🚗
           </div>
@@ -197,10 +197,9 @@ export default function TrainerCard({ trainer }: { trainer: Trainer }) {
               <MapPin size={11} />
               <span>{trainer.city}</span>
               <span>·</span>
-              <span>{trainer.yearsExperience} yrs exp</span>
+              <span>{trainer.experience} yrs exp</span> {/* Updated variable name */}
             </div>
 
-            {/* Tags */}
             <div className="flex flex-wrap gap-1.5 mt-2">
               {trainer.vehicleTypes.map((v) => (
                 <span
@@ -222,7 +221,6 @@ export default function TrainerCard({ trainer }: { trainer: Trainer }) {
           </div>
         </div>
 
-        {/* Right: price + book */}
         <div className="text-right shrink-0">
           <div className="text-[#e8821a] font-bold text-xl leading-none">
             ₹{startingPrice.toLocaleString("en-IN")}
@@ -239,7 +237,6 @@ export default function TrainerCard({ trainer }: { trainer: Trainer }) {
         </div>
       </div>
 
-      {/* ── Expandable toggle ── */}
       {packages.length > 0 && (
         <>
           <button
@@ -257,7 +254,6 @@ export default function TrainerCard({ trainer }: { trainer: Trainer }) {
             )}
           </button>
 
-          {/* ── Drawer ── */}
           {open && (
             <div className="border-t border-[#e8e2d9] bg-[#faf7f3] px-4 py-4 space-y-3">
               {packages.map((pkg, i) => (
