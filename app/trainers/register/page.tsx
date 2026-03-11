@@ -1,9 +1,21 @@
 "use client";
+// app/trainers/register/page.tsx
 
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 
 type VehicleType = "CAR" | "BIKE_GEARED" | "BIKE_NON_GEARED";
+
+interface TrainerPackage {
+  id: string;
+  name: string;
+  price: number | "";
+  days: number | "";
+  sessionLength: string;
+  distancePerDay: string;
+  includes: string;
+  trackFeePerVehicle: number | "";
+}
 
 interface FormData {
   name: string;
@@ -14,10 +26,10 @@ interface FormData {
   serviceArea: string[];
   vehicleTypes: VehicleType[];
   yearsExp: string;
-  pricePerHour: string;
   languages: string[];
   licenseNo: string;
   agreedToTerms: boolean;
+  packages: TrainerPackage[];
 }
 
 const CITIES = [
@@ -40,6 +52,37 @@ const VEHICLE_OPTIONS: { value: VehicleType; label: string; icon: string; desc: 
 
 const LANGUAGES = ["Hindi", "English", "Marathi", "Kannada", "Tamil", "Telugu", "Bengali", "Gujarati", "Punjabi"];
 
+const PACKAGE_TEMPLATES = [
+  {
+    name: "LL Package",
+    days: 20,
+    sessionLength: "30 min/day",
+    distancePerDay: "5 km",
+    includes: "Learner Licence training, RTO slot booking help, driving practice",
+  },
+  {
+    name: "DL Package",
+    days: 30,
+    sessionLength: "45 min/day",
+    distancePerDay: "10 km",
+    includes: "Full driving licence training, RTO test preparation, road confidence",
+  },
+  {
+    name: "LL + DL Package",
+    days: 45,
+    sessionLength: "45 min/day",
+    distancePerDay: "10 km",
+    includes: "Complete LL + DL training, all RTO formalities, end-to-end support",
+  },
+  {
+    name: "Per Session",
+    days: 1,
+    sessionLength: "1 hour",
+    distancePerDay: "",
+    includes: "Single session, flexible scheduling",
+  },
+];
+
 const STEPS = [
   { id: 1, label: "You", icon: "👤" },
   { id: 2, label: "Location", icon: "📍" },
@@ -47,11 +90,25 @@ const STEPS = [
   { id: 4, label: "Confirm", icon: "✅" },
 ];
 
+function makePackage(template?: typeof PACKAGE_TEMPLATES[0]): TrainerPackage {
+  return {
+    id: Math.random().toString(36).slice(2),
+    name: template?.name || "",
+    price: "",
+    days: template?.days || "",
+    sessionLength: template?.sessionLength || "",
+    distancePerDay: template?.distancePerDay || "",
+    includes: template?.includes || "",
+    trackFeePerVehicle: "",
+  };
+}
+
 const INITIAL_DATA: FormData = {
   name: "", phone: "", email: "",
   city: "", pincode: "", serviceArea: [],
-  vehicleTypes: [], yearsExp: "", pricePerHour: "", languages: [],
+  vehicleTypes: [], yearsExp: "", languages: [],
   licenseNo: "", agreedToTerms: false,
+  packages: [makePackage(PACKAGE_TEMPLATES[0])],
 };
 
 function FieldError({ msg }: { msg?: string }) {
@@ -59,8 +116,8 @@ function FieldError({ msg }: { msg?: string }) {
   return <p className="mt-1.5 text-xs text-red-400 flex items-center gap-1"><span>⚠</span>{msg}</p>;
 }
 
-function validateStep(step: number, data: FormData): Partial<Record<keyof FormData, string>> {
-  const errors: Partial<Record<keyof FormData, string>> = {};
+function validateStep(step: number, data: FormData): Partial<Record<string, string>> {
+  const errors: Partial<Record<string, string>> = {};
 
   if (step === 1) {
     if (!data.name.trim() || data.name.length < 2) errors.name = "Full name required";
@@ -78,25 +135,24 @@ function validateStep(step: number, data: FormData): Partial<Record<keyof FormDa
     if (data.vehicleTypes.length === 0) errors.vehicleTypes = "Select at least one vehicle type";
     if (!data.yearsExp || isNaN(Number(data.yearsExp)) || Number(data.yearsExp) < 1)
       errors.yearsExp = "Enter years of experience";
-    if (data.languages.length === 0) errors.languages = "Select at least one language";
-    const price = Number(data.pricePerHour);
-    if (!data.pricePerHour || isNaN(price) || price < 200 || price > 5000)
-      errors.pricePerHour = "Price must be between ₹200 and ₹5,000";
+    if (data.packages.length === 0) errors.packages = "Add at least one package";
+    const invalidPkg = data.packages.find(p => !p.name || !p.price || Number(p.price) < 100);
+    if (invalidPkg) errors.packages = "Each package needs a name and price (min ₹100)";
   }
 
   if (step === 4) {
-    if (!data.licenseNo || data.licenseNo.length < 10) errors.licenseNo = "Enter your DL number";
-    if (!data.agreedToTerms) errors.agreedToTerms = "Please agree to continue";
+    if (!data.licenseNo.trim()) errors.licenseNo = "Licence number required";
+    if (!data.agreedToTerms) errors.agreedToTerms = "Please agree to the terms";
   }
 
   return errors;
 }
 
-export default function TrainerRegisterPage() {
+export default function RegisterPage() {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [data, setData] = useState<FormData>(INITIAL_DATA);
-  const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
+  const [errors, setErrors] = useState<Partial<Record<string, string>>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [submitted, setSubmitted] = useState(false);
@@ -129,8 +185,28 @@ export default function TrainerRegisterPage() {
     setPincodeError("");
   };
 
-  const removePincode = (p: string) => {
-    onChange("serviceArea", data.serviceArea.filter((x) => x !== p));
+  const removePincode = (p: string) => onChange("serviceArea", data.serviceArea.filter((x) => x !== p));
+
+  // Package helpers
+  const addPackage = (template?: typeof PACKAGE_TEMPLATES[0]) => {
+    if (data.packages.length >= 4) return;
+    onChange("packages", [...data.packages, makePackage(template)]);
+  };
+
+  const removePackage = (id: string) => {
+    if (data.packages.length <= 1) return;
+    onChange("packages", data.packages.filter(p => p.id !== id));
+  };
+
+  const updatePackage = (id: string, field: keyof TrainerPackage, value: any) => {
+    onChange("packages", data.packages.map(p => p.id === id ? { ...p, [field]: value } : p));
+    setErrors(prev => ({ ...prev, packages: undefined }));
+  };
+
+  const applyTemplate = (pkgId: string, template: typeof PACKAGE_TEMPLATES[0]) => {
+    onChange("packages", data.packages.map(p =>
+      p.id === pkgId ? { ...p, name: template.name, days: template.days, sessionLength: template.sessionLength, distancePerDay: template.distancePerDay, includes: template.includes } : p
+    ));
   };
 
   const goNext = () => {
@@ -141,10 +217,7 @@ export default function TrainerRegisterPage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const goBack = () => {
-    setStep((s) => s - 1);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
+  const goBack = () => { setStep((s) => s - 1); window.scrollTo({ top: 0, behavior: "smooth" }); };
 
   const handleSubmit = async () => {
     const stepErrors = validateStep(4, data);
@@ -152,6 +225,9 @@ export default function TrainerRegisterPage() {
     setIsSubmitting(true);
     setSubmitError("");
     try {
+      // Use first package price as basePrice for backward compat
+      const basePrice = data.packages[0]?.price ? Number(data.packages[0].price) : undefined;
+
       const res = await fetch("/api/trainers/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -166,17 +242,15 @@ export default function TrainerRegisterPage() {
           vehicleTypes: data.vehicleTypes,
           experience: Number(data.yearsExp),
           languages: data.languages,
-          basePrice: Number(data.pricePerHour),
+          basePrice,
+          packagesJson: JSON.stringify(data.packages),
           licenseNumber: data.licenseNo,
           documents: {},
         }),
       });
 
       const json = await res.json();
-      if (!res.ok) {
-        setSubmitError(json.error || "Something went wrong. Please try again.");
-        return;
-      }
+      if (!res.ok) { setSubmitError(json.error || "Something went wrong. Please try again."); return; }
       setSubmitted(true);
     } catch {
       setSubmitError("Network error. Please check your connection and try again.");
@@ -185,23 +259,20 @@ export default function TrainerRegisterPage() {
     }
   };
 
-  const filteredCities = CITIES.filter((c) =>
-    c.toLowerCase().includes(citySearch.toLowerCase())
-  );
-
+  const filteredCities = CITIES.filter((c) => c.toLowerCase().includes(citySearch.toLowerCase()));
   const progress = (step / STEPS.length) * 100;
 
-  // ── Success Screen ──
+  const inputCls = "w-full border border-slate-600 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-all";
+  const inputBg = { background: "rgba(15,23,42,0.8)" };
+
   if (submitted) {
     return (
       <div className="min-h-screen flex items-center justify-center px-4"
         style={{ background: "linear-gradient(135deg, #0a1628 0%, #0f2040 50%, #1a1a2e 100%)" }}>
         <div className="max-w-md w-full text-center">
           <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 text-4xl"
-            style={{ background: "rgba(251,191,36,0.15)", border: "2px solid rgba(251,191,36,0.4)" }}>
-            🎉
-          </div>
-          <h1 className="text-3xl font-bold text-white mb-3">You're registered!</h1>
+            style={{ background: "rgba(251,191,36,0.15)", border: "2px solid rgba(251,191,36,0.4)" }}>🎉</div>
+          <h1 className="text-3xl font-bold text-white mb-3">You&apos;re registered!</h1>
           <p className="text-slate-400 mb-8 leading-relaxed">
             Thanks, <span className="text-amber-300 font-semibold">{data.name}</span>!
             Our team will call you on{" "}
@@ -210,18 +281,10 @@ export default function TrainerRegisterPage() {
           </p>
           <div className="rounded-2xl p-5 mb-8 text-left space-y-3"
             style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
-            <div className="flex items-center gap-3 text-sm text-slate-300">
-              <span className="text-amber-400 font-bold">✓</span>Application received
-            </div>
-            <div className="flex items-center gap-3 text-sm text-slate-400">
-              <span className="text-slate-600">○</span>Our team calls you within 24 hours
-            </div>
-            <div className="flex items-center gap-3 text-sm text-slate-400">
-              <span className="text-slate-600">○</span>Quick document check via WhatsApp
-            </div>
-            <div className="flex items-center gap-3 text-sm text-slate-400">
-              <span className="text-slate-600">○</span>Profile goes live — students start booking!
-            </div>
+            <div className="flex items-center gap-3 text-sm text-slate-300"><span className="text-amber-400 font-bold">✓</span>Application received</div>
+            <div className="flex items-center gap-3 text-sm text-slate-400"><span className="text-slate-600">○</span>Our team calls you within 24 hours</div>
+            <div className="flex items-center gap-3 text-sm text-slate-400"><span className="text-slate-600">○</span>Quick document check via WhatsApp</div>
+            <div className="flex items-center gap-3 text-sm text-slate-400"><span className="text-slate-600">○</span>Profile goes live — students start booking!</div>
           </div>
           <button onClick={() => router.push("/")}
             className="px-8 py-3 bg-amber-400 hover:bg-amber-300 font-bold rounded-xl transition-colors"
@@ -233,14 +296,12 @@ export default function TrainerRegisterPage() {
     );
   }
 
-  // ── Main Form ──
   return (
     <div className="min-h-screen" style={{ background: "linear-gradient(135deg, #0a1628 0%, #0f2040 50%, #1a1a2e 100%)" }}>
 
       <header className="sticky top-0 z-50 px-4 py-4 flex items-center justify-between"
         style={{ background: "rgba(10,22,40,0.9)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-        <button onClick={() => router.push("/")}
-          className="flex items-center gap-2 text-white hover:text-amber-300 transition-colors">
+        <button onClick={() => router.push("/")} className="flex items-center gap-2 text-white hover:text-amber-300 transition-colors">
           <span className="text-xl">←</span>
           <span className="hidden sm:block text-sm font-medium">LearnDrive</span>
         </button>
@@ -283,7 +344,7 @@ export default function TrainerRegisterPage() {
           <p className="text-slate-400 mt-2 text-sm">
             {step === 1 && "Just your name and number — takes 30 seconds"}
             {step === 2 && "Your city and pincodes you cover — so students find you"}
-            {step === 3 && "Vehicle types, experience, and your pricing"}
+            {step === 3 && "Vehicle types, experience, and your packages"}
             {step === 4 && "One last thing and you're in"}
           </p>
         </div>
@@ -297,114 +358,76 @@ export default function TrainerRegisterPage() {
               <div>
                 <label className="block text-sm font-semibold text-slate-300 mb-1.5">Full Name <span className="text-amber-400">*</span></label>
                 <input type="text" value={data.name} onChange={(e) => onChange("name", e.target.value)} placeholder="Rajesh Kumar"
-                  className="w-full border border-slate-600 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-all"
-                  style={{ background: "rgba(15,23,42,0.8)" }} />
+                  className={inputCls} style={inputBg} />
                 <FieldError msg={errors.name} />
               </div>
               <div>
                 <label className="block text-sm font-semibold text-slate-300 mb-1.5">Mobile Number <span className="text-amber-400">*</span></label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-mono">+91</span>
-                  <input type="tel" value={data.phone} onChange={(e) => onChange("phone", e.target.value.replace(/\D/g, "").slice(0, 10))}
-                    placeholder="9876543210" maxLength={10}
-                    className="w-full border border-slate-600 rounded-xl pl-12 pr-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-all"
-                    style={{ background: "rgba(15,23,42,0.8)" }} />
-                </div>
-                <p className="mt-1 text-xs text-slate-500">We'll call you on this number within 24 hours</p>
+                <input type="tel" value={data.phone} onChange={(e) => onChange("phone", e.target.value.replace(/\D/g, "").slice(0, 10))}
+                  placeholder="9876543210" maxLength={10} inputMode="numeric" className={inputCls} style={inputBg} />
                 <FieldError msg={errors.phone} />
               </div>
               <div>
                 <label className="block text-sm font-semibold text-slate-300 mb-1.5">Email <span className="text-slate-500 font-normal">(optional)</span></label>
-                <input type="email" value={data.email} onChange={(e) => onChange("email", e.target.value)} placeholder="rajesh@example.com"
-                  className="w-full border border-slate-600 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 transition-all"
-                  style={{ background: "rgba(15,23,42,0.8)" }} />
+                <input type="email" value={data.email} onChange={(e) => onChange("email", e.target.value)}
+                  placeholder="you@example.com" className={inputCls} style={inputBg} />
                 <FieldError msg={errors.email} />
-              </div>
-              <div className="rounded-xl p-4 border border-amber-400/15 mt-2" style={{ background: "rgba(251,191,36,0.04)" }}>
-                <p className="text-sm font-semibold text-amber-300 mb-2">Why join LearnDrive?</p>
-                <div className="space-y-1.5 text-xs text-slate-400">
-                  <p>✅ Get 10–15 extra students per month</p>
-                  <p>✅ You keep 85% of every booking</p>
-                  <p>✅ No monthly fee, no joining fee</p>
-                  <p>✅ Students come to you — no marketing needed</p>
-                </div>
               </div>
             </div>
           )}
 
           {/* ── STEP 2 ── */}
           {step === 2 && (
-            <div className="space-y-6">
-              {/* City */}
+            <div className="space-y-5">
               <div>
                 <label className="block text-sm font-semibold text-slate-300 mb-1.5">Your City <span className="text-amber-400">*</span></label>
-                <input type="text" value={citySearch} onChange={(e) => setCitySearch(e.target.value)} placeholder="Search city..."
-                  className="w-full border border-slate-600 rounded-xl px-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 transition-all mb-2 text-sm"
-                  style={{ background: "rgba(15,23,42,0.8)" }} />
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-48 overflow-y-auto pr-1">
-                  {filteredCities.map((city) => (
-                    <button key={city} type="button" onClick={() => onChange("city", city)}
-                      className={`px-3 py-2.5 rounded-xl border text-sm font-medium text-left transition-all ${
-                        data.city === city ? "border-amber-400 bg-amber-400/10 text-amber-300" : "border-slate-700 text-slate-400 hover:border-slate-500 hover:text-slate-300"
-                      }`} style={{ background: data.city === city ? "rgba(251,191,36,0.1)" : "rgba(15,23,42,0.6)" }}>
-                      {data.city === city && <span className="text-amber-400 mr-1">✓</span>}{city}
-                    </button>
-                  ))}
-                </div>
+                <input type="text" value={citySearch} onChange={(e) => setCitySearch(e.target.value)}
+                  placeholder="Search your city..." className={inputCls} style={inputBg} />
+                {citySearch && (
+                  <div className="mt-2 rounded-xl border border-slate-600 overflow-hidden max-h-40 overflow-y-auto" style={{ background: "#0d1f38" }}>
+                    {filteredCities.slice(0, 8).map((c) => (
+                      <button key={c} type="button" onClick={() => { onChange("city", c); setCitySearch(c); }}
+                        className={`w-full text-left px-4 py-2.5 text-sm transition-colors hover:bg-amber-400/10 ${data.city === c ? "text-amber-400 font-semibold" : "text-slate-300"}`}>
+                        {c}
+                      </button>
+                    ))}
+                    {filteredCities.length === 0 && <p className="px-4 py-3 text-sm text-slate-500">No city found</p>}
+                  </div>
+                )}
                 <FieldError msg={errors.city} />
               </div>
 
-              {/* Home pincode */}
               <div>
-                <label className="block text-sm font-semibold text-slate-300 mb-1.5">
-                  Your Home Pincode <span className="text-amber-400">*</span>
-                </label>
-                <input type="text" value={data.pincode}
-                  onChange={(e) => onChange("pincode", e.target.value.replace(/\D/g, "").slice(0, 6))}
-                  placeholder="e.g. 110045" maxLength={6} inputMode="numeric"
-                  className="w-full border border-slate-600 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-all font-mono"
-                  style={{ background: "rgba(15,23,42,0.8)" }} />
-                <p className="mt-1 text-xs text-slate-500">The pincode of the area where you are based</p>
+                <label className="block text-sm font-semibold text-slate-300 mb-1.5">Your Home Pincode <span className="text-amber-400">*</span></label>
+                <input type="text" value={data.pincode} onChange={(e) => onChange("pincode", e.target.value.replace(/\D/g, "").slice(0, 6))}
+                  placeholder="110001" maxLength={6} inputMode="numeric" className={inputCls} style={inputBg} />
                 <FieldError msg={errors.pincode} />
               </div>
 
-              {/* Service pincodes */}
               <div>
-                <label className="block text-sm font-semibold text-slate-300 mb-1">
-                  Pincodes You Serve <span className="text-amber-400">*</span>
-                </label>
-                <p className="text-xs text-slate-500 mb-3">
-                  Add all pincodes you can travel to for training. Students search by pincode — more pincodes = more visibility.
-                </p>
+                <label className="block text-sm font-semibold text-slate-300 mb-1.5">Service Area Pincodes <span className="text-amber-400">*</span></label>
+                <p className="text-xs text-slate-500 mb-2">Add pincodes where you pick up students</p>
                 <div className="flex gap-2">
-                  <input type="text" value={pincodeInput}
-                    onChange={(e) => { setPincodeInput(e.target.value.replace(/\D/g, "").slice(0, 6)); setPincodeError(""); }}
-                    onKeyDown={(e) => e.key === "Enter" && addPincode()}
-                    placeholder="110001" maxLength={6} inputMode="numeric"
-                    className="flex-1 border border-slate-600 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 transition-all font-mono text-sm"
-                    style={{ background: "rgba(15,23,42,0.8)" }} />
+                  <input type="text" value={pincodeInput} onChange={(e) => { setPincodeInput(e.target.value.replace(/\D/g, "").slice(0, 6)); setPincodeError(""); }}
+                    onKeyDown={(e) => e.key === "Enter" && addPincode()} placeholder="Enter pincode"
+                    maxLength={6} inputMode="numeric" className={`${inputCls} flex-1`} style={inputBg} />
                   <button type="button" onClick={addPincode}
-                    className="px-5 py-3 bg-amber-400 hover:bg-amber-300 font-bold rounded-xl text-sm transition-all flex-shrink-0"
-                    style={{ color: "#0f172a" }}>
+                    className="px-4 py-3 bg-amber-400/20 hover:bg-amber-400/30 text-amber-400 font-bold rounded-xl transition-colors text-sm border border-amber-400/30">
                     + Add
                   </button>
                 </div>
                 {pincodeError && <p className="mt-1 text-xs text-red-400">⚠ {pincodeError}</p>}
-
                 {data.serviceArea.length > 0 && (
                   <div className="flex flex-wrap gap-2 mt-3">
                     {data.serviceArea.map((p) => (
-                      <span key={p} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-mono font-medium"
-                        style={{ background: "rgba(251,191,36,0.1)", border: "1px solid rgba(251,191,36,0.3)", color: "#fcd34d" }}>
-                        📍 {p}
-                        <button type="button" onClick={() => removePincode(p)}
-                          className="text-slate-400 hover:text-red-400 transition-colors ml-0.5 text-xs">✕</button>
+                      <span key={p} className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-semibold text-amber-300"
+                        style={{ background: "rgba(251,191,36,0.12)", border: "1px solid rgba(251,191,36,0.25)" }}>
+                        {p}
+                        <button type="button" onClick={() => removePincode(p)} className="text-slate-400 hover:text-red-400 transition-colors ml-1">×</button>
                       </span>
                     ))}
                   </div>
                 )}
-
-                <p className="mt-2 text-xs text-slate-600">{data.serviceArea.length}/10 pincodes added</p>
                 <FieldError msg={errors.serviceArea} />
               </div>
             </div>
@@ -412,68 +435,176 @@ export default function TrainerRegisterPage() {
 
           {/* ── STEP 3 ── */}
           {step === 3 && (
-            <div className="space-y-6">
+            <div className="space-y-7">
+
+              {/* Vehicle types */}
               <div>
-                <label className="block text-sm font-semibold text-slate-300 mb-2">Vehicle Types You Train <span className="text-amber-400">*</span></label>
-                <div className="grid grid-cols-1 gap-3">
-                  {VEHICLE_OPTIONS.map((v) => {
-                    const selected = data.vehicleTypes.includes(v.value);
-                    return (
-                      <button key={v.value} type="button" onClick={() => toggleVehicle(v.value)}
-                        className={`flex items-center gap-4 px-4 py-4 rounded-xl border text-left transition-all ${selected ? "border-amber-400 bg-amber-400/10" : "border-slate-600 hover:border-slate-500"}`}
-                        style={{ background: selected ? "rgba(251,191,36,0.1)" : "rgba(15,23,42,0.8)" }}>
-                        <span className="text-2xl">{v.icon}</span>
-                        <div className="flex-1">
-                          <p className={`font-semibold text-sm ${selected ? "text-amber-300" : "text-slate-200"}`}>{v.label}</p>
-                          <p className="text-xs text-slate-500 mt-0.5">{v.desc}</p>
-                        </div>
-                        <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${selected ? "border-amber-400 bg-amber-400" : "border-slate-600"}`}>
-                          {selected && <span className="text-xs font-bold" style={{ color: "#0f172a" }}>✓</span>}
-                        </div>
-                      </button>
-                    );
-                  })}
+                <label className="block text-sm font-semibold text-slate-300 mb-3">Vehicle Types You Teach <span className="text-amber-400">*</span></label>
+                <div className="grid grid-cols-3 gap-3">
+                  {VEHICLE_OPTIONS.map((v) => (
+                    <button key={v.value} type="button" onClick={() => toggleVehicle(v.value)}
+                      className={`flex flex-col items-center gap-1.5 p-4 rounded-xl border transition-all text-center ${
+                        data.vehicleTypes.includes(v.value)
+                          ? "border-amber-400 bg-amber-400/10 text-white"
+                          : "border-slate-600 hover:border-slate-500 text-slate-400"
+                      }`}>
+                      <span className="text-2xl">{v.icon}</span>
+                      <span className="text-xs font-semibold">{v.label}</span>
+                      <span className="text-xs text-slate-500">{v.desc}</span>
+                    </button>
+                  ))}
                 </div>
                 <FieldError msg={errors.vehicleTypes} />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-slate-300 mb-1.5">Years Experience <span className="text-amber-400">*</span></label>
-                  <input type="number" value={data.yearsExp} onChange={(e) => onChange("yearsExp", e.target.value)} placeholder="5" min="1"
-                    className="w-full border border-slate-600 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 transition-all"
-                    style={{ background: "rgba(15,23,42,0.8)" }} />
-                  <FieldError msg={errors.yearsExp} />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-slate-300 mb-1.5">Price per Hour <span className="text-amber-400">*</span></label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-semibold">₹</span>
-                    <input type="number" value={data.pricePerHour} onChange={(e) => onChange("pricePerHour", e.target.value)} placeholder="500" min={200} max={5000}
-                      className="w-full border border-slate-600 rounded-xl pl-8 pr-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 transition-all"
-                      style={{ background: "rgba(15,23,42,0.8)" }} />
-                  </div>
-                  <p className="mt-1 text-xs text-slate-500">₹200 – ₹5,000</p>
-                  <FieldError msg={errors.pricePerHour} />
+              {/* Experience */}
+              <div>
+                <label className="block text-sm font-semibold text-slate-300 mb-1.5">Years of Teaching Experience <span className="text-amber-400">*</span></label>
+                <input type="number" value={data.yearsExp} onChange={(e) => onChange("yearsExp", e.target.value)}
+                  placeholder="e.g. 5" min="1" max="50" className={inputCls} style={inputBg} />
+                <FieldError msg={errors.yearsExp} />
+              </div>
+
+              {/* Languages */}
+              <div>
+                <label className="block text-sm font-semibold text-slate-300 mb-3">Languages You Teach In</label>
+                <div className="flex flex-wrap gap-2">
+                  {LANGUAGES.map((l) => (
+                    <button key={l} type="button" onClick={() => toggleLang(l)}
+                      className={`px-4 py-2 rounded-full text-sm font-medium border transition-all ${
+                        data.languages.includes(l)
+                          ? "border-amber-400 bg-amber-400/10 text-amber-300"
+                          : "border-slate-600 text-slate-400 hover:border-slate-500"
+                      }`}>
+                      {l}
+                    </button>
+                  ))}
                 </div>
               </div>
 
+              {/* ── PACKAGES ── */}
               <div>
-                <label className="block text-sm font-semibold text-slate-300 mb-2">Teaching Languages <span className="text-amber-400">*</span></label>
-                <div className="flex flex-wrap gap-2">
-                  {LANGUAGES.map((lang) => {
-                    const selected = data.languages.includes(lang);
-                    return (
-                      <button key={lang} type="button" onClick={() => toggleLang(lang)}
-                        className={`px-3 py-1.5 rounded-lg border text-sm font-medium transition-all ${selected ? "border-amber-400 bg-amber-400/10 text-amber-300" : "border-slate-600 text-slate-400 hover:border-slate-500"}`}
-                        style={{ background: selected ? "rgba(251,191,36,0.1)" : "transparent" }}>
-                        {selected && "✓ "}{lang}
-                      </button>
-                    );
-                  })}
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-sm font-semibold text-slate-300">
+                    Your Packages & Pricing <span className="text-amber-400">*</span>
+                  </label>
+                  <span className="text-xs text-slate-500">{data.packages.length}/4 packages</span>
                 </div>
-                <FieldError msg={errors.languages} />
+                <p className="text-xs text-slate-500 mb-4">Add the packages you offer — students will see these and choose what fits them</p>
+
+                <div className="space-y-4">
+                  {data.packages.map((pkg, idx) => (
+                    <div key={pkg.id} className="rounded-xl p-4 space-y-3"
+                      style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)" }}>
+
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-semibold text-amber-400 uppercase tracking-wider">Package {idx + 1}</span>
+                        {data.packages.length > 1 && (
+                          <button type="button" onClick={() => removePackage(pkg.id)}
+                            className="text-xs text-red-400 hover:text-red-300 transition-colors">Remove</button>
+                        )}
+                      </div>
+
+                      {/* Quick-fill templates */}
+                      <div>
+                        <p className="text-xs text-slate-500 mb-2">Quick fill:</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {PACKAGE_TEMPLATES.map(t => (
+                            <button key={t.name} type="button" onClick={() => applyTemplate(pkg.id, t)}
+                              className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-all ${
+                                pkg.name === t.name
+                                  ? "border-amber-400/60 text-amber-300 bg-amber-400/10"
+                                  : "border-slate-600 text-slate-400 hover:border-slate-500"
+                              }`}>
+                              {t.name}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Package name */}
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs text-slate-400 mb-1">Package Name *</label>
+                          <input type="text" value={pkg.name}
+                            onChange={(e) => updatePackage(pkg.id, "name", e.target.value)}
+                            placeholder="e.g. LL Package" className={`${inputCls} text-sm py-2.5`} style={inputBg} />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-slate-400 mb-1">Price (₹) *</label>
+                          <input type="number" value={pkg.price}
+                            onChange={(e) => updatePackage(pkg.id, "price", e.target.value ? Number(e.target.value) : "")}
+                            placeholder="e.g. 5500" min="100"
+                            className={`${inputCls} text-sm py-2.5`} style={inputBg} />
+                        </div>
+                      </div>
+
+                      {/* Duration + session */}
+                      <div className="grid grid-cols-3 gap-3">
+                        <div>
+                          <label className="block text-xs text-slate-400 mb-1">Duration (days)</label>
+                          <input type="number" value={pkg.days}
+                            onChange={(e) => updatePackage(pkg.id, "days", e.target.value ? Number(e.target.value) : "")}
+                            placeholder="20" min="1"
+                            className={`${inputCls} text-sm py-2.5`} style={inputBg} />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-slate-400 mb-1">Session length</label>
+                          <input type="text" value={pkg.sessionLength}
+                            onChange={(e) => updatePackage(pkg.id, "sessionLength", e.target.value)}
+                            placeholder="30 min/day"
+                            className={`${inputCls} text-sm py-2.5`} style={inputBg} />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-slate-400 mb-1">Distance/day</label>
+                          <input type="text" value={pkg.distancePerDay}
+                            onChange={(e) => updatePackage(pkg.id, "distancePerDay", e.target.value)}
+                            placeholder="5 km"
+                            className={`${inputCls} text-sm py-2.5`} style={inputBg} />
+                        </div>
+                      </div>
+
+                      {/* Includes */}
+                      <div>
+                        <label className="block text-xs text-slate-400 mb-1">What&apos;s included</label>
+                        <input type="text" value={pkg.includes}
+                          onChange={(e) => updatePackage(pkg.id, "includes", e.target.value)}
+                          placeholder="e.g. LL training, RTO slot booking, road confidence"
+                          className={`${inputCls} text-sm py-2.5`} style={inputBg} />
+                      </div>
+
+                      {/* Track fee */}
+                      <div>
+                        <label className="block text-xs text-slate-400 mb-1">Track / Test day fee per vehicle (₹) <span className="text-slate-600">optional</span></label>
+                        <input type="number" value={pkg.trackFeePerVehicle}
+                          onChange={(e) => updatePackage(pkg.id, "trackFeePerVehicle", e.target.value ? Number(e.target.value) : "")}
+                          placeholder="e.g. 150"
+                          className={`${inputCls} text-sm py-2.5`} style={inputBg} />
+                        <p className="text-xs text-slate-600 mt-1">This is extra — shown separately so students know upfront</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Add package button */}
+                {data.packages.length < 4 && (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {PACKAGE_TEMPLATES.filter(t => !data.packages.find(p => p.name === t.name)).map(t => (
+                      <button key={t.name} type="button" onClick={() => addPackage(t)}
+                        className="px-3 py-2 rounded-xl text-xs font-semibold text-amber-400 border border-amber-400/30 hover:bg-amber-400/10 transition-colors">
+                        + Add {t.name}
+                      </button>
+                    ))}
+                    <button type="button" onClick={() => addPackage()}
+                      className="px-3 py-2 rounded-xl text-xs font-semibold text-slate-400 border border-slate-600 hover:border-slate-500 transition-colors">
+                      + Custom Package
+                    </button>
+                  </div>
+                )}
+
+                <FieldError msg={errors.packages} />
               </div>
+
             </div>
           )}
 
@@ -486,23 +617,30 @@ export default function TrainerRegisterPage() {
               </div>
               <div>
                 <label className="block text-sm font-semibold text-slate-300 mb-1.5">Driving Licence Number <span className="text-amber-400">*</span></label>
-                <input type="text" value={data.licenseNo} onChange={(e) => onChange("licenseNo", e.target.value.toUpperCase())} placeholder="DL0120230001234"
-                  className="w-full border border-slate-600 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-all font-mono"
-                  style={{ background: "rgba(15,23,42,0.8)" }} />
+                <input type="text" value={data.licenseNo} onChange={(e) => onChange("licenseNo", e.target.value.toUpperCase())}
+                  placeholder="DL0120230001234" className={`${inputCls} font-mono`} style={inputBg} />
                 <p className="mt-1 text-xs text-slate-500">Must cover the vehicle types you selected</p>
                 <FieldError msg={errors.licenseNo} />
               </div>
 
-              <div className="rounded-xl p-4 border border-slate-700 space-y-2" style={{ background: "rgba(255,255,255,0.02)" }}>
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Summary</p>
+              {/* Summary */}
+              <div className="rounded-xl p-4 border border-slate-700 space-y-3" style={{ background: "rgba(255,255,255,0.02)" }}>
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Summary</p>
                 <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
                   <span className="text-slate-500">Name</span><span className="text-slate-200 font-medium">{data.name}</span>
                   <span className="text-slate-500">Phone</span><span className="text-slate-200 font-mono">+91 {data.phone}</span>
                   <span className="text-slate-500">City</span><span className="text-slate-200">{data.city}</span>
-                  <span className="text-slate-500">Pincodes</span><span className="text-slate-200 font-mono text-xs">{data.serviceArea.join(", ")}</span>
                   <span className="text-slate-500">Vehicles</span><span className="text-slate-200">{data.vehicleTypes.join(", ")}</span>
                   <span className="text-slate-500">Experience</span><span className="text-slate-200">{data.yearsExp} years</span>
-                  <span className="text-slate-500">Price</span><span className="text-slate-200">₹{data.pricePerHour}/hr</span>
+                </div>
+                <div className="pt-2 border-t border-slate-700">
+                  <p className="text-xs font-semibold text-slate-400 mb-2">Packages</p>
+                  {data.packages.map(pkg => (
+                    <div key={pkg.id} className="flex justify-between text-sm mb-1">
+                      <span className="text-slate-400">{pkg.name}</span>
+                      <span className="text-amber-300 font-semibold">₹{Number(pkg.price).toLocaleString("en-IN")}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
 
@@ -512,7 +650,7 @@ export default function TrainerRegisterPage() {
                   {data.agreedToTerms && <span className="text-xs font-bold" style={{ color: "#0f172a" }}>✓</span>}
                 </div>
                 <span className="text-sm text-slate-300 leading-relaxed">
-                  I confirm all information is accurate. I agree to LearnDrive's{" "}
+                  I confirm all information is accurate. I agree to LearnDrive&apos;s{" "}
                   <a href="/terms" target="_blank" className="text-amber-400 underline">Terms</a> and{" "}
                   <a href="/privacy" target="_blank" className="text-amber-400 underline">Privacy Policy</a>.
                 </span>

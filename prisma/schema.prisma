@@ -55,7 +55,8 @@ model Trainer {
   trainerType    TrainerType   @default(INDEPENDENT)
   status         TrainerStatus @default(PENDING)
   rating         Float?        @default(0)
-  basePrice      Int?
+  basePrice      Int?          // fallback per-session price
+  packagesJson   String?       // JSON: TrainerPackage[] — stores all packages
   verifiedSchool Boolean       @default(false)
   createdAt      DateTime      @default(now())
 
