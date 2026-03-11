@@ -1,17 +1,30 @@
 "use client";
+// app/trainers/[id]/page.tsx
+// FIXES: removed trial class, shows platform fee split, correct price labels, no fallback packages
+
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+
+interface VehicleVariant {
+  model: string;
+  price: number;
+  priceAC?: number;
+}
 
 interface TrainerPackage {
   id: string;
   name: string;
   price: number;
+  priceMax?: number;          // for range display e.g. ₹3,000 – ₹5,000
   days: number;
   sessionLength: string;
   distancePerDay: string;
   includes: string;
   trackFeePerVehicle?: number;
+  acSurcharge?: number;       // extra for AC vehicle
+  vehicleModels?: string;     // comma-separated e.g. "Wagon R, Swift, Dzire"
+  variants?: VehicleVariant[];// vehicle-model-specific prices
 }
 
 interface Trainer {
@@ -29,21 +42,26 @@ interface Trainer {
   bio?: string;
 }
 
+// Platform fee logic — flat ₹500 if package >= ₹2000, else 10%
+function computeFees(price: number) {
+  const platformFee = price >= 2000 ? 500 : Math.round(price * 0.1);
+  const trainerPayout = price - platformFee;
+  return { platformFee, trainerPayout };
+}
+
 export default function TrainerPage() {
   const params = useParams();
   const [trainer, setTrainer] = useState<Trainer | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedPkg, setSelectedPkg] = useState<TrainerPackage | null>(null);
-  const [bookingType, setBookingType] = useState<"trial" | "package">("trial");
 
   useEffect(() => {
     fetch(`/api/trainers/${params.id}`)
-      .then((r) => r.json())
-      .then((d) => {
+      .then(r => r.json())
+      .then(d => {
         const t = d.trainer ?? d;
         setTrainer(t);
         setLoading(false);
-        // Auto-select first package
         if (t.packagesJson) {
           try {
             const pkgs: TrainerPackage[] = JSON.parse(t.packagesJson);
@@ -56,7 +74,7 @@ export default function TrainerPage() {
 
   if (loading) return (
     <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#F8F7F4" }}>
-      <div style={{ textAlign: "center", color: "#64748B" }}>Loading trainer...</div>
+      <div style={{ color: "#64748B" }}>Loading...</div>
     </div>
   );
 
@@ -73,55 +91,50 @@ export default function TrainerPage() {
   const langs: string[] = Array.isArray(trainer.languages) ? trainer.languages : [];
   const bio = trainer.bio || trainer.about || null;
 
-  // Parse packages
+  // Parse packages — NO fallback trial/per-session packages
   let packages: TrainerPackage[] = [];
   if (trainer.packagesJson) {
     try { packages = JSON.parse(trainer.packagesJson); } catch {}
   }
 
-  // Fallback if no packages — build one from basePrice
-  const fallbackPrice = trainer.basePrice || trainer.price || 500;
-  if (packages.length === 0) {
-    packages = [
-      { id: "trial", name: "Trial Session", price: 299, days: 1, sessionLength: "1 hour", distancePerDay: "", includes: "Single session, no commitment", trackFeePerVehicle: undefined },
-      { id: "session", name: "Per Session", price: fallbackPrice, days: 1, sessionLength: "1 hour", distancePerDay: "", includes: "Flexible, book as many as you need", trackFeePerVehicle: undefined },
-    ];
+  // If DB has no packages at all, use a simple per-session based on basePrice only
+  const fallbackPrice = trainer.basePrice || trainer.price || 0;
+  if (packages.length === 0 && fallbackPrice > 0) {
+    packages = [{
+      id: "main",
+      name: "Training Package",
+      price: fallbackPrice,
+      days: 0,
+      sessionLength: "",
+      distancePerDay: "",
+      includes: "Contact trainer for full details",
+    }];
   }
 
-  const trialPrice = 299;
+  const { platformFee, trainerPayout } = selectedPkg
+    ? computeFees(selectedPkg.price)
+    : { platformFee: 0, trainerPayout: 0 };
 
-  // Header display price
-  const headerPrice = bookingType === "trial" ? trialPrice : (selectedPkg?.price ?? 0);
-  const headerLabel = bookingType === "trial" ? "trial class" : selectedPkg?.name ?? "";
-
-  // Book URLs — pass everything in URL so book page never crashes
-  const makeBookUrl = (price: number, pkgName: string, type: "trial" | "package") =>
-    `/trainers/${trainer.id}/book?type=${type}&price=${price}&sessions=1&pkgName=${encodeURIComponent(pkgName)}&trainerName=${encodeURIComponent(trainer.name)}&trainerCity=${encodeURIComponent(trainer.city)}`;
-
-  const trialBookUrl = makeBookUrl(trialPrice, "Trial Class", "trial");
-  const packageBookUrl = selectedPkg ? makeBookUrl(selectedPkg.price, selectedPkg.name, "package") : "#";
+  const makeBookUrl = (price: number, pkgName: string) =>
+    `/trainers/${trainer.id}/book?price=${price}&pkgName=${encodeURIComponent(pkgName)}&trainerName=${encodeURIComponent(trainer.name)}&trainerCity=${encodeURIComponent(trainer.city)}`;
 
   return (
-    <main style={{ minHeight: "100vh", background: "#F8F7F4", fontFamily: "'DM Sans', 'Segoe UI', sans-serif" }}>
+    <main style={{ minHeight: "100vh", background: "#F8F7F4", fontFamily: "'DM Sans','Segoe UI',sans-serif" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Sora:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap');
-        .pkg-card { transition: all 0.15s; cursor: pointer; border-radius: 14px; border: 2px solid #E2E8F0; background: white; padding: 16px; }
+        .pkg-card { transition: all 0.15s; cursor: pointer; border-radius: 14px; border: 2px solid #E2E8F0; background: white; padding: 16px; margin-bottom: 12px; }
         .pkg-card:hover { border-color: #F59E0B; }
         .pkg-card.selected { border-color: #F59E0B; background: #FFFBEB; }
-        .tab-btn { padding: 10px 20px; border-radius: 10px; border: none; font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.15s; flex: 1; }
-        .tab-btn.active { background: #F59E0B; color: #1a2540; }
-        .tab-btn.inactive { background: #F1F5F9; color: #64748B; }
-        @media (max-width: 480px) {
-          .trainer-header { flex-direction: column !important; }
-          .price-display { text-align: left !important; margin-top: 8px; }
-        }
+        .fee-row { display: flex; justify-content: space-between; font-size: 14px; color: #64748B; margin-bottom: 8px; }
+        .fee-row.total { font-size: 16px; font-weight: 800; color: #0F172A; border-top: 1px solid #F1F5F9; padding-top: 12px; margin-top: 4px; }
+        .fee-row.trainer-cut { color: #16A34A; font-size: 13px; }
       `}</style>
 
       {/* Nav */}
       <nav style={{ background: "#FFFFFF", borderBottom: "1px solid #E2E8F0", padding: "0 5%" }}>
         <div style={{ maxWidth: 900, margin: "0 auto", display: "flex", alignItems: "center", height: 56, gap: 12 }}>
           <Link href="/" style={{ textDecoration: "none" }}>
-            <span style={{ fontFamily: "'Sora', sans-serif", color: "#0F172A", fontSize: 18, fontWeight: 800 }}>
+            <span style={{ fontFamily: "'Sora',sans-serif", color: "#0F172A", fontSize: 18, fontWeight: 800 }}>
               Learn<span style={{ color: "#F59E0B" }}>Drive</span>
             </span>
           </Link>
@@ -132,14 +145,14 @@ export default function TrainerPage() {
 
       <div style={{ maxWidth: 680, margin: "0 auto", padding: "28px 5% 60px" }}>
 
-        {/* Header card — dynamic price */}
-        <div style={{ background: "linear-gradient(145deg, #0B1437 0%, #1A2B5F 100%)", borderRadius: 20, padding: 28, marginBottom: 20 }}>
-          <div className="trainer-header" style={{ display: "flex", gap: 18, alignItems: "flex-start", flexWrap: "wrap" }}>
+        {/* Header card */}
+        <div style={{ background: "linear-gradient(145deg,#0B1437 0%,#1A2B5F 100%)", borderRadius: 20, padding: 28, marginBottom: 20 }}>
+          <div style={{ display: "flex", gap: 18, alignItems: "flex-start", flexWrap: "wrap" }}>
             <div style={{ width: 64, height: 64, borderRadius: 16, background: "rgba(245,158,11,0.2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26, flexShrink: 0 }}>
               🧑‍🏫
             </div>
-            <div style={{ flex: 1 }}>
-              <h1 style={{ fontFamily: "'Sora', sans-serif", fontSize: 22, fontWeight: 800, marginBottom: 8, color: "#FFFFFF" }}>
+            <div style={{ flex: 1, minWidth: 180 }}>
+              <h1 style={{ fontFamily: "'Sora',sans-serif", fontSize: 22, fontWeight: 800, marginBottom: 8, color: "#FFFFFF" }}>
                 {trainer.name}
               </h1>
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -156,41 +169,57 @@ export default function TrainerPage() {
                     ⭐ {trainer.rating.toFixed(1)}
                   </span>
                 ) : null}
-                {vehicles.map((v) => (
+                {vehicles.map(v => (
                   <span key={v} style={{ background: "rgba(96,165,250,0.15)", color: "#93C5FD", borderRadius: 99, padding: "3px 12px", fontSize: 13 }}>
                     {v === "CAR" ? "🚗 Car" : v === "BIKE_GEARED" ? "🏍️ Bike" : "🛵 Scooter"}
                   </span>
                 ))}
               </div>
+              {/* All languages shown */}
               {langs.length > 0 && (
-                <p style={{ color: "rgba(255,255,255,0.45)", fontSize: 13, marginTop: 8 }}>
-                  Speaks: {langs.join(", ")}
+                <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 13, marginTop: 8 }}>
+                  🗣 {langs.join(" · ")}
                 </p>
               )}
             </div>
-            {/* Dynamic price */}
-            <div className="price-display" style={{ textAlign: "right", minWidth: 110 }}>
-              <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 28, fontWeight: 800, color: "#F59E0B" }}>
-                ₹{headerPrice.toLocaleString("en-IN")}
+            {/* Header price — shows selected package price, not /hr */}
+            {selectedPkg && (
+              <div style={{ textAlign: "right", minWidth: 120 }}>
+                {selectedPkg.priceMax ? (
+                  <>
+                    <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 20, fontWeight: 800, color: "#F59E0B" }}>
+                      ₹{selectedPkg.price.toLocaleString("en-IN")}–{selectedPkg.priceMax.toLocaleString("en-IN")}
+                    </div>
+                    <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 11, marginTop: 2 }}>starting price</div>
+                  </>
+                ) : (
+                  <>
+                    <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 28, fontWeight: 800, color: "#F59E0B" }}>
+                      ₹{selectedPkg.price.toLocaleString("en-IN")}
+                    </div>
+                    <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 12, marginTop: 2 }}>
+                      {selectedPkg.name}
+                    </div>
+                  </>
+                )}
               </div>
-              <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 12, marginTop: 2 }}>{headerLabel}</div>
-            </div>
+            )}
           </div>
         </div>
 
         {/* About */}
         {bio && (
           <div style={{ background: "#FFFFFF", borderRadius: 18, border: "1px solid #E2E8F0", padding: 24, marginBottom: 20 }}>
-            <h2 style={{ fontFamily: "'Sora', sans-serif", fontSize: 16, fontWeight: 700, marginBottom: 10 }}>About</h2>
+            <h2 style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 700, marginBottom: 10 }}>About</h2>
             <p style={{ color: "#64748B", lineHeight: 1.7 }}>{bio}</p>
           </div>
         )}
 
         {/* What's included */}
         <div style={{ background: "#FFFFFF", borderRadius: 18, border: "1px solid #E2E8F0", padding: 24, marginBottom: 20 }}>
-          <h2 style={{ fontFamily: "'Sora', sans-serif", fontSize: 16, fontWeight: 700, marginBottom: 16 }}>What&apos;s included in all packages</h2>
+          <h2 style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 700, marginBottom: 16 }}>What&apos;s included</h2>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-            {["Dual-control car", "RTO test prep", "Flexible timings", "Pickup from your location"].map((item) => (
+            {["Pickup from your area", "RTO test preparation", "Flexible timings", "Experienced instructor"].map(item => (
               <div key={item} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, color: "#374151" }}>
                 <span style={{ color: "#16A34A", fontWeight: 700 }}>✓</span> {item}
               </div>
@@ -198,168 +227,151 @@ export default function TrainerPage() {
           </div>
         </div>
 
-        {/* Booking section */}
+        {/* Booking section — NO trial tab */}
         <div style={{ background: "#FFFFFF", borderRadius: 18, border: "1px solid #E2E8F0", padding: 28 }}>
-          <h2 style={{ fontFamily: "'Sora', sans-serif", fontSize: 18, fontWeight: 800, marginBottom: 20, color: "#0F172A" }}>
-            Book your sessions
+          <h2 style={{ fontFamily: "'Sora',sans-serif", fontSize: 18, fontWeight: 800, marginBottom: 6, color: "#0F172A" }}>
+            Choose a package
           </h2>
+          <p style={{ color: "#94A3B8", fontSize: 13, marginBottom: 20 }}>
+            Select a training package that suits your needs
+          </p>
 
-          {/* Tabs */}
-          <div style={{ display: "flex", gap: 8, marginBottom: 24, background: "#F1F5F9", borderRadius: 12, padding: 4 }}>
-            <button className={`tab-btn ${bookingType === "trial" ? "active" : "inactive"}`} onClick={() => setBookingType("trial")}>
-              Trial Class — ₹299
-            </button>
-            <button className={`tab-btn ${bookingType === "package" ? "active" : "inactive"}`} onClick={() => setBookingType("package")}>
-              Book a Package
-            </button>
-          </div>
-
-          {bookingType === "trial" ? (
-            <>
-              <div style={{ background: "#F0FDF4", border: "1px solid #BBF7D0", borderRadius: 12, padding: 16, marginBottom: 20 }}>
-                <div style={{ fontWeight: 700, color: "#166534", marginBottom: 4, fontSize: 15 }}>✅ Try before you commit</div>
-                <p style={{ color: "#166534", fontSize: 14, lineHeight: 1.6 }}>
-                  A 1-hour trial class with {trainer.name} at just ₹299. If you like it, book a full package. No pressure.
-                </p>
-              </div>
-
-              <div style={{ background: "#FEF9EC", border: "1px solid #FDE68A", borderRadius: 12, padding: 14, marginBottom: 20 }}>
-                <p style={{ fontSize: 13, color: "#92400E", lineHeight: 1.6 }}>
-                  💡 After your trial, you can pick any of {trainer.name}&apos;s packages below that fit your schedule and budget.
-                </p>
-              </div>
-
-              <div style={{ borderTop: "1px solid #F1F5F9", paddingTop: 16, marginBottom: 20 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, color: "#64748B", marginBottom: 8 }}>
-                  <span>Trial class (1 hour)</span><span>₹299</span>
+          {/* Package cards */}
+          {packages.map(pkg => (
+            <div
+              key={pkg.id}
+              className={`pkg-card ${selectedPkg?.id === pkg.id ? "selected" : ""}`}
+              onClick={() => setSelectedPkg(pkg)}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <div style={{
+                    width: 20, height: 20, borderRadius: "50%",
+                    border: `2px solid ${selectedPkg?.id === pkg.id ? "#F59E0B" : "#CBD5E1"}`,
+                    background: selectedPkg?.id === pkg.id ? "#F59E0B" : "white",
+                    display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0
+                  }}>
+                    {selectedPkg?.id === pkg.id && <div style={{ width: 8, height: 8, borderRadius: "50%", background: "white" }} />}
+                  </div>
+                  <span style={{ fontFamily: "'Sora',sans-serif", fontWeight: 700, fontSize: 15, color: "#0F172A" }}>
+                    {pkg.name}
+                  </span>
                 </div>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, color: "#64748B", marginBottom: 8 }}>
-                  <span>Platform fee</span><span style={{ color: "#16A34A" }}>Included</span>
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 16, fontWeight: 800, color: "#0F172A", borderTop: "1px solid #F1F5F9", paddingTop: 12 }}>
-                  <span>Total payable</span><span style={{ color: "#F59E0B" }}>₹299</span>
-                </div>
-              </div>
-
-              <Link href={trialBookUrl}
-                style={{ display: "block", textAlign: "center", background: "#F59E0B", color: "#fff", padding: "14px", borderRadius: 12, fontWeight: 800, fontSize: 16, textDecoration: "none", boxShadow: "0 4px 20px rgba(245,158,11,0.35)" }}>
-                Book Trial Class — ₹299 →
-              </Link>
-            </>
-          ) : (
-            <>
-              {/* Package cards */}
-              <div style={{ marginBottom: 20 }}>
-                <p style={{ fontSize: 14, fontWeight: 600, color: "#374151", marginBottom: 12 }}>
-                  Choose a package:
-                </p>
-                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                  {packages.map((pkg) => (
-                    <div
-                      key={pkg.id}
-                      className={`pkg-card ${selectedPkg?.id === pkg.id ? "selected" : ""}`}
-                      onClick={() => setSelectedPkg(pkg)}
-                    >
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                          <div style={{
-                            width: 20, height: 20, borderRadius: "50%", border: `2px solid ${selectedPkg?.id === pkg.id ? "#F59E0B" : "#CBD5E1"}`,
-                            background: selectedPkg?.id === pkg.id ? "#F59E0B" : "white",
-                            display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0
-                          }}>
-                            {selectedPkg?.id === pkg.id && <div style={{ width: 8, height: 8, borderRadius: "50%", background: "white" }} />}
-                          </div>
-                          <span style={{ fontFamily: "'Sora', sans-serif", fontWeight: 700, fontSize: 15, color: "#0F172A" }}>
-                            {pkg.name}
-                          </span>
-                        </div>
-                        <div style={{ textAlign: "right" }}>
-                          <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 20, fontWeight: 800, color: "#F59E0B" }}>
-                            ₹{pkg.price.toLocaleString("en-IN")}
-                          </div>
-                          {pkg.days > 1 && (
-                            <div style={{ fontSize: 11, color: "#94A3B8" }}>
-                              ₹{Math.round(pkg.price / pkg.days).toLocaleString("en-IN")}/day
-                            </div>
-                          )}
-                        </div>
+                <div style={{ textAlign: "right" }}>
+                  {pkg.priceMax ? (
+                    <>
+                      <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 17, fontWeight: 800, color: "#F59E0B" }}>
+                        ₹{pkg.price.toLocaleString("en-IN")} – ₹{pkg.priceMax.toLocaleString("en-IN")}
                       </div>
-
-                      {/* Package details */}
-                      <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 8 }}>
-                        {pkg.days > 1 && (
-                          <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: "#64748B" }}>
-                            <span>📅</span> {pkg.days} days
-                          </div>
-                        )}
-                        {pkg.sessionLength && (
-                          <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: "#64748B" }}>
-                            <span>⏱</span> {pkg.sessionLength}
-                          </div>
-                        )}
-                        {pkg.distancePerDay && (
-                          <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: "#64748B" }}>
-                            <span>📍</span> {pkg.distancePerDay}/day
-                          </div>
-                        )}
+                      <div style={{ fontSize: 11, color: "#94A3B8" }}>depends on vehicle</div>
+                    </>
+                  ) : (
+                    <>
+                      <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 20, fontWeight: 800, color: "#F59E0B" }}>
+                        ₹{pkg.price.toLocaleString("en-IN")}
                       </div>
-
-                      {pkg.includes && (
-                        <p style={{ fontSize: 12, color: "#64748B", lineHeight: 1.5 }}>
-                          ✓ {pkg.includes}
-                        </p>
-                      )}
-
-                      {pkg.trackFeePerVehicle && (
-                        <div style={{ marginTop: 8, padding: "6px 10px", background: "#FEF9EC", borderRadius: 8, fontSize: 12, color: "#92400E" }}>
-                          ⚠ Track/test day fee: ₹{pkg.trackFeePerVehicle}/vehicle (charged separately on test day)
+                      {pkg.days > 1 && (
+                        <div style={{ fontSize: 11, color: "#94A3B8" }}>
+                          ₹{Math.round(pkg.price / pkg.days).toLocaleString("en-IN")}/day
                         </div>
                       )}
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Package meta */}
+              <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: pkg.includes ? 8 : 0 }}>
+                {pkg.days > 1 && (
+                  <span style={{ fontSize: 12, color: "#64748B" }}>📅 {pkg.days} days</span>
+                )}
+                {pkg.sessionLength && (
+                  <span style={{ fontSize: 12, color: "#64748B" }}>⏱ {pkg.sessionLength}</span>
+                )}
+                {pkg.distancePerDay && (
+                  <span style={{ fontSize: 12, color: "#64748B" }}>📍 {pkg.distancePerDay}/day</span>
+                )}
+              </div>
+
+              {/* Vehicle models */}
+              {pkg.vehicleModels && (
+                <p style={{ fontSize: 12, color: "#64748B", marginBottom: 6 }}>
+                  🚗 {pkg.vehicleModels}
+                </p>
+              )}
+
+              {/* Vehicle variants table */}
+              {pkg.variants && pkg.variants.length > 0 && (
+                <div style={{ marginTop: 8, borderRadius: 8, overflow: "hidden", border: "1px solid #E2E8F0" }}>
+                  {pkg.variants.map((v, i) => (
+                    <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 12px", background: i % 2 === 0 ? "#F8FAFC" : "white", fontSize: 13 }}>
+                      <span style={{ color: "#374151" }}>{v.model}</span>
+                      <div style={{ display: "flex", gap: 12 }}>
+                        <span style={{ color: "#F59E0B", fontWeight: 700 }}>₹{v.price.toLocaleString("en-IN")}</span>
+                        {v.priceAC && <span style={{ color: "#94A3B8", fontSize: 12 }}>AC ₹{v.priceAC.toLocaleString("en-IN")}</span>}
+                      </div>
                     </div>
                   ))}
                 </div>
+              )}
+
+              {pkg.includes && (
+                <p style={{ fontSize: 12, color: "#64748B", lineHeight: 1.5, marginTop: 8 }}>
+                  ✓ {pkg.includes}
+                </p>
+              )}
+
+              {pkg.acSurcharge && (
+                <div style={{ marginTop: 8, padding: "5px 10px", background: "#EFF6FF", borderRadius: 6, fontSize: 12, color: "#1E40AF" }}>
+                  ❄ AC vehicle: +₹{pkg.acSurcharge.toLocaleString("en-IN")} extra
+                </div>
+              )}
+
+              {pkg.trackFeePerVehicle && (
+                <div style={{ marginTop: 6, padding: "5px 10px", background: "#FEF9EC", borderRadius: 6, fontSize: 12, color: "#92400E" }}>
+                  ⚠ Track/test day fee: ₹{pkg.trackFeePerVehicle}/vehicle (separate on test day)
+                </div>
+              )}
+            </div>
+          ))}
+
+          {/* Price breakdown — platform fee split visible to customer */}
+          {selectedPkg && (
+            <>
+              <div style={{ marginTop: 20, padding: 16, background: "#F8FAFC", borderRadius: 12, border: "1px solid #E2E8F0" }}>
+                <p style={{ fontSize: 12, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 12 }}>
+                  Price breakdown
+                </p>
+                <div className="fee-row">
+                  <span>{selectedPkg.name}</span>
+                  <span>₹{selectedPkg.price.toLocaleString("en-IN")}</span>
+                </div>
+                <div className="fee-row trainer-cut">
+                  <span>↳ Goes to trainer</span>
+                  <span>₹{trainerPayout.toLocaleString("en-IN")}</span>
+                </div>
+                <div className="fee-row trainer-cut" style={{ color: "#64748B" }}>
+                  <span>↳ Platform fee (LearnDrive)</span>
+                  <span>₹{platformFee.toLocaleString("en-IN")}</span>
+                </div>
+                {selectedPkg.trackFeePerVehicle && (
+                  <div className="fee-row" style={{ color: "#92400E" }}>
+                    <span>Track fee (test day, per vehicle)</span>
+                    <span>₹{selectedPkg.trackFeePerVehicle}</span>
+                  </div>
+                )}
+                <div className="fee-row total">
+                  <span>Total payable now</span>
+                  <span style={{ color: "#F59E0B" }}>₹{selectedPkg.price.toLocaleString("en-IN")}</span>
+                </div>
               </div>
 
-              {/* Price summary */}
-              {selectedPkg && (
-                <>
-                  <div style={{ background: "#FEF9EC", border: "1px solid #FDE68A", borderRadius: 12, padding: 14, marginBottom: 20 }}>
-                    <p style={{ fontSize: 13, color: "#92400E", lineHeight: 1.6 }}>
-                      💡 <strong>{selectedPkg.name}</strong> — {selectedPkg.days > 1 ? `${selectedPkg.days} days of training` : "flexible sessions"}{selectedPkg.sessionLength ? `, ${selectedPkg.sessionLength}` : ""}{selectedPkg.distancePerDay ? `, ${selectedPkg.distancePerDay} per day` : ""}.
-                    </p>
-                  </div>
-
-                  <div style={{ borderTop: "1px solid #F1F5F9", paddingTop: 16, marginBottom: 20 }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, color: "#64748B", marginBottom: 8 }}>
-                      <span>{selectedPkg.name}</span>
-                      <span>₹{selectedPkg.price.toLocaleString("en-IN")}</span>
-                    </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, color: "#64748B", marginBottom: 8 }}>
-                      <span>Platform fee</span><span style={{ color: "#16A34A" }}>Included</span>
-                    </div>
-                    {selectedPkg.trackFeePerVehicle && (
-                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#92400E", marginBottom: 8 }}>
-                        <span>Track fee (on test day)</span>
-                        <span>₹{selectedPkg.trackFeePerVehicle}/vehicle</span>
-                      </div>
-                    )}
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 16, fontWeight: 800, color: "#0F172A", borderTop: "1px solid #F1F5F9", paddingTop: 12 }}>
-                      <span>Total payable now</span>
-                      <span style={{ color: "#F59E0B" }}>₹{selectedPkg.price.toLocaleString("en-IN")}</span>
-                    </div>
-                    {selectedPkg.trackFeePerVehicle && (
-                      <p style={{ fontSize: 11, color: "#94A3B8", marginTop: 4 }}>
-                        Track fee paid separately on test day
-                      </p>
-                    )}
-                  </div>
-
-                  <Link href={packageBookUrl}
-                    style={{ display: "block", textAlign: "center", background: "#F59E0B", color: "#fff", padding: "14px", borderRadius: 12, fontWeight: 800, fontSize: 16, textDecoration: "none", boxShadow: "0 4px 20px rgba(245,158,11,0.35)" }}>
-                    Book {selectedPkg.name} — ₹{selectedPkg.price.toLocaleString("en-IN")} →
-                  </Link>
-                </>
-              )}
+              <Link
+                href={makeBookUrl(selectedPkg.price, selectedPkg.name)}
+                style={{ display: "block", textAlign: "center", background: "#F59E0B", color: "#fff", padding: "14px", borderRadius: 12, fontWeight: 800, fontSize: 16, textDecoration: "none", boxShadow: "0 4px 20px rgba(245,158,11,0.35)", marginTop: 16 }}
+              >
+                Book {selectedPkg.name} — ₹{selectedPkg.price.toLocaleString("en-IN")} →
+              </Link>
             </>
           )}
 
