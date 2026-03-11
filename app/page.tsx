@@ -23,6 +23,8 @@ interface TrainerPackage {
   acSurcharge?: number;
 }
 
+// ✅ FIX: Changed packagesJson from `string | null | undefined` to `any`
+// to match the TrainerDisplayData interface expected by TrainerCard component.
 interface Trainer {
   id: number;
   name: string;
@@ -31,7 +33,7 @@ interface Trainer {
   experience: number;
   languages: string[];
   vehicleTypes: string[];
-  packagesJson?: string | null;
+  packagesJson: any; // was: string | null — caused type conflict with TrainerCard
   rating?: number;
 }
 
@@ -262,11 +264,9 @@ export default function HomePage() {
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              {/* REPLACED CODE STARTS HERE */}
               {trainers.map((trainer) => (
                 <TrainerCard key={trainer.id} trainer={trainer} />
               ))}
-              {/* REPLACED CODE ENDS HERE */}
             </div>
           </div>
         )}
