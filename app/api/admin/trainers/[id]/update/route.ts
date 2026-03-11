@@ -5,10 +5,11 @@ import { prisma } from "@/lib/prisma";
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }  // ✅ Next.js 15: params is a Promise
 ) {
   try {
-    const trainerId = parseInt(params.id);
+    const { id } = await params;
+    const trainerId = parseInt(id);
     if (isNaN(trainerId)) {
       return NextResponse.json({ error: "Invalid trainer ID" }, { status: 400 });
     }
@@ -16,7 +17,7 @@ export async function POST(
     const body = await req.json();
     const { packagesJson, basePrice } = body;
 
-    // Validate packagesJson is valid JSON array if provided
+    // Validate packagesJson is a valid JSON array
     if (packagesJson !== undefined && packagesJson !== null) {
       try {
         const parsed = JSON.parse(packagesJson);
