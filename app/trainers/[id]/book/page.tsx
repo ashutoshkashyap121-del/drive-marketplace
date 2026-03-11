@@ -37,6 +37,7 @@ export default function BookingPage() {
   const trainerNameFromUrl = searchParams.get("trainerName") || "";
   const trainerCityFromUrl = searchParams.get("trainerCity") || "";
 
+  const trainerId = Array.isArray(id) ? id[0] : id;
   const [trainer, setTrainer] = useState<Trainer | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -149,6 +150,7 @@ export default function BookingPage() {
           ondismiss: () => {
             setSubmitError("Payment cancelled. Your booking was not confirmed.");
             setSubmitting(false);
+            router.push(`/trainers/${trainerId}`);
           },
         },
         handler: async (response: {
@@ -231,7 +233,7 @@ export default function BookingPage() {
     <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#F8F7F4" }}>
       <div style={{ textAlign: "center" }}>
         <p style={{ color: "#64748B", marginBottom: 16 }}>Could not load trainer details.</p>
-        <button onClick={() => router.back()} style={{ color: "#F59E0B", background: "none", border: "none", cursor: "pointer", fontWeight: 700, fontSize: 16 }}>← Go Back</button>
+        <button onClick={() => router.push(`/trainers/${trainerId}`)} style={{ color: "#F59E0B", background: "none", border: "none", cursor: "pointer", fontWeight: 700, fontSize: 16 }}>← Go Back</button>
       </div>
     </div>
   );
@@ -246,7 +248,7 @@ export default function BookingPage() {
       {/* Header */}
       <div style={{ background: "linear-gradient(145deg, #0B1437 0%, #1A2B5F 100%)", padding: "24px 5%" }}>
         <div style={{ maxWidth: 560, margin: "0 auto" }}>
-          <button onClick={() => router.back()} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.5)", fontSize: "0.85rem", cursor: "pointer", marginBottom: 8, padding: 0 }}>
+          <button onClick={() => router.push(`/trainers/${trainerId}`)} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.5)", fontSize: "0.85rem", cursor: "pointer", marginBottom: 8, padding: 0 }}>
             ← Back
           </button>
           <h1 style={{ fontFamily: "'Sora', sans-serif", fontSize: "1.6rem", fontWeight: 800, color: "#FFFFFF" }}>

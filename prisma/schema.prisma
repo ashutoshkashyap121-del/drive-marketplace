@@ -84,6 +84,7 @@ model Trainer {
   vehicles       Vehicle[]
   bookings       Booking[]
   documents      TrainerDocument[]
+  reviews        Review[]
 
   @@index([city])
   @@index([status])
@@ -99,7 +100,6 @@ model Vehicle {
   insured             Boolean     @default(false)
   createdAt           DateTime    @default(now())
 
-  // Extended fields
   rcNumber            String?
   vehicleYear         Int?
   insuranceValidUntil DateTime?
@@ -112,9 +112,9 @@ model Vehicle {
 model TrainerDocument {
   id          Int      @id @default(autoincrement())
   trainerId   Int
-  docType     String   // "LICENSE" | "INSURANCE" | "RC"
+  docType     String
   fileName    String
-  fileUrl     String   // Cloudinary secure_url
+  fileUrl     String
   createdAt   DateTime @default(now())
 
   trainer     Trainer  @relation(fields: [trainerId], references: [id])
@@ -140,7 +140,6 @@ model Booking {
   status        BookingStatus @default(PENDING)
   paymentStatus PaymentStatus @default(PENDING)
 
-  // ── Razorpay ──────────────────────────────────────────────────────────────
   razorpayOrderId   String?   @unique
   razorpayPaymentId String?   @unique
 
@@ -148,6 +147,7 @@ model Booking {
   createdAt     DateTime      @default(now())
 
   trainer       Trainer       @relation(fields: [trainerId], references: [id])
+  review        Review?
 
   @@index([trainerId])
   @@index([status])
@@ -200,8 +200,8 @@ model OutreachLead {
   name             String
   phone            String    @unique
   city             String
-  source           String    @default("manual") // manual, gmaps, justdial
-  outreachStatus   String    @default("PENDING") // PENDING, CONTACTED, FAILED, REGISTERED
+  source           String    @default("manual")
+  outreachStatus   String    @default("PENDING")
   whatsappSent     Boolean   @default(false)
   smsSent          Boolean   @default(false)
   lastContactedAt  DateTime?
@@ -210,4 +210,40 @@ model OutreachLead {
 
   @@index([outreachStatus])
   @@index([city])
+}
+
+// ─── NEW: Reviews ─────────────────────────────────────────────────────────────
+
+model Review {
+  id           Int      @id @default(autoincrement())
+  bookingId    Int      @unique
+  trainerId    Int
+  rating       Int      // 1–5
+  comment      String?
+  customerName String?
+  createdAt    DateTime @default(now())
+
+  trainer      Trainer  @relation(fields: [trainerId], references: [id])
+  booking      Booking  @relation(fields: [bookingId], references: [id])
+
+  @@index([trainerId])
+}
+
+// ─── NEW: DL Renewal Reminders ────────────────────────────────────────────────
+
+model DLReminder {
+  id           Int      @id @default(autoincrement())
+  mobile       String
+  dlExpiryDate DateTime
+  name         String?
+
+  reminded60   Boolean  @default(false)
+  reminded30   Boolean  @default(false)
+  reminded7    Boolean  @default(false)
+
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  @@index([dlExpiryDate])
+  @@index([active])
 }

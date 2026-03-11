@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import DLReminderWidget from "@/components/DLReminderWidget";
 
 export const metadata: Metadata = {
   title: "Check Driving Licence Expiry Date India | DL Validity Check 2025",
@@ -160,7 +161,7 @@ export default function DLExpiryPage() {
             <span className="text-yellow-300">Driving Licence Expiry</span>
           </h1>
           <p className="text-blue-100 mt-4 text-lg max-w-xl mx-auto">
-            Step-by-step guide to check DL validity on Parivahan, mParivahan app, and DigiLocker — plus what to do if it's expiring.
+            Step-by-step guide to check DL validity on Parivahan, mParivahan app, and DigiLocker — plus what to do if it&apos;s expiring.
           </p>
           <div className="mt-8 flex flex-wrap gap-3 justify-center">
             <a
@@ -182,15 +183,21 @@ export default function DLExpiryPage() {
       </div>
 
       <div className="max-w-3xl mx-auto px-4 py-12">
+
         {/* Quick warning banner */}
         <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 mb-12 flex gap-4">
           <span className="text-3xl flex-shrink-0">⚡</span>
           <div>
-            <p className="font-bold text-amber-800">Don't wait until it expires</p>
+            <p className="font-bold text-amber-800">Don&apos;t wait until it expires</p>
             <p className="text-amber-700 text-sm mt-1">
               DL renewal takes 7–30 days to arrive by post. Start the process 60 days before expiry. Driving with an expired licence risks a ₹5,000 fine and insurance rejection.
             </p>
           </div>
+        </div>
+
+        {/* ── DL REMINDER WIDGET ─────────────────────────────────────────────── */}
+        <div className="mb-12">
+          <DLReminderWidget />
         </div>
 
         {/* Step by step */}
@@ -309,19 +316,34 @@ export default function DLExpiryPage() {
           </div>
         </section>
 
-        {/* CTA */}
-        <div className="bg-gradient-to-r from-orange-500 to-orange-400 rounded-2xl p-8 text-white text-center">
+        {/* DL Assistance CTA */}
+        <div className="bg-gradient-to-r from-amber-500 to-amber-400 rounded-2xl p-8 text-white text-center mb-8">
+          <p className="text-2xl font-bold">DL expiring or already expired?</p>
+          <p className="text-amber-100 mt-2">
+            Let our experts handle your entire renewal — forms, RTO appointment, checklist. You just show up.
+          </p>
+          <Link
+            href="/dl-assistance"
+            className="mt-5 inline-flex items-center gap-2 bg-white text-amber-600 font-bold px-6 py-3 rounded-xl hover:bg-amber-50 transition-colors"
+          >
+            Get DL Assistance — ₹499 →
+          </Link>
+        </div>
+
+        {/* Trainer CTA */}
+        <div className="bg-gradient-to-r from-blue-900 to-blue-800 rounded-2xl p-8 text-white text-center">
           <p className="text-2xl font-bold">Ready to get your licence?</p>
-          <p className="text-orange-100 mt-2">
+          <p className="text-blue-200 mt-2">
             Find a certified driving trainer near you and book your first session today
           </p>
           <Link
-            href="/trainers"
-            className="mt-5 inline-flex items-center gap-2 bg-white text-orange-600 font-bold px-6 py-3 rounded-xl hover:bg-orange-50 transition-colors"
+            href="/"
+            className="mt-5 inline-flex items-center gap-2 bg-yellow-400 text-blue-900 font-bold px-6 py-3 rounded-xl hover:bg-yellow-300 transition-colors"
           >
             Browse Trainers →
           </Link>
         </div>
+
       </div>
     </div>
   );
