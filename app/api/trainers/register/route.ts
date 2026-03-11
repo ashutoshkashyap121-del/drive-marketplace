@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
           experience: data.experience,
           languages: data.languages,
           basePrice: data.basePrice || 0,
-          licenseNumber: data.licenseNumber || null,
+          licenseNumber: data.licenseNumber || "",
           trainerType: data.trainerType || "INDEPENDENT",
           status: "PENDING",
           rating: 0,
