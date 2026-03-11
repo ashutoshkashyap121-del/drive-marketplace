@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import TrainerCard from "@/components/TrainerCard"; // Added Import
 
 const RECENT_BLOGS = [
   { slug: "how-to-get-driving-licence-india", title: "How to Get a Driving Licence in India (2025 Complete Guide)", description: "Step-by-step guide to getting your driving licence in India – from learner's licence to permanent licence, RTO test tips, and documents checklist.", category: "Licence Guide", readTime: 8 },
@@ -32,11 +33,6 @@ interface Trainer {
   vehicleTypes: string[];
   packagesJson?: string | null;
   rating?: number;
-}
-
-function parsePackages(json?: string | null): TrainerPackage[] {
-  if (!json) return [];
-  try { return JSON.parse(json); } catch { return []; }
 }
 
 const TOP_CITIES = [
@@ -80,7 +76,6 @@ export default function HomePage() {
   const [query, setQuery] = useState("");
   const [showCityDropdown, setShowCityDropdown] = useState(false);
   const [searchState, setSearchState] = useState<"idle" | "loading" | "trainers" | "waitlist">("idle");
-  const [expandedCard, setExpandedCard] = useState<number | null>(null);
   const [trainers, setTrainers] = useState<Trainer[]>([]);
   const [waitlistCity, setWaitlistCity] = useState("");
   const [waitlistCount, setWaitlistCount] = useState(0);
@@ -261,128 +256,17 @@ export default function HomePage() {
               <h2 className="font-display" style={{ fontSize: 22, fontWeight: 800 }}>
                 {trainers.length} trainer{trainers.length !== 1 ? "s" : ""} in {query}
               </h2>
-              <button onClick={() => { setSearchState("idle"); setQuery(""); setExpandedCard(null); }} style={{ background: "none", border: "1px solid #E2E8F0", borderRadius: 8, padding: "6px 14px", fontSize: 13, cursor: "pointer", color: "#64748B" }}>
+              <button onClick={() => { setSearchState("idle"); setQuery(""); }} style={{ background: "none", border: "1px solid #E2E8F0", borderRadius: 8, padding: "6px 14px", fontSize: 13, cursor: "pointer", color: "#64748B" }}>
                 ✕ Clear
               </button>
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              {trainers.map((t) => {
-                const packages = parsePackages(t.packagesJson);
-                const isExpanded = expandedCard === t.id;
-                const langs: string[] = Array.isArray(t.languages) ? t.languages : [];
-                const displayPrice = packages[0]?.price ?? t.basePrice;
-                const displayLabel = packages.length > 1 ? packages[0].name : packages[0]?.name ?? "Package";
-
-                return (
-                  <div key={t.id} style={{ background: "#FFFFFF", borderRadius: 18, border: `1px solid ${isExpanded ? "#F59E0B" : "#E2E8F0"}`, overflow: "hidden", boxShadow: isExpanded ? "0 8px 32px rgba(0,0,0,0.08)" : "none", transition: "all 0.2s" }}>
-
-                    {/* ── Card top ── */}
-                    <div style={{ padding: 24, display: "grid", gridTemplateColumns: "1fr auto", gap: 16, alignItems: "start" }}>
-                      <div>
-                        {/* Name + location */}
-                        <div style={{ display: "flex", gap: 12, alignItems: "flex-start", marginBottom: 10 }}>
-                          <div style={{ width: 44, height: 44, borderRadius: 12, background: "#FEF3C7", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>🧑‍🏫</div>
-                          <div>
-                            <div style={{ fontWeight: 700, fontSize: 16, color: "#0F172A", marginBottom: 2 }}>{t.name}</div>
-                            <div style={{ color: "#64748B", fontSize: 13 }}>
-                              📍 {t.city} · {t.experience} yr{t.experience !== 1 ? "s" : ""} exp
-                              {t.rating && t.rating > 0 ? <span style={{ color: "#F59E0B", fontWeight: 700, marginLeft: 10 }}>★ {t.rating.toFixed(1)}</span> : null}
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Vehicle + language badges */}
-                        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 12 }}>
-                          {(t.vehicleTypes as string[]).map((v) => (
-                            <span key={v} style={{ background: "#EFF6FF", color: "#2563EB", borderRadius: 6, padding: "2px 10px", fontSize: 12, fontWeight: 600 }}>
-                              {v === "CAR" ? "🚗 Car" : v === "BIKE_GEARED" ? "🏍️ Bike" : "🛵 Scooter"}
-                            </span>
-                          ))}
-                          {langs.map((l) => (
-                            <span key={l} style={{ background: "#F1F5F9", color: "#475569", borderRadius: 6, padding: "2px 10px", fontSize: 12 }}>{l}</span>
-                          ))}
-                        </div>
-
-                        {/* Package pills */}
-                        {packages.length > 0 && (
-                          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
-                            {packages.map((pkg) => (
-                              <span key={pkg.id} style={{ fontSize: 12, fontWeight: 600, padding: "4px 12px", borderRadius: 99, background: "#F8FAFC", border: "1px solid #E2E8F0", color: "#374151" }}>
-                                {pkg.name} — <span style={{ color: "#D97706" }}>₹{pkg.price.toLocaleString("en-IN")}{pkg.priceMax ? `–${pkg.priceMax.toLocaleString("en-IN")}` : ""}</span>
-                              </span>
-                            ))}
-                          </div>
-                        )}
-
-                        {/* Expand toggle */}
-                        {packages.length > 0 && (
-                          <button
-                            onClick={() => setExpandedCard(isExpanded ? null : t.id)}
-                            style={{ background: "none", border: "none", cursor: "pointer", padding: 0, fontSize: 13, fontWeight: 600, color: "#F59E0B", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 4 }}
-                          >
-                            {isExpanded ? "▲ Hide details" : "▼ See package details"}
-                          </button>
-                        )}
-                      </div>
-
-                      {/* Right: price + CTA */}
-                      <div style={{ textAlign: "right", minWidth: 110 }}>
-                        <div style={{ color: "#F59E0B", fontWeight: 800, fontSize: 20, fontFamily: "'Sora', sans-serif" }}>
-                          ₹{displayPrice?.toLocaleString("en-IN")}
-                        </div>
-                        <div style={{ color: "#94A3B8", fontSize: 11, marginBottom: 10 }}>
-                          {packages.length > 1 ? "starting from" : displayLabel}
-                        </div>
-                        <Link href={`/trainers/${t.id}`} style={{ display: "block", textAlign: "center", background: "#F59E0B", color: "#fff", padding: "10px 16px", borderRadius: 10, fontWeight: 700, fontSize: 13, textDecoration: "none" }}>
-                          View & Book →
-                        </Link>
-                      </div>
-                    </div>
-
-                    {/* ── Expanded package drawer ── */}
-                    {isExpanded && (
-                      <div style={{ borderTop: "1px solid #F1F5F9", background: "#FAFBFF", padding: "20px 24px" }}>
-                        <div style={{ fontSize: 11, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 14 }}>Packages offered</div>
-                        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                          {packages.map((pkg) => {
-                            const perDay = pkg.days && pkg.days > 1 ? Math.round(pkg.price / pkg.days) : null;
-                            return (
-                              <div key={pkg.id} style={{ border: "1px solid #E2E8F0", borderRadius: 12, padding: "14px 16px", background: "white", display: "grid", gridTemplateColumns: "1fr auto", gap: 12, alignItems: "start" }}>
-                                <div>
-                                  <div style={{ fontWeight: 700, fontSize: 14, color: "#0F172A", marginBottom: 6 }}>{pkg.name}</div>
-                                  <div style={{ display: "flex", gap: 14, flexWrap: "wrap", fontSize: 12, color: "#64748B", marginBottom: pkg.includes ? 6 : 0 }}>
-                                    {pkg.days && pkg.days > 1 && <span>📅 {pkg.days} days</span>}
-                                    {pkg.sessionLength && <span>⏱ {pkg.sessionLength}</span>}
-                                    {pkg.distancePerDay && <span>📍 {pkg.distancePerDay}/day</span>}
-                                  </div>
-                                  {pkg.includes && (
-                                    <p style={{ fontSize: 12, color: "#64748B", lineHeight: 1.5, margin: 0 }}>
-                                      <span style={{ color: "#16A34A", fontWeight: 700 }}>✓ </span>{pkg.includes}
-                                    </p>
-                                  )}
-                                  {pkg.acSurcharge ? <span style={{ fontSize: 11, color: "#92400E", background: "#FEF9EC", borderRadius: 4, padding: "2px 7px", marginTop: 6, display: "inline-block" }}>❄ AC +₹{pkg.acSurcharge}</span> : null}
-                                  {pkg.trackFeePerVehicle ? <span style={{ fontSize: 11, color: "#92400E", background: "#FEF9EC", borderRadius: 4, padding: "2px 7px", marginTop: 6, marginLeft: 4, display: "inline-block" }}>⚠ Track fee ₹{pkg.trackFeePerVehicle}/vehicle</span> : null}
-                                </div>
-                                <div style={{ textAlign: "right" }}>
-                                  <div style={{ fontWeight: 800, fontSize: 16, color: "#F59E0B" }}>₹{pkg.price.toLocaleString("en-IN")}{pkg.priceMax ? `–${pkg.priceMax.toLocaleString("en-IN")}` : ""}</div>
-                                  {perDay && <div style={{ fontSize: 11, color: "#94A3B8" }}>₹{perDay.toLocaleString("en-IN")}/day</div>}
-                                  <Link
-                                    href={`/trainers/${t.id}/book?price=${pkg.price}&pkgName=${encodeURIComponent(pkg.name)}&trainerName=${encodeURIComponent(t.name)}&trainerCity=${encodeURIComponent(t.city)}`}
-                                    style={{ display: "block", marginTop: 8, background: "#F59E0B", color: "white", fontSize: 12, fontWeight: 700, padding: "6px 12px", borderRadius: 8, textDecoration: "none", whiteSpace: "nowrap" }}
-                                  >
-                                    Book this →
-                                  </Link>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+              {/* REPLACED CODE STARTS HERE */}
+              {trainers.map((trainer) => (
+                <TrainerCard key={trainer.id} trainer={trainer} />
+              ))}
+              {/* REPLACED CODE ENDS HERE */}
             </div>
           </div>
         )}
@@ -518,11 +402,13 @@ export default function HomePage() {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 24 }}>
             {recentBlogs.slice(0, 3).map((post) => (
               <Link key={post.slug} href={`/blog/${post.slug}`} style={{ textDecoration: "none", color: "inherit" }}>
-                <div className="card-hover" style={{ background: "#FFFFFF", borderRadius: 16, border: "1px solid #E2E8F0", padding: 24, height: "100%" }}>
-                  <div style={{ display: "inline-block", background: "#FEF3C7", color: "#92400E", borderRadius: 6, padding: "3px 10px", fontSize: 12, fontWeight: 600, marginBottom: 12 }}>{post.category}</div>
-                  <h3 style={{ fontWeight: 700, fontSize: 16, lineHeight: 1.45, color: "#0F172A", marginBottom: 10 }}>{post.title}</h3>
-                  <p style={{ color: "#64748B", fontSize: 13, lineHeight: 1.6, marginBottom: 14 }}>{post.description.slice(0, 90)}…</p>
-                  <div style={{ color: "#94A3B8", fontSize: 12 }}>{post.readTime} min read</div>
+                <div className="card-hover" style={{ border: "1px solid #E2E8F0", borderRadius: 16, overflow: "hidden", background: "#fff" }}>
+                  <div style={{ padding: 24 }}>
+                    <div style={{ color: "#F59E0B", fontSize: 12, fontWeight: 700, marginBottom: 8, textTransform: "uppercase" }}>{post.category} • {post.readTime} min read</div>
+                    <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 12, lineHeight: 1.4 }}>{post.title}</h3>
+                    <p style={{ color: "#64748B", fontSize: 14, lineHeight: 1.6, marginBottom: 20 }}>{post.description}</p>
+                    <span style={{ color: "#0F172A", fontWeight: 700, fontSize: 14 }}>Read Article →</span>
+                  </div>
                 </div>
               </Link>
             ))}
@@ -531,41 +417,11 @@ export default function HomePage() {
       )}
 
       {/* ── FOOTER ── */}
-      <footer style={{ background: "#0B1437", color: "rgba(255,255,255,0.6)", padding: "48px 5% 32px", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
-        <div style={{ maxWidth: 1100, margin: "0 auto" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 32, marginBottom: 40 }}>
-            <div>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-                <span style={{ fontFamily: "'Sora', sans-serif", color: "#fff", fontSize: 18, fontWeight: 800 }}>Learn<span style={{ color: "#F59E0B" }}>Drive</span></span>
-              </div>
-              <p style={{ fontSize: 13, lineHeight: 1.7 }}>India's trusted marketplace for driving instructors and learners.</p>
-            </div>
-            <div>
-              <div style={{ color: "#fff", fontWeight: 600, fontSize: 14, marginBottom: 12 }}>Quick Links</div>
-              {[["Find Trainers", "/trainers"], ["Become a Trainer", "/trainers/register"], ["DL Assistance", "/dl-assistance"], ["RTO Mock Test", "/rto-test/practice"], ["Blog", "/blog"]].map(([label, href]) => (
-                <div key={href} style={{ marginBottom: 8 }}>
-                  <Link href={href} style={{ color: "rgba(255,255,255,0.55)", textDecoration: "none", fontSize: 13 }}>{label}</Link>
-                </div>
-              ))}
-            </div>
-            <div>
-              <div style={{ color: "#fff", fontWeight: 600, fontSize: 14, marginBottom: 12 }}>Support</div>
-              {[["Help & FAQ", "/help"], ["Refund Policy", "/refund"], ["Terms of Service", "/terms"], ["Privacy Policy", "/privacy"]].map(([label, href]) => (
-                <div key={href} style={{ marginBottom: 8 }}>
-                  <Link href={href} style={{ color: "rgba(255,255,255,0.55)", textDecoration: "none", fontSize: 13 }}>{label}</Link>
-                </div>
-              ))}
-            </div>
-            <div>
-              <div style={{ color: "#fff", fontWeight: 600, fontSize: 14, marginBottom: 12 }}>Contact</div>
-              <p style={{ fontSize: 13, marginBottom: 6 }}>support@learndrive.in</p>
-              <p style={{ fontSize: 13 }}>+91 87008 96528</p>
-            </div>
-          </div>
-          <div style={{ borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: 24, textAlign: "center", fontSize: 12 }}>
-            © 2025 LearnDrive. All rights reserved.
-          </div>
+      <footer style={{ background: "#0F172A", color: "#94A3B8", padding: "48px 5% 24px", textAlign: "center" }}>
+        <div style={{ marginBottom: 24, fontSize: 20, fontWeight: 800, color: "#fff", fontFamily: "'Sora', sans-serif" }}>
+          Learn<span style={{ color: "#F59E0B" }}>Drive</span>
         </div>
+        <div style={{ fontSize: 14 }}>© 2026 LearnDrive. All rights reserved.</div>
       </footer>
     </div>
   );
