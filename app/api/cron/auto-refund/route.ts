@@ -85,35 +85,6 @@ export async function GET(req: NextRequest) {
       `It will reflect in your account within 5–7 business days.\n\n` +
       `Sorry for the inconvenience. Please try another trainer at learndrive.in\n\n— LearnDrive Team`
     );
-
-    // Email student if available
-    if (booking.email) {
-      await resend.emails.send({
-        from:    process.env.FROM_EMAIL!,
-        to:      booking.email,
-        subject: `Auto-refund initiated — Booking #${booking.id} | LearnDrive`,
-        html: `
-          <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px;">
-            <div style="background:#1a1a2e;color:white;border-radius:12px;padding:20px;margin-bottom:20px;">
-              <h2 style="margin:0;">Refund Initiated Automatically</h2>
-            </div>
-            <p>Hi ${booking.customerName},</p>
-            <p style="color:#555;line-height:1.7;">
-              We were unable to confirm your booking with <strong>${booking.trainer.name}</strong> within 4 hours, so we've automatically cancelled it and initiated a full refund.
-            </p>
-            <div style="background:#f5f0e8;border-radius:12px;padding:20px;margin:20px 0;">
-              <p style="margin:4px 0;"><strong>Booking ID:</strong> #${booking.id}</p>
-              <p style="margin:4px 0;"><strong>Refund Amount:</strong> <span style="color:#e8821a;font-weight:bold;">₹${booking.amount.toLocaleString("en-IN")}</span></p>
-              <p style="margin:4px 0;"><strong>Timeline:</strong> 5–7 business days</p>
-              ${refundId ? `<p style="margin:4px 0;"><strong>Refund ID:</strong> ${refundId}</p>` : ""}
-            </div>
-            <p style="color:#555;">We apologise for the inconvenience. Please <a href="https://learndrive.in" style="color:#e8821a;">book another trainer</a> on LearnDrive.</p>
-            <p style="color:#888;font-size:13px;">Questions? Call +91 87008 96528 or email support@learndrive.in</p>
-          </div>
-        `,
-      });
-    }
-
     // Alert admin
     await resend.emails.send({
       from:    process.env.FROM_EMAIL!,
