@@ -30,6 +30,7 @@ enum TrainerStatus {
 
 enum BookingStatus {
   PENDING
+  PENDING_COORDINATION  // scraped school — LearnDrive manually coordinates
   CONFIRMED
   COMPLETED
   CANCELLED
@@ -79,7 +80,7 @@ model Trainer {
   aadharAuthTag   String?
 
   // Admin
-  adminNotes     String?
+  adminNotes     String?       // also stores scraped GMB metadata as JSON
 
   // Relations
   vehicles       Vehicle[]
@@ -213,7 +214,7 @@ model OutreachLead {
   @@index([city])
 }
 
-// ─── NEW: Reviews ─────────────────────────────────────────────────────────────
+// ─── Reviews ──────────────────────────────────────────────────────────────────
 
 model Review {
   id           Int      @id @default(autoincrement())
@@ -230,7 +231,7 @@ model Review {
   @@index([trainerId])
 }
 
-// ─── NEW: DL Renewal Reminders ────────────────────────────────────────────────
+// ─── DL Renewal Reminders ─────────────────────────────────────────────────────
 
 model DLReminder {
   id           Int      @id @default(autoincrement())

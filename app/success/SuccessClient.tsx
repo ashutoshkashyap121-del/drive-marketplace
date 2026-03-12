@@ -8,6 +8,7 @@ export default function SuccessClient() {
   const router = useRouter();
   const bookingId = params.get("id");
   const trainerName = params.get("trainer");
+  const isUnverified = params.get("unverified") === "true"; // ← scraped school flag
 
   // Fire Meta Pixel Purchase event on booking success
   useEffect(() => {
@@ -29,17 +30,27 @@ export default function SuccessClient() {
         {/* Main card */}
         <div style={{ background: "#fff", borderRadius: 24, border: "1px solid #E2E8F0", padding: "40px 32px", textAlign: "center", marginBottom: 16 }}>
 
-          {/* Icon */}
-          <div style={{ width: 72, height: 72, borderRadius: "50%", background: "#FEF3C7", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "2rem", margin: "0 auto 20px" }}>
-            🎉
+          {/* Icon — different for unverified */}
+          <div style={{ width: 72, height: 72, borderRadius: "50%", background: isUnverified ? "#FFF7ED" : "#FEF3C7", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "2rem", margin: "0 auto 20px" }}>
+            {isUnverified ? "📋" : "🎉"}
           </div>
 
           <h1 style={{ fontFamily: "'Sora', sans-serif", fontSize: "1.6rem", fontWeight: 800, color: "#0F172A", marginBottom: 10 }}>
-            Booking Confirmed!
+            {isUnverified ? "Booking Received!" : "Booking Confirmed!"}
           </h1>
 
           <p style={{ fontSize: "0.92rem", color: "#64748B", lineHeight: 1.7, marginBottom: 24 }}>
-            Your session with <strong style={{ color: "#0F172A" }}>{trainerName || "your trainer"}</strong> has been booked and payment received. You'll be contacted on your mobile to confirm timing.
+            {isUnverified ? (
+              <>
+                Your payment is confirmed. Our team is coordinating with{" "}
+                <strong style={{ color: "#0F172A" }}>{trainerName || "the driving school"}</strong>{" "}
+                and will call you within <strong style={{ color: "#0F172A" }}>2 hours</strong> to confirm your session.
+              </>
+            ) : (
+              <>
+                Your session with <strong style={{ color: "#0F172A" }}>{trainerName || "your trainer"}</strong> has been booked and payment received. You'll be contacted on your mobile to confirm timing.
+              </>
+            )}
           </p>
 
           {/* Booking ID */}
@@ -51,20 +62,34 @@ export default function SuccessClient() {
             </div>
           )}
 
-          {/* What happens next */}
+          {/* What happens next — different steps for unverified */}
           <div style={{ background: "#FFFBEB", border: "1px solid #FDE68A", borderRadius: 14, padding: "16px 20px", textAlign: "left", marginBottom: 24 }}>
             <p style={{ fontSize: "0.72rem", fontWeight: 700, color: "#92400E", textTransform: "uppercase", letterSpacing: "1px", marginBottom: 12 }}>What happens next?</p>
-            {[
+            {(isUnverified ? [
+              "Payment confirmed — your booking is locked in",
+              "LearnDrive team calls you within 2 hours to confirm details",
+              "We coordinate with the school and share your session schedule 🚗",
+            ] : [
               "Payment confirmed — your booking is locked in",
               "Trainer will call you to confirm session time & location",
               "Show up at your pickup address on the booked date 🚗",
-            ].map((step, i) => (
+            ]).map((step, i) => (
               <div key={i} style={{ display: "flex", gap: 10, marginBottom: i < 2 ? 10 : 0, alignItems: "flex-start" }}>
                 <span style={{ fontFamily: "'Sora', sans-serif", fontWeight: 800, color: "#F59E0B", fontSize: "0.85rem", flexShrink: 0 }}>{i + 1}.</span>
                 <p style={{ margin: 0, fontSize: "0.85rem", color: "#374151", lineHeight: 1.6 }}>{step}</p>
               </div>
             ))}
           </div>
+
+          {/* Urgent call notice — only for unverified */}
+          {isUnverified && (
+            <div style={{ background: "#F0FDF4", border: "1px solid #BBF7D0", borderRadius: 14, padding: "14px 20px", marginBottom: 24, textAlign: "left" }}>
+              <p style={{ fontSize: "0.82rem", color: "#166534", margin: 0, lineHeight: 1.7 }}>
+                📞 <strong>Keep your phone reachable.</strong> Our team will call from{" "}
+                <strong>+91 87008 96528</strong> to confirm your booking within 2 hours.
+              </p>
+            </div>
+          )}
 
           {/* Buttons */}
           <button onClick={() => router.push("/trainers")}
@@ -111,6 +136,7 @@ export default function SuccessClient() {
             </a>
           </div>
         </div>
+
       </div>
     </main>
   );
