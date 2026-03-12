@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
         id: true,
         name: true,
         city: true,
-        phone: true,
+        mobile: true,
         rating: true,
         basePrice: true,
         status: true,
@@ -37,7 +37,6 @@ export async function GET(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   const body = await req.json();
 
-  // Bulk approve all pending scraped listings
   if (body.bulkApproveAll) {
     await prisma.trainer.updateMany({
       where: {
@@ -49,7 +48,6 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ ok: true });
   }
 
-  // Individual update
   const { id, status } = body;
   if (!id || !["APPROVED", "REJECTED"].includes(status)) {
     return NextResponse.json({ error: "Invalid" }, { status: 400 });
