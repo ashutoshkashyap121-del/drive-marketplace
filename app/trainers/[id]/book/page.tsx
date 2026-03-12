@@ -25,23 +25,28 @@ interface FormErrors {
   bookingDate?: string;
 }
 
+// Platform fee logic — flat ₹500 if >= ₹2000, else 10%
+function computeFees(price: number) {
+  const platformFee = price >= 2000 ? 500 : Math.round(price * 0.1);
+  const trainerPayout = price - platformFee;
+  return { platformFee, trainerPayout };
+}
+
 export default function BookingPage() {
   const { id } = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Read everything passed from the trainer page
-  const sessions = parseInt(searchParams.get("sessions") || "1");
-  const bookingType = searchParams.get("type") || "trial";
-  const priceFromUrl = parseInt(searchParams.get("price") || "0");
+  const priceFromUrl   = parseInt(searchParams.get("price") || "0");
+  const pkgName        = searchParams.get("pkgName") || "Training Package";
   const trainerNameFromUrl = searchParams.get("trainerName") || "";
   const trainerCityFromUrl = searchParams.get("trainerCity") || "";
 
   const trainerId = Array.isArray(id) ? id[0] : id;
-  const [trainer, setTrainer] = useState<Trainer | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [trainer, setTrainer]     = useState<Trainer | null>(null);
+  const [loading, setLoading]     = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [errors, setErrors] = useState<FormErrors>({});
+  const [errors, setErrors]       = useState<FormErrors>({});
   const [submitError, setSubmitError] = useState("");
   const [form, setForm] = useState({
     customerName: "",
@@ -64,26 +69,18 @@ export default function BookingPage() {
   useEffect(() => {
     fetch(`/api/trainers/${id}`)
       .then((r) => r.json())
-      .then((data) => {
-        // FIX: API returns the trainer object directly, not nested under .trainer
-        const t = data.trainer ?? data;
-        setTrainer(t);
-        setLoading(false);
-      })
+      .then((data) => { setTrainer(data.trainer ?? data); setLoading(false); })
       .catch(() => setLoading(false));
   }, [id]);
 
-  // FIX: Use URL price if API returns zero/null basePrice
   const trainerName = trainer?.name || trainerNameFromUrl;
   const trainerCity = trainer?.city || trainerCityFromUrl;
-  const sessionPrice = trainer?.basePrice || trainer?.price || 0;
-  // Use the price calculated on the trainer page (includes discounts, sessions)
-  const totalAmount = priceFromUrl > 0 ? priceFromUrl : sessionPrice * sessions;
+  const totalAmount = priceFromUrl > 0 ? priceFromUrl : (trainer?.basePrice || trainer?.price || 0);
+  const { platformFee, trainerPayout } = computeFees(totalAmount);
 
   function validate(): boolean {
     const e: FormErrors = {};
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const today = new Date(); today.setHours(0, 0, 0, 0);
     if (!form.customerName.trim() || form.customerName.length < 2) e.customerName = "Enter your full name";
     if (!/^[6-9]\d{9}$/.test(form.mobile)) e.mobile = "Enter a valid 10-digit Indian mobile number";
     if (!form.address.trim()) e.address = "Enter your pickup address";
@@ -103,48 +100,26 @@ export default function BookingPage() {
 
   const handleSubmit = async () => {
     if (!validate()) return;
-    if (totalAmount <= 0) {
-      setSubmitError("Invalid amount. Please go back and select a session again.");
-      return;
-    }
-    setSubmitting(true);
-    setSubmitError("");
+    if (totalAmount <= 0) { setSubmitError("Invalid amount. Please go back and select a package."); return; }
+    setSubmitting(true); setSubmitError("");
 
     try {
-      // Step 1: Create Razorpay order with the CORRECT total amount
       const orderRes = await fetch("/api/razorpay/order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          amount: totalAmount,
-          customerName: form.customerName,
-          trainerName,
-        }),
+        body: JSON.stringify({ amount: totalAmount, customerName: form.customerName, trainerName }),
       });
-
       const orderData = await orderRes.json();
+      if (!orderRes.ok) { setSubmitError(orderData.error || "Failed to initiate payment."); setSubmitting(false); return; }
 
-      if (!orderRes.ok) {
-        setSubmitError(orderData.error || "Failed to initiate payment. Please try again.");
-        setSubmitting(false);
-        return;
-      }
-
-      // Step 2: Open Razorpay checkout
       const options = {
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
         amount: orderData.amount,
         currency: orderData.currency,
         name: "LearnDrive",
-        description: bookingType === "trial"
-          ? `Trial class with ${trainerName}`
-          : `${sessions} sessions with ${trainerName}`,
+        description: `${pkgName} with ${trainerName}`,
         order_id: orderData.orderId,
-        prefill: {
-          name: form.customerName,
-          contact: form.mobile,
-          email: form.email || "",
-        },
+        prefill: { name: form.customerName, contact: form.mobile, email: form.email || "" },
         theme: { color: "#F59E0B" },
         modal: {
           ondismiss: () => {
@@ -153,13 +128,8 @@ export default function BookingPage() {
             router.push(`/trainers/${trainerId}`);
           },
         },
-        handler: async (response: {
-          razorpay_order_id: string;
-          razorpay_payment_id: string;
-          razorpay_signature: string;
-        }) => {
+        handler: async (response: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }) => {
           try {
-            // Step 3: Verify payment + create booking
             const verifyRes = await fetch("/api/razorpay/verify", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -175,20 +145,12 @@ export default function BookingPage() {
                 address: form.address,
                 pincode: form.pincode,
                 bookingDate: form.bookingDate,
-                sessions,
-                bookingType,
+                packageName: pkgName,
                 totalAmount,
               }),
             });
-
             const verifyData = await verifyRes.json();
-
-            if (!verifyRes.ok) {
-              setSubmitError(verifyData.error || "Payment verification failed. Contact support.");
-              setSubmitting(false);
-              return;
-            }
-
+            if (!verifyRes.ok) { setSubmitError(verifyData.error || "Payment verification failed. Contact support."); setSubmitting(false); return; }
             router.push(`/success?id=${verifyData.booking.id}&trainer=${encodeURIComponent(trainerName)}`);
           } catch {
             setSubmitError("Payment received but booking failed. Contact support with payment ID: " + response.razorpay_payment_id);
@@ -199,7 +161,6 @@ export default function BookingPage() {
 
       const rzp = new window.Razorpay(options);
       rzp.open();
-
     } catch {
       setSubmitError("Network error. Please check your connection and try again.");
       setSubmitting(false);
@@ -228,7 +189,6 @@ export default function BookingPage() {
     </div>
   );
 
-  // FIX: Show page even if API fails — we have name/city from URL params
   if (!trainer && !trainerNameFromUrl) return (
     <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#F8F7F4" }}>
       <div style={{ textAlign: "center" }}>
@@ -238,33 +198,31 @@ export default function BookingPage() {
     </div>
   );
 
-  const isPackage = bookingType === "package";
-  const perSessionEffective = isPackage && sessions > 1 ? Math.round(totalAmount / sessions) : null;
-
   return (
     <main style={{ minHeight: "100vh", background: "#F8F7F4", fontFamily: "'DM Sans', 'Segoe UI', sans-serif" }}>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Sora:wght@700;800&display=swap');`}</style>
 
-      {/* Header */}
+      {/* ── Header ── */}
       <div style={{ background: "linear-gradient(145deg, #0B1437 0%, #1A2B5F 100%)", padding: "24px 5%" }}>
         <div style={{ maxWidth: 560, margin: "0 auto" }}>
           <button onClick={() => router.push(`/trainers/${trainerId}`)} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.5)", fontSize: "0.85rem", cursor: "pointer", marginBottom: 8, padding: 0 }}>
             ← Back
           </button>
+          {/* ✅ FIX: Show package name, not "Book Trial Class" */}
           <h1 style={{ fontFamily: "'Sora', sans-serif", fontSize: "1.6rem", fontWeight: 800, color: "#FFFFFF" }}>
-            {isPackage ? `Book ${sessions} Sessions` : "Book Trial Class"}
+            Book {pkgName}
           </h1>
         </div>
       </div>
 
       <div style={{ maxWidth: 560, margin: "0 auto", padding: "32px 5% 60px" }}>
 
-        {/* Trainer + booking summary */}
-        <div style={{ background: "#FFFFFF", borderRadius: 20, border: "1px solid #E2E8F0", padding: "20px 24px", marginBottom: 20 }}>
+        {/* ── Booking summary card ── */}
+        <div style={{ background: "#FFFFFF", borderRadius: 20, border: "1px solid #E2E8F0", padding: "20px 24px", marginBottom: 16 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div>
               <p style={{ fontSize: "0.72rem", color: "#94A3B8", textTransform: "uppercase", letterSpacing: "0.8px", fontWeight: 600, marginBottom: 4 }}>
-                {isPackage ? `${sessions}-session package with` : "Trial class with"}
+                Booking with
               </p>
               <h2 style={{ fontFamily: "'Sora', sans-serif", fontSize: "1.1rem", fontWeight: 800, color: "#0F172A", marginBottom: 2 }}>
                 {trainerName}
@@ -275,14 +233,18 @@ export default function BookingPage() {
               <p style={{ fontFamily: "'Sora', sans-serif", fontSize: "1.5rem", fontWeight: 800, color: "#F59E0B" }}>
                 ₹{totalAmount.toLocaleString("en-IN")}
               </p>
-              {perSessionEffective && (
-                <p style={{ fontSize: "0.72rem", color: "#94A3B8" }}>
-                  ₹{perSessionEffective.toLocaleString("en-IN")}/session
-                </p>
-              )}
-              {!isPackage && <p style={{ fontSize: "0.75rem", color: "#94A3B8" }}>1 session</p>}
+              <p style={{ fontSize: "0.75rem", color: "#94A3B8" }}>{pkgName}</p>
             </div>
           </div>
+        </div>
+
+        {/* ✅ NEW: Lowest package note */}
+        <div style={{ background: "#FFFBEB", border: "1px solid #FDE68A", borderRadius: 12, padding: "12px 16px", marginBottom: 16, display: "flex", alignItems: "flex-start", gap: 10 }}>
+          <span style={{ fontSize: "1rem", flexShrink: 0 }}>💡</span>
+          <p style={{ fontSize: "0.8rem", color: "#92400E", margin: 0, lineHeight: 1.5 }}>
+            You are booking the <strong>{pkgName}</strong> — the starting package for this trainer.
+            If you wish to upgrade to a higher package later, the difference in price will be applicable.
+          </p>
         </div>
 
         {/* Secure payment badge */}
@@ -294,7 +256,7 @@ export default function BookingPage() {
           </div>
         </div>
 
-        {/* Form */}
+        {/* ── Form ── */}
         <div style={{ background: "#FFFFFF", borderRadius: 20, border: "1px solid #E2E8F0", padding: "24px" }}>
           <h3 style={{ fontFamily: "'Sora', sans-serif", fontSize: "1rem", fontWeight: 700, color: "#0F172A", marginBottom: 20 }}>Your Details</h3>
 
@@ -369,31 +331,20 @@ export default function BookingPage() {
             </div>
           )}
 
-          {/* Price summary */}
+          {/* ✅ FIX: Correct price breakdown — no hardcoded ₹299 trial line */}
           <div style={{ background: "#F8FAFC", borderRadius: 12, padding: "14px 16px", marginBottom: 20, border: "1px solid #E2E8F0" }}>
-            {isPackage ? (
-              <>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", color: "#64748B", marginBottom: 6 }}>
-                  <span>{sessions} sessions</span>
-                  <span>₹{totalAmount.toLocaleString("en-IN")}</span>
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", color: "#64748B", marginBottom: 10, paddingBottom: 10, borderBottom: "1px solid #E2E8F0" }}>
-                  <span>Platform fee</span>
-                  <span style={{ color: "#16A34A" }}>Included</span>
-                </div>
-              </>
-            ) : (
-              <>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", color: "#64748B", marginBottom: 6 }}>
-                  <span>Trial class (1 session)</span>
-                  <span>₹299</span>
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", color: "#64748B", marginBottom: 10, paddingBottom: 10, borderBottom: "1px solid #E2E8F0" }}>
-                  <span>Platform fee</span>
-                  <span style={{ color: "#16A34A" }}>Included</span>
-                </div>
-              </>
-            )}
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", color: "#64748B", marginBottom: 6 }}>
+              <span>{pkgName}</span>
+              <span>₹{totalAmount.toLocaleString("en-IN")}</span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.82rem", color: "#16A34A", marginBottom: 6 }}>
+              <span>↳ Goes to trainer</span>
+              <span>₹{trainerPayout.toLocaleString("en-IN")}</span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.82rem", color: "#64748B", marginBottom: 10, paddingBottom: 10, borderBottom: "1px solid #E2E8F0" }}>
+              <span>↳ Platform fee (LearnDrive)</span>
+              <span>₹{platformFee.toLocaleString("en-IN")}</span>
+            </div>
             <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "'Sora', sans-serif", fontWeight: 800, fontSize: "1rem", color: "#0F172A" }}>
               <span>Total payable</span>
               <span style={{ color: "#F59E0B" }}>₹{totalAmount.toLocaleString("en-IN")}</span>

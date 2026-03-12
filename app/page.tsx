@@ -55,7 +55,7 @@ const ALL_CITIES = [
 const STATS = [
   { value: "50+", label: "Cities" },
   { value: "2,400+", label: "Students waitlisted" },
-  { value: "₹299", label: "Trial class" },
+  { value: "100%", label: "Verified trainers" },  // ✅ Replace with this
   { value: "4.8★", label: "Avg trainer rating" },
 ];
 
