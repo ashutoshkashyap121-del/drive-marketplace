@@ -1,9 +1,9 @@
 "use client";
 // app/trainers/register/page.tsx
-// FIXES: MS Form No. support, vehicle model pricing per package, AC surcharge field
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react"; // ✅ added useEffect
 import { useRouter } from "next/navigation";
+import { TrainerEvents } from "@/components/GoogleAnalytics"; // ✅ GA4
 
 type VehicleType = "CAR" | "BIKE_GEARED" | "BIKE_NON_GEARED";
 type TrainerTypeVal = "INDEPENDENT" | "DRIVING_SCHOOL";
@@ -18,16 +18,16 @@ interface VehicleVariant {
 interface TrainerPackage {
   id: string;
   name: string;
-  price: number | "";       // base / starting price
-  priceMax: number | "";    // if range e.g. 3000–5000
+  price: number | "";
+  priceMax: number | "";
   days: number | "";
   sessionLength: string;
   distancePerDay: string;
   includes: string;
   trackFeePerVehicle: number | "";
-  acSurcharge: number | "";          // flat AC vehicle add-on
-  vehicleModels: string;             // free text: "Wagon R, Swift, Dzire"
-  hasVariants: boolean;              // true = show per-model pricing table
+  acSurcharge: number | "";
+  vehicleModels: string;
+  hasVariants: boolean;
   variants: VehicleVariant[];
 }
 
@@ -36,9 +36,9 @@ interface FormData {
   name: string;
   schoolName: string;
   licenceFormat: LicenceFormat;
-  schoolLicenceNo: string;     // RTO/BNG(N)/DS/3/97-98
-  msFormNo: string;            // MS Form No. 382
-  msRTO: string;               // RTO Mumbai West
+  schoolLicenceNo: string;
+  msFormNo: string;
+  msRTO: string;
   ownerName: string;
   phone: string;
   email: string;
@@ -155,7 +155,6 @@ function validate(step: number, d: FormData): Record<string, string> {
   return e;
 }
 
-// Build display licence number for submission
 function buildLicenceNo(d: FormData): string {
   if (d.trainerType === "INDEPENDENT") return d.licenseNo;
   if (d.licenceFormat === "RTO_STANDARD") return d.schoolLicenceNo;
@@ -177,6 +176,11 @@ export default function RegisterPage() {
 
   const school = data.trainerType === "DRIVING_SCHOOL";
 
+  // ✅ GA4: Track page load = Step 1 entered
+  useEffect(() => {
+    TrainerEvents.stepStarted(1, "You");
+  }, []);
+
   const set = useCallback((k: keyof FormData, v: any) => {
     setData(p => ({ ...p, [k]: v }));
     setErrors(p => { const n = { ...p }; delete n[k]; return n; });
@@ -194,7 +198,6 @@ export default function RegisterPage() {
     setPcInput(""); setPcErr("");
   };
 
-  // Package helpers
   const addPkg = (t?: typeof PACKAGE_TEMPLATES[0]) => { if (data.packages.length < 6) set("packages", [...data.packages, makePkg(t)]); };
   const rmPkg = (id: string) => { if (data.packages.length > 1) set("packages", data.packages.filter(p => p.id !== id)); };
   const updPkg = (id: string, f: keyof TrainerPackage, v: any) => {
@@ -204,7 +207,6 @@ export default function RegisterPage() {
   const applyTmpl = (id: string, t: typeof PACKAGE_TEMPLATES[0]) =>
     set("packages", data.packages.map(p => p.id === id ? { ...p, name: t.name, days: t.days, sessionLength: t.sessionLength, distancePerDay: t.distancePerDay, includes: t.includes } : p));
 
-  // Variant helpers
   const addVariant = (pkgId: string) => {
     set("packages", data.packages.map(p => p.id === pkgId ? { ...p, variants: [...p.variants, makeVariant()] } : p));
   };
@@ -221,8 +223,13 @@ export default function RegisterPage() {
   const next = () => {
     const e = validate(step, data);
     if (Object.keys(e).length) { setErrors(e); return; }
-    setErrors({}); setStep(s => s + 1); window.scrollTo({ top: 0, behavior: "smooth" });
+    setErrors({});
+    // ✅ GA4: Track step completion before moving forward
+    TrainerEvents.stepStarted(step + 1, STEPS[step]?.label ?? "");
+    setStep(s => s + 1);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
+
   const back = () => { setStep(s => s - 1); window.scrollTo({ top: 0, behavior: "smooth" }); };
 
   const submit = async () => {
@@ -260,6 +267,10 @@ export default function RegisterPage() {
       });
       const json = await res.json();
       if (!res.ok) { setSubmitErr(json.error || "Something went wrong."); return; }
+
+      // ✅ GA4: Fire conversion event — this is what Google Ads will optimise for
+      TrainerEvents.completed(data.trainerType);
+
       setDone(true);
     } catch { setSubmitErr("Network error. Please try again."); }
     finally { setSubmitting(false); }
@@ -294,7 +305,6 @@ export default function RegisterPage() {
       <div className="h-0.5 bg-slate-800"><div className="h-full bg-amber-400 transition-all duration-500" style={{ width: `${prog}%` }} /></div>
 
       <div className="max-w-xl mx-auto px-4 py-10">
-        {/* Step indicators */}
         <div className="flex items-center gap-1 mb-8">
           {STEPS.map((s, i) => (
             <div key={s.id} className="flex items-center flex-1">
@@ -322,7 +332,6 @@ export default function RegisterPage() {
           {/* ── STEP 1 ── */}
           {step === 1 && (
             <div className="space-y-5">
-              {/* Type toggle */}
               <div>
                 <label className="block text-sm font-semibold text-slate-300 mb-3">I am a... <span className="text-amber-400">*</span></label>
                 <div className="grid grid-cols-2 gap-3">
@@ -348,7 +357,6 @@ export default function RegisterPage() {
                     <FieldError msg={errors.schoolName} />
                   </div>
 
-                  {/* Licence format selector */}
                   <div>
                     <label className="block text-sm font-semibold text-slate-300 mb-2">School Registration Format <span className="text-amber-400">*</span></label>
                     <div className="grid grid-cols-3 gap-2 mb-3">
@@ -475,7 +483,6 @@ export default function RegisterPage() {
           {/* ── STEP 3 ── */}
           {step === 3 && (
             <div className="space-y-7">
-              {/* Vehicles */}
               <div>
                 <label className="block text-sm font-semibold text-slate-300 mb-3">Vehicle Types <span className="text-amber-400">*</span></label>
                 <div className="grid grid-cols-3 gap-3">
@@ -490,7 +497,6 @@ export default function RegisterPage() {
                 <FieldError msg={errors.vehicleTypes} />
               </div>
 
-              {/* Own track */}
               {school && (
                 <button type="button" onClick={() => set("hasOwnTrack", !data.hasOwnTrack)} className="flex items-start gap-3 w-full text-left group">
                   <div className={`mt-0.5 w-5 h-5 rounded border-2 flex-shrink-0 flex items-center justify-center transition-all ${data.hasOwnTrack ? "border-amber-400 bg-amber-400" : "border-slate-500"}`}>
@@ -503,14 +509,12 @@ export default function RegisterPage() {
                 </button>
               )}
 
-              {/* Experience */}
               <div>
                 <label className="block text-sm font-semibold text-slate-300 mb-1.5">{school ? "Years School Has Been Operating" : "Years of Teaching Experience"} <span className="text-amber-400">*</span></label>
                 <input type="number" value={data.yearsExp} onChange={e => set("yearsExp", e.target.value)} placeholder="e.g. 27" min="1" className={inp} style={bg} />
                 <FieldError msg={errors.yearsExp} />
               </div>
 
-              {/* Languages */}
               <div>
                 <label className="block text-sm font-semibold text-slate-300 mb-3">Languages of Instruction</label>
                 <div className="flex flex-wrap gap-2">
@@ -523,7 +527,6 @@ export default function RegisterPage() {
                 </div>
               </div>
 
-              {/* Packages */}
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <label className="block text-sm font-semibold text-slate-300">Packages & Pricing <span className="text-amber-400">*</span></label>
@@ -539,7 +542,6 @@ export default function RegisterPage() {
                         {data.packages.length > 1 && <button type="button" onClick={() => rmPkg(pkg.id)} className="text-xs text-red-400">Remove</button>}
                       </div>
 
-                      {/* Templates */}
                       <div className="flex flex-wrap gap-1.5">
                         {PACKAGE_TEMPLATES.map(t => (
                           <button key={t.name} type="button" onClick={() => applyTmpl(pkg.id, t)}
@@ -601,7 +603,6 @@ export default function RegisterPage() {
                         <input type="number" value={pkg.trackFeePerVehicle} onChange={e => updPkg(pkg.id, "trackFeePerVehicle", e.target.value ? Number(e.target.value) : "")} placeholder="150" className={`${inp} py-2.5`} style={bg} />
                       </div>
 
-                      {/* Per-vehicle-model pricing table */}
                       <div>
                         <button type="button" onClick={() => updPkg(pkg.id, "hasVariants", !pkg.hasVariants)}
                           className="flex items-center gap-2 text-xs font-semibold text-amber-400 hover:text-amber-300 transition-colors">
@@ -679,7 +680,6 @@ export default function RegisterPage() {
                 <FieldError msg={errors.licenseNo} />
               </div>
 
-              {/* Summary */}
               <div className="rounded-xl p-4 border border-slate-700 space-y-3" style={{ background: "rgba(255,255,255,0.02)" }}>
                 <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Summary</p>
                 <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">

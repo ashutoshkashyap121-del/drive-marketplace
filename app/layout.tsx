@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Script from "next/script";
+import GoogleAnalytics from "@/components/GoogleAnalytics"; // ✅ GA4
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -118,13 +119,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        {/* Structured Data */}
+        {/* ── Structured Data ── */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
         />
 
-        {/* Meta Pixel — base code */}
+        {/* ── Meta Pixel ── */}
         <script
           dangerouslySetInnerHTML={{
             __html: `
@@ -150,11 +151,19 @@ export default function RootLayout({
             alt=""
           />
         </noscript>
+
+        {/* ── Fonts ── */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-<link href="https://fonts.googleapis.com/css2?family=Sora:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Sora:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap"
+          rel="stylesheet"
+        />
       </head>
+
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        {/* ✅ GA4 — auto pageview tracking + funnel events across all pages */}
+        <GoogleAnalytics />
         {children}
       </body>
     </html>
