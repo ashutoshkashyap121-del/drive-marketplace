@@ -42,6 +42,19 @@ enum PaymentStatus {
   REFUNDED
 }
 
+enum DriverRequestStatus {
+  PENDING
+  ASSIGNED
+  COMPLETED
+  CANCELLED
+}
+
+enum DriverApplicationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 // ─── Models ───────────────────────────────────────────────────────────────────
 
 model Trainer {
@@ -248,4 +261,88 @@ model DLReminder {
 
   @@index([dlExpiryDate])
   @@index([active])
+}
+
+// ─── Hire-a-Driver ────────────────────────────────────────────────────────────
+
+model DriverRequest {
+  id               Int                  @id @default(autoincrement())
+
+  // Customer details
+  customerName     String
+  mobile           String
+  email            String?
+  city             String
+
+  // Trip details
+  tripType         String               // outstation | fullday | wedding | airport | corporate
+  startDate        DateTime
+  endDate          DateTime?
+  days             Int                  @default(1)
+  pickupAddress    String
+  notes            String?
+
+  // Pricing (15% platform fee)
+  estimatedPrice   Float                @default(0)
+  platformFee      Float?               // 15% of estimatedPrice
+  driverPayout     Float?               // 85% of estimatedPrice
+  finalPrice       Float?               // set by admin if different from estimate
+
+  // Status & assignment
+  status           DriverRequestStatus  @default(PENDING)
+  assignedDriverId Int?
+  assignedDriver   DriverApplication?   @relation(fields: [assignedDriverId], references: [id])
+
+  // Admin notes
+  adminNotes       String?
+
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+
+  @@index([status])
+  @@index([city])
+  @@index([startDate])
+  @@index([assignedDriverId])
+}
+
+model DriverApplication {
+  id           Int                     @id @default(autoincrement())
+
+  // Personal
+  name         String
+  mobile       String                  @unique
+  email        String?
+  city         String
+  pincode      String
+
+  // Licence
+  licenseNo    String
+  licenseType  String                  // LMV | LMV + HMV | HMV
+  yearsExp     Int
+
+  // Skills
+  tripTypes    String                  // JSON: string[]
+  languages    String                  // JSON: string[]
+  availability String                  // JSON: string[]
+
+  // Vehicle
+  hasOwnCar    Boolean                 @default(false)
+  carModel     String?
+
+  // Profile
+  about        String?
+  photoUrl     String?
+
+  // Status
+  status       DriverApplicationStatus @default(PENDING)
+  adminNotes   String?
+
+  // Relations
+  requests     DriverRequest[]
+
+  createdAt    DateTime                @default(now())
+  updatedAt    DateTime                @updatedAt
+
+  @@index([status])
+  @@index([city])
 }
