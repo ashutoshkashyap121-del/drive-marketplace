@@ -5,7 +5,6 @@ import { z } from "zod";
 import { notifyAdminNewTrainer } from "@/lib/notifications";
 import { smsAdminNewTrainer } from "@/lib/sms";
 
-// 1. Matched the schema exactly to the frontend payload
 const RegisterSchema = z.object({
   name: z.string().min(2),
   email: z.string().email().optional().or(z.literal("")),
@@ -15,14 +14,14 @@ const RegisterSchema = z.object({
   pincode: z.string().regex(/^\d{6}$/),
   serviceArea: z.array(z.string().regex(/^\d{6}$/)).min(1).max(10),
   vehicleTypes: z.array(z.enum(["CAR", "BIKE", "BIKE_GEARED", "BIKE_NON_GEARED"])).min(1),
-  experience: z.number().min(1), // Changed to min 1 to match frontend
+  experience: z.number().min(1),
   languages: z.array(z.string()).optional().default([]),
-  basePrice: z.number().min(100).optional(), // Changed to min 100
+  basePrice: z.number().min(100).optional(),
   packagesJson: z.string().optional(),
-  licenseNumber: z.string().optional().or(z.literal("")), // Made optional for driving schools
+  licenseNumber: z.string().optional().or(z.literal("")),
   trainerType: z.enum(["INDEPENDENT", "DRIVING_SCHOOL"]).optional(),
   adminNotes: z.string().optional(),
-  documents: z.any().optional(), // Accepts the empty object sent by frontend
+  documents: z.any().optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -36,17 +35,16 @@ export async function POST(req: NextRequest) {
         const key = e.path[e.path.length - 1] as string;
         if (!issues[key]) issues[key] = e.message;
       });
-      console.log("Validation Issues:", issues); // Helpful for debugging in terminal
+      console.log("Validation Issues:", issues);
       return NextResponse.json({ error: "Validation failed", issues }, { status: 400 });
     }
 
     const data = parsed.data;
 
-    // 2. Check for existing trainer (Mobile only, since email is optional)
     const existing = await prisma.trainer.findFirst({
       where: { mobile: data.mobile },
     });
-    
+
     if (existing) {
       return NextResponse.json(
         { error: "Validation failed", issues: { mobile: "A trainer with this mobile already exists" } },
@@ -54,12 +52,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 3. Create Trainer without requiring immediate Vehicle/Document records
     const trainer = await prisma.$transaction(async (tx) => {
       const newTrainer = await tx.trainer.create({
         data: {
           name: data.name,
-          email: data.email || null, // Fallback to null so DB unique constraints don't trip on empty strings
+          email: data.email || null,
           mobile: data.mobile,
           bio: data.bio || "",
           city: data.city,
@@ -73,20 +70,15 @@ export async function POST(req: NextRequest) {
           trainerType: data.trainerType || "INDEPENDENT",
           status: "PENDING",
           rating: 0,
-          // Note: If you have packagesJson or adminNotes columns in your Prisma schema, 
-          // you can uncomment these lines below to save them directly:
-          // packagesJson: data.packagesJson,
-          // adminNotes: data.adminNotes,
+          packagesJson: data.packagesJson || null,  // ✅ FIXED: was commented out
+          adminNotes: data.adminNotes || null,        // ✅ FIXED: was commented out
         },
       });
 
-      // We skip tx.vehicle.create() and tx.trainerDocument.createMany() 
-      // because the frontend multi-step form doesn't provide this data yet.
-      
       return newTrainer;
     });
 
-    // ── Notify admin via SMS + email ───
+    // ── Notify admin ───
     try {
       await smsAdminNewTrainer({
         name: trainer.name,
