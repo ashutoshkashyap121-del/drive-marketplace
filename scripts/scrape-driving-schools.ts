@@ -2,8 +2,8 @@
  * LearnDrive — PAN India Driving School Scraper
  * Uses Google Places API (key already in GOOGLE_PLACES_API_KEY env var)
  *
- * Run: npx ts-node scripts/scrape-driving-schools.ts --city="Delhi NCR"
- * Or scrape all cities: npx ts-node scripts/scrape-driving-schools.ts --all
+ * Run: npx ts-node scripts/scrape-driving-schools.ts --city=Mumbai
+ * Or:  npx ts-node scripts/scrape-driving-schools.ts --all
  */
 
 import { PrismaClient } from "@prisma/client";
@@ -12,9 +12,10 @@ import * as https from "https";
 const prisma = new PrismaClient();
 
 const GOOGLE_PLACES_API_KEY = process.env.GOOGLE_PLACES_API_KEY!;
-const PLATFORM_MARKUP = 500; // ₹500 added to every scraped package
+const PLATFORM_MARKUP = 500;
 
-// ─── Cities to scrape ────────────────────────────────────────────────────────
+// ─── Cities ───────────────────────────────────────────────────────────────────
+
 const CITIES = [
   { name: "Delhi", lat: 28.6139, lng: 77.209 },
   { name: "Mumbai", lat: 19.076, lng: 72.8777 },
@@ -37,12 +38,12 @@ const CITIES = [
   { name: "Visakhapatnam", lat: 17.6868, lng: 83.2185 },
   { name: "Noida", lat: 28.5355, lng: 77.391 },
   { name: "Gurgaon", lat: 28.4595, lng: 77.0266 },
-  { name: "Faridabad", lat: 28.4089, lng: 77.3178 },
   { name: "Vadodara", lat: 22.3072, lng: 73.1812 },
   { name: "Rajkot", lat: 22.3039, lng: 70.8022 },
+  { name: "Faridabad", lat: 28.4089, lng: 77.3178 },
 ];
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function fetchJson(url: string): Promise<any> {
   return new Promise((resolve, reject) => {
@@ -61,28 +62,24 @@ function sleep(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
-// Guess a rough package price from rating + review count
-// Since GMB rarely shows prices, we build a sensible default
-function estimatePackagePrice(rating: number, reviewCount: number): number {
+function estimatePackagePrice(rating: number): number {
   let base = 4000;
   if (rating >= 4.5) base = 5000;
   else if (rating >= 4.0) base = 4500;
   else if (rating < 3.5) base = 3500;
-  // Add platform markup
   return base + PLATFORM_MARKUP;
 }
 
-function buildPackagesJson(price: number, schoolName: string) {
+function buildPackagesJson(price: number) {
   return JSON.stringify([
     {
       id: "pkg_dl",
       name: "DL Package",
-      price: price,
+      price,
       days: 21,
       sessionLength: "45 min/day",
       distancePerDay: "5 km",
-      includes: `Driving lessons in city traffic, Highway driving practice, RTO road test preparation, Learning Licence assistance`,
-      vehicleModels: "Car (Manual)",
+      includes: "Driving lessons, Highway practice, RTO test preparation",
       hasVariants: false,
     },
     {
@@ -92,40 +89,33 @@ function buildPackagesJson(price: number, schoolName: string) {
       days: 28,
       sessionLength: "45 min/day",
       distancePerDay: "5 km",
-      includes: `Learning Licence application, Driving lessons, RTO test preparation, All paperwork assistance`,
-      vehicleModels: "Car (Manual)",
+      includes: "LL application, Driving lessons, RTO test prep, Paperwork",
       hasVariants: false,
     },
   ]);
 }
 
-// ─── Fetch places from Google ─────────────────────────────────────────────────
+// ─── Google Places ────────────────────────────────────────────────────────────
 
 async function searchDrivingSchools(city: { name: string; lat: number; lng: number }) {
   const results: any[] = [];
-  const radius = 15000; // 15km
   const query = `driving school near ${city.name} India`;
   const baseUrl = `https://maps.googleapis.com/maps/api/place/textsearch/json`;
 
-  let url = `${baseUrl}?query=${encodeURIComponent(query)}&location=${city.lat},${city.lng}&radius=${radius}&key=${GOOGLE_PLACES_API_KEY}`;
+  let url = `${baseUrl}?query=${encodeURIComponent(query)}&location=${city.lat},${city.lng}&radius=15000&key=${GOOGLE_PLACES_API_KEY}`;
 
   console.log(`\n📍 Scraping ${city.name}...`);
 
   while (url) {
     const data = await fetchJson(url);
-
     if (data.status !== "OK" && data.status !== "ZERO_RESULTS") {
-      console.error(`  ❌ API error for ${city.name}: ${data.status} — ${data.error_message ?? ""}`);
+      console.error(`  ❌ API error: ${data.status} — ${data.error_message ?? ""}`);
       break;
     }
+    for (const place of (data.results ?? [])) results.push(place);
 
-    for (const place of (data.results ?? [])) {
-      results.push(place);
-    }
-
-    // Handle pagination
     if (data.next_page_token) {
-      await sleep(2000); // Google requires delay before next_page_token works
+      await sleep(2000);
       url = `${baseUrl}?pagetoken=${data.next_page_token}&key=${GOOGLE_PLACES_API_KEY}`;
     } else {
       url = "";
@@ -137,7 +127,7 @@ async function searchDrivingSchools(city: { name: string; lat: number; lng: numb
 }
 
 async function getPlaceDetails(placeId: string): Promise<any> {
-  const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=name,formatted_phone_number,website,rating,user_ratings_total,photos,formatted_address,opening_hours&key=${GOOGLE_PLACES_API_KEY}`;
+  const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=name,formatted_phone_number,website,rating,user_ratings_total,photos,formatted_address&key=${GOOGLE_PLACES_API_KEY}`;
   const data = await fetchJson(url);
   return data.result ?? {};
 }
@@ -147,24 +137,27 @@ async function getPlaceDetails(placeId: string): Promise<any> {
 async function saveScrapedTrainer(place: any, details: any, city: string) {
   const rating = details.rating ?? place.rating ?? 4.0;
   const reviewCount = details.user_ratings_total ?? place.user_ratings_total ?? 0;
-  const phone = details.formatted_phone_number?.replace(/\D/g, "") ?? "";
   const address = details.formatted_address ?? place.formatted_address ?? "";
   const website = details.website ?? null;
   const name = details.name ?? place.name;
 
-  // Skip if already exists (by name + city)
-  const existing = await prisma.trainer.findFirst({
-    where: { name, city },
-  });
+  // Raw phone from Google — strip non-digits, ensure it's 10 digits
+  const rawPhone = (details.formatted_phone_number ?? "").replace(/\D/g, "");
+  // Google gives +91XXXXXXXXXX — strip country code if present
+  const mobile = rawPhone.startsWith("91") && rawPhone.length === 12
+    ? rawPhone.slice(2)
+    : rawPhone.slice(-10) || "0000000000";
+
+  // Skip duplicates
+  const existing = await prisma.trainer.findFirst({ where: { name, city } });
   if (existing) {
-    console.log(`  ⏩ Skip (already exists): ${name}`);
+    console.log(`  ⏩ Skip (exists): ${name}`);
     return;
   }
 
-  const estimatedPrice = estimatePackagePrice(rating, reviewCount);
-  const packagesJson = buildPackagesJson(estimatedPrice, name);
+  const estimatedPrice = estimatePackagePrice(rating);
+  const packagesJson = buildPackagesJson(estimatedPrice);
 
-  // Photo reference → URL
   const photoRef = place.photos?.[0]?.photo_reference ?? details.photos?.[0]?.photo_reference;
   const photoUrl = photoRef
     ? `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${photoRef}&key=${GOOGLE_PLACES_API_KEY}`
@@ -175,16 +168,17 @@ async function saveScrapedTrainer(place: any, details: any, city: string) {
       data: {
         name,
         city,
-        phone: phone || "0000000000",
+        mobile,                          // ← correct field name
         trainerType: "DRIVING_SCHOOL",
         vehicleTypes: ["CAR"],
-        languages: ["Hindi", "English"],
-        yearsExperience: 5,
-        rating: rating,
+        languages:   ["Hindi", "English"],
+        experience:  5,                  // ← correct field name
+        licenseNumber: "SCRAPED",        // ← required field, placeholder
+        rating,
         packagesJson,
         basePrice: estimatedPrice,
-        status: "PENDING", // admin must approve before going live
-        // Extra scraped metadata stored in adminNotes
+        status: "PENDING",
+        serviceArea: [],
         adminNotes: JSON.stringify({
           source: "scraped_gmb",
           placeId: place.place_id,
@@ -193,10 +187,8 @@ async function saveScrapedTrainer(place: any, details: any, city: string) {
           reviewCount,
           photoUrl,
           scrapedAt: new Date().toISOString(),
-          isUnverified: true, // flag — school hasn't registered themselves
+          isUnverified: true,
         }),
-        serviceArea: [],
-        homeArea: city,
       },
     });
     console.log(`  💾 Saved: ${name} (${city}) — ₹${estimatedPrice}`);
@@ -209,14 +201,13 @@ async function saveScrapedTrainer(place: any, details: any, city: string) {
 
 async function scrapeCity(city: { name: string; lat: number; lng: number }) {
   const places = await searchDrivingSchools(city);
-
   for (const place of places) {
     try {
       const details = await getPlaceDetails(place.place_id);
       await saveScrapedTrainer(place, details, city.name);
-      await sleep(300); // be polite to the API
+      await sleep(300);
     } catch (err: any) {
-      console.error(`  ❌ Error processing ${place.name}: ${err.message}`);
+      console.error(`  ❌ Error: ${place.name}: ${err.message}`);
     }
   }
 }
@@ -224,22 +215,20 @@ async function scrapeCity(city: { name: string; lat: number; lng: number }) {
 async function main() {
   const args = process.argv.slice(2);
   const cityFlag = args.find((a) => a.startsWith("--city="))?.split("=")[1];
-  const allFlag = args.includes("--all");
+  const allFlag  = args.includes("--all");
 
   if (!GOOGLE_PLACES_API_KEY) {
-    console.error("❌ GOOGLE_PLACES_API_KEY not set in environment");
+    console.error("❌ GOOGLE_PLACES_API_KEY not set");
     process.exit(1);
   }
 
   if (allFlag) {
     console.log(`🚀 Scraping all ${CITIES.length} cities PAN India...`);
-    for (const city of CITIES) {
-      await scrapeCity(city);
-    }
+    for (const city of CITIES) await scrapeCity(city);
   } else if (cityFlag) {
     const city = CITIES.find((c) => c.name.toLowerCase() === cityFlag.toLowerCase());
     if (!city) {
-      console.error(`❌ City "${cityFlag}" not found. Available: ${CITIES.map((c) => c.name).join(", ")}`);
+      console.error(`❌ City not found. Options: ${CITIES.map((c) => c.name).join(", ")}`);
       process.exit(1);
     }
     await scrapeCity(city);
@@ -250,7 +239,7 @@ async function main() {
   }
 
   await prisma.$disconnect();
-  console.log("\n✅ Done! Go to /admin/scraped-listings to review and approve.");
+  console.log("\n✅ Done! Go to /admin/scraped-listings to review.");
 }
 
 main().catch(console.error);
