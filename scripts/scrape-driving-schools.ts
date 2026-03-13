@@ -11,7 +11,9 @@ import * as https from "https";
 
 const prisma = new PrismaClient();
 const GOOGLE_PLACES_API_KEY = process.env.GOOGLE_PLACES_API_KEY!;
-const PLATFORM_MARKUP = 500;
+// Price logic: flat ₹5500 base + 10% platform fee = ₹6050 total shown to customer
+const BASE_PRICE    = 5500;
+const PLATFORM_FEE_PCT = 0.10;
 
 // ─── Cities ───────────────────────────────────────────────────────────────────
 
@@ -77,35 +79,23 @@ function sleep(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
-function estimatePackagePrice(rating: number): number {
-  let base = 4000;
-  if (rating >= 4.5) base = 5000;
-  else if (rating >= 4.0) base = 4500;
-  else if (rating < 3.5) base = 3500;
-  return base + PLATFORM_MARKUP;
+function estimatePackagePrice(): number {
+  // Always flat ₹5500 base for all scraped listings
+  return BASE_PRICE;
 }
 
-function buildPackagesJson(price: number) {
+function buildPackagesJson(basePrice: number) {
+  const platformFee = Math.round(basePrice * PLATFORM_FEE_PCT);
+  const totalPrice  = basePrice + platformFee;
   return JSON.stringify([
     {
-      id: "pkg_dl",
-      name: "DL Package",
-      price,
-      days: 21,
-      sessionLength: "45 min/day",
-      distancePerDay: "5 km",
-      includes: "Driving lessons, Highway practice, RTO test preparation",
-      hasVariants: false,
-    },
-    {
-      id: "pkg_ll_dl",
-      name: "LL + DL Package",
-      price: Math.round(price * 1.25),
-      days: 28,
-      sessionLength: "45 min/day",
-      distancePerDay: "5 km",
-      includes: "LL application, Driving lessons, RTO test prep, Paperwork",
-      hasVariants: false,
+      id:           "pkg_dl",
+      name:         "DL Package",
+      price:        totalPrice,   // what customer pays (base + 10% fee)
+      basePrice,                  // trainer payout
+      platformFee,                // platform cut
+      includes:     "Driving lessons in city & highway traffic, RTO road test preparation",
+      hasVariants:  false,
     },
   ]);
 }
@@ -178,7 +168,7 @@ async function saveScrapedTrainer(place: any, city: string) {
     return;
   }
 
-  const estimatedPrice = estimatePackagePrice(rating);
+  const estimatedPrice = estimatePackagePrice();
 
   // Photo URL from Places API (New)
   const photoName = place.photos?.[0]?.name;
