@@ -34,25 +34,22 @@ export default function Footer() {
           </p>
           {/* Contact */}
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            <a href="tel:+918800000000" className="footer-link" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <a href="tel:+918700896528" className="footer-link" style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <span style={{ fontSize: 16 }}>📞</span>
-              <span>+91 88000 00000</span>
+              <span>+91 87008 96528</span>
             </a>
             <a href="mailto:support@learndrive.in" className="footer-link" style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <span style={{ fontSize: 16 }}>✉️</span>
               <span>support@learndrive.in</span>
             </a>
-            <a href="https://wa.me/918700896528" target="_blank" rel="noopener noreferrer" className="footer-link" style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ fontSize: 16 }}>💬</span>
-              <span>WhatsApp Support</span>
-            </a>
+
           </div>
           {/* Social */}
           <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
             {[
+              { href: "https://www.facebook.com/profile.php?id=61579668686130", label: "Facebook", icon: "📘" },
               { href: "https://instagram.com/learndrive.in", label: "Instagram", icon: "📸" },
               { href: "https://linkedin.com/company/learndrive", label: "LinkedIn", icon: "💼" },
-              { href: "https://twitter.com/learndriveIN", label: "Twitter / X", icon: "🐦" },
             ].map(s => (
               <a key={s.label} href={s.href} target="_blank" rel="noopener noreferrer" title={s.label}
                 style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, textDecoration: "none", transition: "background 0.15s" }}
