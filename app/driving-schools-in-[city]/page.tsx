@@ -77,7 +77,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function CityLandingPage({ params }: Props) {
-  const citySlug = params.city.toLowerCase();
+  if (!params.city) notFound();
+const citySlug = params.city.toLowerCase();
   const meta     = CITY_META[citySlug];
   if (!meta) notFound();
 
