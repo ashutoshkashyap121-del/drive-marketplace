@@ -1,6 +1,7 @@
+// app/api/hire-driver/request/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
- 
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -9,12 +10,15 @@ export async function POST(req: NextRequest) {
       startDate, endDate, days, pickupAddress,
       notes, estimatedPrice,
     } = body;
- 
+
     if (!name || !mobile || !city || !tripType || !startDate || !pickupAddress) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
- 
-    // Save to DB — uses a DriverRequest model (add to schema below)
+
+    const price = Number(estimatedPrice) || 0;
+    const platformFee = Math.round(price * 0.15);
+    const driverPayout = price - platformFee;
+
     const request = await prisma.driverRequest.create({
       data: {
         customerName: name,
@@ -27,14 +31,13 @@ export async function POST(req: NextRequest) {
         days: Number(days) || 1,
         pickupAddress,
         notes: notes || null,
-        estimatedPrice: Number(estimatedPrice) || 0,
+        estimatedPrice: price,
+        platformFee,
+        driverPayout,
         status: "PENDING",
       },
     });
- 
-    // TODO: Send WhatsApp/SMS notification to admin
-    // await sendWhatsApp(`New driver request from ${name} (${mobile}) in ${city} for ${tripType} on ${startDate}`);
- 
+
     return NextResponse.json({ success: true, id: request.id });
   } catch (err) {
     console.error("Driver request error:", err);
