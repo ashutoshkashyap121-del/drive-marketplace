@@ -1,4 +1,15 @@
 User-agent: *
 Allow: /
 
+# Block admin panel from being indexed
+Disallow: /admin/
+Disallow: /admin/scraped-listings
+Disallow: /admin/trainer-outreach
+Disallow: /api/
+
+# Block private booking/payment pages
+Disallow: /trainers/*/book
+Disallow: /success
+Disallow: /payment-failed
+
 Sitemap: https://learndrive.in/sitemap.xml

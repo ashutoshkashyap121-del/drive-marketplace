@@ -1,7 +1,14 @@
+// app/sitemap.ts
+// Async sitemap — fetches live trainer IDs from DB
+// Submits to Google Search Console after deploy:
+// https://learndrive.in/sitemap.xml
+
 import { MetadataRoute } from "next";
+import { prisma } from "@/lib/prisma";
 
 const BASE = "https://learndrive.in";
 
+// ─── All your existing blog slugs (kept exactly as-is) ───────────────────────
 const BLOG_SLUGS = [
   "how-to-get-driving-licence-india",
   "best-driving-schools-bangalore",
@@ -133,44 +140,72 @@ const BLOG_SLUGS = [
   "rto-guide-hyderabad",
 ];
 
-const CITIES = [
-  "delhi", "mumbai", "bangalore", "hyderabad", "chennai", "kolkata", "pune",
-  "jaipur", "surat", "lucknow", "nagpur", "indore", "bhopal", "patna",
-  "vadodara", "agra", "nashik", "faridabad", "meerut", "rajkot",
-  "varanasi", "amritsar", "ranchi", "coimbatore", "chandigarh",
-  "dehradun", "kochi", "noida", "gurugram",
+// ─── City slugs — NOW as dedicated landing pages (not query params) ───────────
+// These match app/driving-schools-in-[city]/page.tsx
+const CITY_SLUGS = [
+  "delhi", "mumbai", "bangalore", "hyderabad", "chennai", "pune",
+  "kolkata", "jaipur", "ahmedabad", "surat", "lucknow", "chandigarh",
+  "bhopal", "indore", "nagpur", "patna", "coimbatore", "kochi",
+  "visakhapatnam", "noida", "gurgaon", "vadodara", "rajkot", "faridabad",
 ];
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const now = new Date();
+
+  // ── Static pages ──────────────────────────────────────────────────────────
   const staticPages: MetadataRoute.Sitemap = [
-    { url: `${BASE}/`, priority: 1.0, changeFrequency: "weekly", lastModified: new Date() },
-    { url: `${BASE}/trainers`, priority: 0.9, changeFrequency: "daily", lastModified: new Date() },
-    { url: `${BASE}/trainers/register`, priority: 0.8, changeFrequency: "monthly", lastModified: new Date() },
-    { url: `${BASE}/rto-test`, priority: 0.8, changeFrequency: "weekly", lastModified: new Date() },
-    { url: `${BASE}/rto-test/practice`, priority: 0.8, changeFrequency: "weekly", lastModified: new Date() },
-    { url: `${BASE}/rto-test/mock`, priority: 0.7, changeFrequency: "weekly", lastModified: new Date() },
-    { url: `${BASE}/blog`, priority: 0.9, changeFrequency: "daily", lastModified: new Date() },
-    { url: `${BASE}/rto-finder`, priority: 0.7, changeFrequency: "monthly", lastModified: new Date() },
-    { url: `${BASE}/dl-expiry`, priority: 0.7, changeFrequency: "monthly", lastModified: new Date() },
-    { url: `${BASE}/dl-assistance`, priority: 0.9, changeFrequency: "monthly", lastModified: new Date() },
-    { url: `${BASE}/privacy`, priority: 0.3, changeFrequency: "yearly", lastModified: new Date() },
-    { url: `${BASE}/terms`, priority: 0.3, changeFrequency: "yearly", lastModified: new Date() },
-    { url: `${BASE}/help`, priority: 0.5, changeFrequency: "monthly", lastModified: new Date() },
+    { url: `${BASE}/`,                    priority: 1.0, changeFrequency: "weekly",  lastModified: now },
+    { url: `${BASE}/trainers`,            priority: 0.9, changeFrequency: "daily",   lastModified: now },
+    { url: `${BASE}/trainers/register`,   priority: 0.8, changeFrequency: "monthly", lastModified: now },
+    { url: `${BASE}/rto-test`,            priority: 0.8, changeFrequency: "weekly",  lastModified: now },
+    { url: `${BASE}/rto-test/practice`,   priority: 0.8, changeFrequency: "weekly",  lastModified: now },
+    { url: `${BASE}/rto-test/mock`,       priority: 0.7, changeFrequency: "weekly",  lastModified: now },
+    { url: `${BASE}/blog`,                priority: 0.9, changeFrequency: "daily",   lastModified: now },
+    { url: `${BASE}/rto-finder`,          priority: 0.7, changeFrequency: "monthly", lastModified: now },
+    { url: `${BASE}/dl-expiry`,           priority: 0.7, changeFrequency: "monthly", lastModified: now },
+    { url: `${BASE}/dl-assistance`,       priority: 0.9, changeFrequency: "monthly", lastModified: now },
+    { url: `${BASE}/refund`,              priority: 0.3, changeFrequency: "monthly", lastModified: now },
+    { url: `${BASE}/remove-listing`,      priority: 0.3, changeFrequency: "monthly", lastModified: now },
+    { url: `${BASE}/privacy`,             priority: 0.3, changeFrequency: "yearly",  lastModified: now },
+    { url: `${BASE}/terms`,               priority: 0.3, changeFrequency: "yearly",  lastModified: now },
+    { url: `${BASE}/help`,                priority: 0.5, changeFrequency: "monthly", lastModified: now },
   ];
 
+  // ── City landing pages — high priority, rank for generic searches ──────────
+  // e.g. "driving school in Delhi" → learndrive.in/driving-schools-in-delhi
+  const cityPages: MetadataRoute.Sitemap = CITY_SLUGS.map((city) => ({
+    url:             `${BASE}/driving-schools-in-${city}`,
+    priority:        0.9,
+    changeFrequency: "daily" as const,
+    lastModified:    now,
+  }));
+
+  // ── Blog pages ────────────────────────────────────────────────────────────
   const blogPages: MetadataRoute.Sitemap = BLOG_SLUGS.map((slug) => ({
-    url: `${BASE}/blog/${slug}`,
-    priority: 0.8,
-    changeFrequency: "monthly",
-    lastModified: new Date(),
+    url:             `${BASE}/blog/${slug}`,
+    priority:        0.8,
+    changeFrequency: "monthly" as const,
+    lastModified:    now,
   }));
 
-  const cityPages: MetadataRoute.Sitemap = CITIES.map((city) => ({
-    url: `${BASE}/trainers?city=${city}`,
-    priority: 0.7,
-    changeFrequency: "weekly",
-    lastModified: new Date(),
-  }));
+  // ── Individual trainer pages — fetched live from DB ───────────────────────
+  // This is the key one — every approved trainer gets their own sitemap entry
+  let trainerPages: MetadataRoute.Sitemap = [];
+  try {
+    const trainers = await prisma.trainer.findMany({
+      where:   { status: "APPROVED" },
+      select:  { id: true, updatedAt: true },
+      orderBy: { createdAt: "desc" },
+    });
+    trainerPages = trainers.map((t) => ({
+      url:             `${BASE}/trainers/${t.id}`,
+      priority:        0.85,
+      changeFrequency: "weekly" as const,
+      lastModified:    t.updatedAt ?? now,
+    }));
+  } catch (e) {
+    console.error("[sitemap] Failed to fetch trainers:", e);
+  }
 
-  return [...staticPages, ...blogPages, ...cityPages];
+  return [...staticPages, ...cityPages, ...blogPages, ...trainerPages];
 }
