@@ -14,14 +14,14 @@ interface VehicleVariant {
 }
 
 interface TrainerPackage {
-  id?: string;                  // optional — may not be in DB JSON
+  id?: string;
   name: string;
   price: number;
   priceMax?: number;
   days?: number;
   sessionLength?: string;
   distancePerDay?: string;
-  includes?: string | string[]; // DB may store as string or array
+  includes?: string | string[];
   trackFeePerVehicle?: number;
   acSurcharge?: number;
   vehicleModels?: string;
@@ -72,7 +72,6 @@ export default function TrainerPage() {
   const params = useParams();
   const [trainer, setTrainer] = useState<Trainer | null>(null);
   const [loading, setLoading] = useState(true);
-  // Use index — avoids undefined id matching bug when DB JSON has no id field
   const [selectedIdx, setSelectedIdx] = useState(0);
 
   useEffect(() => {
@@ -232,7 +231,7 @@ export default function TrainerPage() {
         </div>
 
         {/* ── Package selection ── */}
-        <div style={{ background: "#FFFFFF", borderRadius: 18, border: "1px solid #E2E8F0", padding: 28 }}>
+        <div style={{ background: "#FFFFFF", borderRadius: 18, border: "1px solid #E2E8F0", padding: 28, marginBottom: 20 }}>
           <h2 style={{ fontFamily: "'Sora',sans-serif", fontSize: 18, fontWeight: 800, marginBottom: 6, color: "#0F172A" }}>
             Choose a package
           </h2>
@@ -378,6 +377,26 @@ export default function TrainerPage() {
             Free cancellation · Secure payment via Razorpay
           </p>
         </div>
+
+        {/* ── HIRE A DRIVER BANNER ── */}
+        <div style={{ background: "linear-gradient(145deg,#0B1437 0%,#1A2B5F 100%)", borderRadius: 18, padding: 24, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
+          <div style={{ flex: 1, minWidth: 200 }}>
+            <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 12, marginBottom: 4 }}>Not learning — just need to get somewhere?</p>
+            <h3 style={{ fontFamily: "'Sora',sans-serif", color: "#FFFFFF", fontSize: 16, fontWeight: 700, marginBottom: 6 }}>
+              Hire a Driver for Your Car
+            </h3>
+            <p style={{ color: "rgba(255,255,255,0.55)", fontSize: 13, lineHeight: 1.5 }}>
+              Outstation trips, weddings, airport drops. Verified drivers. From ₹800/trip.
+            </p>
+          </div>
+          <Link
+            href="/hire-driver"
+            style={{ background: "#F59E0B", color: "#0B1437", textDecoration: "none", padding: "11px 22px", borderRadius: 10, fontWeight: 700, fontSize: 14, whiteSpace: "nowrap" as const, flexShrink: 0 }}
+          >
+            🚗 Hire a Driver →
+          </Link>
+        </div>
+
       </div>
     </main>
   );

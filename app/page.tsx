@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import TrainerCard from "@/components/TrainerCard"; // Added Import
+import TrainerCard from "@/components/TrainerCard";
+import Footer from "@/components/Footer";
 
 const RECENT_BLOGS = [
   { slug: "how-to-get-driving-licence-india", title: "How to Get a Driving Licence in India (2025 Complete Guide)", description: "Step-by-step guide to getting your driving licence in India – from learner's licence to permanent licence, RTO test tips, and documents checklist.", category: "Licence Guide", readTime: 8 },
@@ -23,8 +24,6 @@ interface TrainerPackage {
   acSurcharge?: number;
 }
 
-// ✅ FIX: Changed packagesJson from `string | null | undefined` to `any`
-// to match the TrainerDisplayData interface expected by TrainerCard component.
 interface Trainer {
   id: number;
   name: string;
@@ -33,7 +32,7 @@ interface Trainer {
   experience: number;
   languages: string[];
   vehicleTypes: string[];
-  packagesJson: any; // was: string | null — caused type conflict with TrainerCard
+  packagesJson: any;
   rating?: number;
 }
 
@@ -55,7 +54,7 @@ const ALL_CITIES = [
 const STATS = [
   { value: "50+", label: "Cities" },
   { value: "2,400+", label: "Students waitlisted" },
-  { value: "100%", label: "Verified trainers" },  // ✅ Replace with this
+  { value: "100%", label: "Verified trainers" },
   { value: "4.8★", label: "Avg trainer rating" },
 ];
 
@@ -157,7 +156,8 @@ export default function HomePage() {
         input:focus { outline: none; border-color: #F59E0B !important; }
         .nav-links { display: flex; align-items: center; gap: 2px; }
         .nav-trainer-btn { white-space: nowrap !important; flex-shrink: 0 !important; }
-        @media (max-width: 600px) {
+        .hire-driver-link { white-space: nowrap; }
+        @media (max-width: 768px) {
           .nav-links { display: none !important; }
           .nav-trainer-btn { font-size: 12px !important; padding: 7px 10px !important; }
         }
@@ -167,13 +167,19 @@ export default function HomePage() {
       <nav style={{ background: "#FFFFFF", borderBottom: "1px solid #E2E8F0", position: "sticky", top: 0, zIndex: 50, padding: "0 5%" }}>
         <div style={{ maxWidth: 1100, margin: "0 auto", display: "flex", alignItems: "center", height: 64, gap: 8 }}>
           <Link href="/" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none", flexShrink: 0 }}>
-            <span style={{ fontFamily: "'Sora', sans-serif", color: "#0F172A", fontSize: 20, fontWeight: 800, letterSpacing: "-0.5px" }}>Learn<span style={{ color: "#F59E0B" }}>Drive</span></span>
+            <span style={{ fontFamily: "'Sora', sans-serif", color: "#0F172A", fontSize: 20, fontWeight: 800, letterSpacing: "-0.5px" }}>
+              Learn<span style={{ color: "#F59E0B" }}>Drive</span>
+            </span>
           </Link>
           <div style={{ flex: 1 }} />
           <div className="nav-links">
             <Link href="/blog" style={{ color: "#64748B", textDecoration: "none", fontSize: 14, fontWeight: 500, padding: "6px 12px" }}>Blog</Link>
             <Link href="/rto-test/practice" style={{ color: "#64748B", textDecoration: "none", fontSize: 14, fontWeight: 500, padding: "6px 12px" }}>RTO Test</Link>
             <Link href="/dl-assistance" style={{ color: "#64748B", textDecoration: "none", fontSize: 14, fontWeight: 500, padding: "6px 12px" }}>DL Assistance</Link>
+            {/* ── NEW: Hire a Driver link ── */}
+            <Link href="/hire-driver" className="hire-driver-link" style={{ color: "#64748B", textDecoration: "none", fontSize: 14, fontWeight: 500, padding: "6px 12px", display: "flex", alignItems: "center", gap: 4 }}>
+              🚗 Hire a Driver
+            </Link>
           </div>
           <Link href="/trainers/register" className="nav-trainer-btn" style={{ background: "#F59E0B", color: "#fff", textDecoration: "none", fontSize: 14, fontWeight: 700, padding: "8px 18px", borderRadius: 10 }}>
             Join as Trainer
@@ -262,7 +268,6 @@ export default function HomePage() {
                 ✕ Clear
               </button>
             </div>
-
             <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               {trainers.map((trainer) => (
                 <TrainerCard key={trainer.id} trainer={trainer} />
@@ -359,6 +364,49 @@ export default function HomePage() {
         </div>
       </div>
 
+      {/* ── HIRE A DRIVER BANNER ── */}
+      <div style={{ background: "linear-gradient(135deg, #0B1437 0%, #1A2B5F 100%)", padding: "56px 5%" }}>
+        <div style={{ maxWidth: 1100, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 32 }}>
+          <div style={{ maxWidth: 560 }}>
+            <div style={{ display: "inline-block", background: "rgba(245,158,11,0.2)", color: "#F59E0B", padding: "4px 14px", borderRadius: 20, fontSize: 12, fontWeight: 600, marginBottom: 16, border: "1px solid rgba(245,158,11,0.3)" }}>
+              🚗 New Service
+            </div>
+            <h2 style={{ fontSize: "clamp(1.4rem, 3vw, 2rem)", fontWeight: 800, color: "#fff", marginBottom: 12, lineHeight: 1.3 }}>
+              Need Someone to Drive<br />Your Own Car?
+            </h2>
+            <p style={{ color: "#94A3B8", fontSize: 15, lineHeight: 1.7, marginBottom: 16 }}>
+              Hire a verified, background-checked driver for outstation trips, weddings, full-day errands, or airport transfers. Your car, our driver.
+            </p>
+            <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 24 }}>
+              {["✅ Verified drivers", "🔒 Background checked", "💰 From ₹800/trip", "📍 20+ cities"].map((item) => (
+                <span key={item} style={{ color: "#CBD5E1", fontSize: 13 }}>{item}</span>
+              ))}
+            </div>
+            <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+              <Link href="/hire-driver" style={{ display: "inline-block", background: "#F59E0B", color: "#0B1437", padding: "14px 28px", borderRadius: 12, fontWeight: 800, fontSize: 15, textDecoration: "none" }}>
+                Hire a Driver →
+              </Link>
+              <Link href="/hire-driver/onboard" style={{ display: "inline-block", background: "rgba(255,255,255,0.08)", color: "#fff", padding: "14px 28px", borderRadius: 12, fontWeight: 600, fontSize: 15, textDecoration: "none", border: "1px solid rgba(255,255,255,0.15)" }}>
+                Become a Driver
+              </Link>
+            </div>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, minWidth: 220 }}>
+            {[
+              { v: "₹800+", l: "Per trip" },
+              { v: "85%", l: "Driver keeps" },
+              { v: "20+", l: "Cities" },
+              { v: "2hr", l: "Confirmation" },
+            ].map(s => (
+              <div key={s.l} style={{ background: "rgba(255,255,255,0.05)", borderRadius: 14, padding: "18px 16px", textAlign: "center", border: "1px solid rgba(255,255,255,0.08)" }}>
+                <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 22, fontWeight: 800, color: "#F59E0B" }}>{s.v}</div>
+                <div style={{ color: "#94A3B8", fontSize: 12, marginTop: 4 }}>{s.l}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
       {/* ── DL ASSISTANCE BANNER ── */}
       <div style={{ background: "linear-gradient(135deg, #1a2540 0%, #2d3f6b 100%)", padding: "56px 5%" }}>
         <div style={{ maxWidth: 1100, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 32 }}>
@@ -416,13 +464,7 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* ── FOOTER ── */}
-      <footer style={{ background: "#0F172A", color: "#94A3B8", padding: "48px 5% 24px", textAlign: "center" }}>
-        <div style={{ marginBottom: 24, fontSize: 20, fontWeight: 800, color: "#fff", fontFamily: "'Sora', sans-serif" }}>
-          Learn<span style={{ color: "#F59E0B" }}>Drive</span>
-        </div>
-        <div style={{ fontSize: 14 }}>© 2026 LearnDrive. All rights reserved.</div>
-      </footer>
+      <Footer />
     </div>
   );
 }
