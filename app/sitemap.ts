@@ -194,14 +194,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   try {
     const trainers = await prisma.trainer.findMany({
       where:   { status: "APPROVED" },
-      select:  { id: true, updatedAt: true },
+      select: { id: true },
       orderBy: { createdAt: "desc" },
     });
     trainerPages = trainers.map((t) => ({
       url:             `${BASE}/trainers/${t.id}`,
       priority:        0.85,
       changeFrequency: "weekly" as const,
-      lastModified:    t.updatedAt ?? now,
+      lastModified: now,
     }));
   } catch (e) {
     console.error("[sitemap] Failed to fetch trainers:", e);
