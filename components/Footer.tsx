@@ -42,7 +42,7 @@ export default function Footer() {
               <span style={{ fontSize: 16 }}>✉️</span>
               <span>support@learndrive.in</span>
             </a>
-            <a href="https://wa.me/918800000000" target="_blank" rel="noopener noreferrer" className="footer-link" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <a href="https://wa.me/918700896528" target="_blank" rel="noopener noreferrer" className="footer-link" style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <span style={{ fontSize: 16 }}>💬</span>
               <span>WhatsApp Support</span>
             </a>
