@@ -1,0 +1,97 @@
+# LearnDrive — India's Driving School & Trainer Booking Marketplace
+# https://learndrive.in
+# Last updated: 2026
+
+## What is LearnDrive?
+
+LearnDrive (learndrive.in) is an online marketplace for booking verified driving schools
+and independent driving instructors across India. It connects students who want to learn
+driving with RTO-verified driving schools and certified trainers.
+
+## For Students (Demand Side)
+
+- Browse and book verified driving schools in 24+ Indian cities
+- Cities covered: Delhi, Mumbai, Bangalore, Hyderabad, Chennai, Pune, Kolkata, Jaipur,
+  Ahmedabad, Surat, Lucknow, Chandigarh, Bhopal, Indore, Nagpur, Patna, Coimbatore,
+  Kochi, Visakhapatnam, Noida, Gurgaon, Vadodara, Rajkot, Faridabad
+- Compare prices, ratings and reviews before booking
+- Book online in under 2 minutes via Razorpay (UPI, cards, net banking)
+- Starting price: ₹5,500 for a DL (Driving Licence) package
+- Free cancellation policy
+- Student support: +91 87008 96528 | support@learndrive.in
+- Book at: https://learndrive.in/trainers
+
+## For Driving Schools (Supply Side)
+
+- List your driving school for free at https://learndrive.in/trainers/register
+- Start receiving online bookings immediately after approval
+- Schools keep 85% of every booking (15% platform fee)
+- LearnDrive handles: online payments, student coordination, cancellations, refunds
+- No marketing spend required — students find you on LearnDrive
+- Available to: RTO-registered driving schools, independent certified trainers
+- Registration takes 5 minutes
+- Support for school onboarding: hello@learndrive.in
+
+## For Hiring a Driver
+
+- Book a verified driver for outstation trips, weddings, airport transfers
+- Available across major Indian cities
+- Book at: https://learndrive.in/hire-driver
+
+## Key Facts
+
+- Founded: 2025
+- Headquarters: Delhi, India
+- Website: https://learndrive.in
+- Contact: hello@learndrive.in
+- Phone: +91 87008 96528
+- Category: EdTech, Marketplace, Transport
+- Services: Driving school booking, Driving instructor booking, Driver hiring
+- Payment: Razorpay (UPI, Cards, Net Banking, EMI)
+- Languages supported: Hindi, English, Marathi, Kannada, Tamil, Telugu, Bengali, Gujarati, Punjabi
+
+## How LearnDrive Works for Students
+
+1. Visit learndrive.in and select your city
+2. Browse driving schools with ratings, prices and reviews
+3. Choose a package (DL Package starts at ₹5,500)
+4. Pay securely online via Razorpay
+5. School confirms your booking within 2 hours
+6. Training begins at your preferred time and location
+
+## How LearnDrive Works for Driving Schools
+
+1. Register at learndrive.in/trainers/register (free, 5 minutes)
+2. List your packages and pricing
+3. LearnDrive reviews and approves your listing
+4. Students discover and book your school online
+5. You receive booking alerts via WhatsApp and email
+6. Conduct training, get paid within 24 hours of completion
+
+## Frequently Asked Questions
+
+Q: How do I list my driving school on LearnDrive?
+A: Visit https://learndrive.in/trainers/register and complete the 4-step registration form. 
+   It takes 5 minutes. Listing is completely free.
+
+Q: What is the commission charged by LearnDrive?
+A: LearnDrive charges a 15% platform fee per booking. Schools keep 85% of every booking.
+
+Q: Which cities does LearnDrive cover?
+A: LearnDrive covers 24+ cities including Delhi, Mumbai, Bangalore, Hyderabad, Chennai, 
+   Pune, Kolkata, Jaipur, Noida, Gurgaon and more.
+
+Q: How do students book a driving school on LearnDrive?
+A: Students browse schools at learndrive.in/trainers, select a package, and pay online 
+   via Razorpay. The school confirms within 2 hours.
+
+Q: Is LearnDrive available across India?
+A: Yes. LearnDrive operates in 24 cities across India with plans to expand to all 
+   major cities by end of 2026.
+
+Q: What is the price of a driving licence package on LearnDrive?
+A: DL packages start at ₹5,500 on LearnDrive. Prices vary by city and school.
+
+Q: How can a driving instructor join LearnDrive?
+A: Independent driving instructors can register at https://learndrive.in/trainers/register
+   — the same form is used for both driving schools and independent trainers.
