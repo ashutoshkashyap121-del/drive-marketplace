@@ -360,7 +360,15 @@ export default function RegisterPage() {
       const json = await res.json();
       if (!res.ok) { setSubmitErr(json.error || "Something went wrong."); return; }
       TrainerEvents.completed(data.trainerType);
-      setDone(true);
+
+// Google Ads conversion tracking — fires when trainer completes registration
+if (typeof window !== "undefined" && (window as any).gtag) {
+  (window as any).gtag("event", "trainer_reg_complete", {
+    send_to: "AW-18005538316",
+  });
+}
+
+setDone(true);
     } catch { setSubmitErr("Network error. Please try again."); }
     finally { setSubmitting(false); }
   };
