@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-const CITIES = ["Delhi NCR", "Mumbai", "Bangalore"];
+const CITIES = ["Delhi", "Noida", "Gurugram", "Faridabad", "Mumbai", "Bangalore"];
 const STATS = [
   { value: "500+", label: "Verified Trainers" },
   { value: "3", label: "Cities" },

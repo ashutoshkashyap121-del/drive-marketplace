@@ -39,8 +39,9 @@ type Trainer = {
 };
 
 const CITIES = [
-  "Delhi NCR", "Mumbai", "Bangalore", "Hyderabad", "Chennai",
-  "Kolkata", "Pune", "Jaipur", "Noida", "Gurugram",
+  "Delhi", "Noida", "Gurugram", "Faridabad", "Ghaziabad",
+  "Mumbai", "Bangalore", "Hyderabad", "Chennai",
+  "Kolkata", "Pune", "Jaipur",
 ];
 
 function parsePackages(json: string | null): TrainerPackage[] {

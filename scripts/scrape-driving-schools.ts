@@ -8,6 +8,7 @@
 
 import { PrismaClient } from "@prisma/client";
 import * as https from "https";
+import { buildServiceArea, getBasePincode } from "@/lib/scraped-service-area";
 
 const prisma = new PrismaClient();
 const GOOGLE_PLACES_API_KEY = process.env.GOOGLE_PLACES_API_KEY!;
@@ -175,6 +176,23 @@ async function saveScrapedTrainer(place: any, city: string) {
   const photoUrl  = photoName
     ? `https://places.googleapis.com/v1/${photoName}/media?maxWidthPx=400&key=${GOOGLE_PLACES_API_KEY}`
     : null;
+  const adminMeta = {
+    source: "scraped_gmb",
+    placeId: place.id,
+    address,
+    website,
+    reviewCount,
+    photoUrl,
+    scrapedAt: new Date().toISOString(),
+    isUnverified: true,
+  };
+  const basePincode = getBasePincode({
+    pincode: null,
+    adminNotes: JSON.stringify(adminMeta),
+  });
+  const serviceArea = basePincode
+    ? buildServiceArea({ city, basePincode })
+    : [];
 
   try {
     await prisma.trainer.create({
@@ -191,17 +209,9 @@ async function saveScrapedTrainer(place: any, city: string) {
         packagesJson:  buildPackagesJson(estimatedPrice),
         basePrice:     estimatedPrice,
         status:        "PENDING",
-        serviceArea:   [],
-        adminNotes: JSON.stringify({
-          source:      "scraped_gmb",
-          placeId:     place.id,
-          address,
-          website,
-          reviewCount,
-          photoUrl,
-          scrapedAt:   new Date().toISOString(),
-          isUnverified: true,
-        }),
+        pincode:       basePincode,
+        serviceArea,
+        adminNotes:    JSON.stringify(adminMeta),
       },
     });
     console.log(`  💾 Saved: ${name} (${city}) — ₹${estimatedPrice}`);

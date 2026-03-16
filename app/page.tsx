@@ -37,8 +37,9 @@ interface Trainer {
 }
 
 const TOP_CITIES = [
-  "Delhi NCR", "Mumbai", "Bangalore", "Hyderabad", "Chennai",
-  "Pune", "Kolkata", "Jaipur", "Chandigarh", "Kochi",
+  "Delhi", "Noida", "Gurugram", "Faridabad", "Mumbai",
+  "Bangalore", "Hyderabad", "Chennai", "Pune", "Kolkata",
+  "Jaipur", "Chandigarh", "Kochi",
   "Indore", "Lucknow", "Ahmedabad", "Surat", "Nagpur",
   "Bhopal", "Coimbatore", "Mysuru", "Vadodara", "Dehradun",
 ];
