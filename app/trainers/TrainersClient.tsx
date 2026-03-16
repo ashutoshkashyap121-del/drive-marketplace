@@ -69,10 +69,62 @@ export default function TrainersClient() {
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
   const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [wlName, setWlName] = useState("");
+  const [wlPhone, setWlPhone] = useState("");
+  const [wlEmail, setWlEmail] = useState("");
+  const [wlSubmitting, setWlSubmitting] = useState(false);
+  const [wlSuccess, setWlSuccess] = useState(false);
+  const [wlError, setWlError] = useState("");
+
+  async function submitWaitlist() {
+    setWlError("");
+    setWlSuccess(false);
+
+    if (!city) {
+      setWlError("Please select city first.");
+      return;
+    }
+    if (!/^[6-9]\d{9}$/.test(wlPhone)) {
+      setWlError("Enter a valid 10-digit mobile number.");
+      return;
+    }
+
+    setWlSubmitting(true);
+    try {
+      const res = await fetch("/api/waitlist/student", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: wlName.trim(),
+          phone: wlPhone.trim(),
+          email: wlEmail.trim(),
+          city: pincode.length === 6 ? `${city} (${pincode})` : city,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setWlError(data?.error ?? "Could not submit request. Try again.");
+        setWlSubmitting(false);
+        return;
+      }
+
+      setWlSuccess(true);
+      setWlName("");
+      setWlPhone("");
+      setWlEmail("");
+    } catch {
+      setWlError("Could not submit request. Try again.");
+    }
+    setWlSubmitting(false);
+  }
 
   useEffect(() => {
     if (!city || !vehicle) return;
-    if (pincode.length > 0 && pincode.length < 6) return;
+    if (pincode.length > 0 && pincode.length < 6) {
+      setTrainers([]);
+      setSearched(false);
+      return;
+    }
 
     setLoading(true);
     setSearched(true);
@@ -170,6 +222,14 @@ export default function TrainersClient() {
         .empty-state { text-align: center; padding: 64px 20px; color: #94A3B8; }
         .empty-icon { font-size: 3rem; margin-bottom: 16px; }
         .empty-title { font-family: 'Sora',sans-serif; font-size: 1.1rem; font-weight: 700; color: #475569; margin-bottom: 8px; }
+        .waitlist-card { margin: 18px auto 0; max-width: 520px; text-align: left; background: #fff; border: 1px solid #E2E8F0; border-radius: 16px; padding: 18px; }
+        .waitlist-title { font-family: 'Sora',sans-serif; color: #0F172A; font-size: 0.95rem; font-weight: 700; margin-bottom: 8px; }
+        .waitlist-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+        .waitlist-input { width: 100%; padding: 10px 12px; border: 1.5px solid #E2E8F0; border-radius: 10px; font-size: 0.86rem; color: #0F172A; background: #F8FAFC; font-family: inherit; }
+        .waitlist-input:focus { outline: none; border-color: #F59E0B; }
+        .waitlist-btn { margin-top: 12px; width: 100%; border: 0; border-radius: 10px; padding: 11px 14px; background: linear-gradient(135deg,#F59E0B,#D97706); color: #fff; font-family: 'Sora',sans-serif; font-size: 0.86rem; font-weight: 700; cursor: pointer; }
+        .waitlist-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .waitlist-msg { margin-top: 8px; font-size: 0.8rem; }
 
         .skeleton { background: linear-gradient(90deg,#f0f0f0 25%,#e0e0e0 50%,#f0f0f0 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 18px; height: 140px; margin-bottom: 16px; }
         @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
@@ -178,6 +238,7 @@ export default function TrainersClient() {
           .card-top { grid-template-columns: 1fr; }
           .price-block { text-align: left; display: flex; align-items: center; gap: 16px; }
           .price-note { margin-bottom: 0; }
+          .waitlist-row { grid-template-columns: 1fr; }
         }
       `}</style>
 
@@ -207,6 +268,9 @@ export default function TrainersClient() {
           placeholder="📍 Pincode (optional)" value={pincode} maxLength={6}
           onChange={e => setPincode(e.target.value.replace(/\D/g, ""))}
         />
+        <span style={{ fontSize: "0.76rem", color: "#94A3B8" }}>
+          Enter 6-digit pincode to show only nearby trainers
+        </span>
 
         {pincode.length === 6 && (
           <button onClick={() => setPincode("")}
@@ -235,8 +299,52 @@ export default function TrainersClient() {
             <div className="empty-icon">😕</div>
             <div className="empty-title">No trainers found{pincode.length === 6 ? ` in pincode ${pincode}` : ` in ${city}`}</div>
             <p style={{ fontSize: "0.88rem" }}>
-              {pincode.length === 6 ? "Try clearing the pincode filter to see all trainers in your city." : "We're onboarding trainers fast — check back soon or try another city."}
+              {pincode.length === 6 ? "No match in this pincode right now. Submit your request and we will notify you first." : "We're onboarding trainers fast. Submit your request and we'll notify you when available."}
             </p>
+
+            <div className="waitlist-card">
+              <div className="waitlist-title">
+                Coming to {city}{pincode.length === 6 ? ` (${pincode})` : ""} soon
+              </div>
+              <p style={{ margin: 0, color: "#64748B", fontSize: "0.82rem" }}>
+                Share your details to get notified as soon as trainers are available.
+              </p>
+
+              <div className="waitlist-row">
+                <input
+                  className="waitlist-input"
+                  placeholder="Your name (optional)"
+                  value={wlName}
+                  onChange={(e) => setWlName(e.target.value)}
+                />
+                <input
+                  className="waitlist-input"
+                  placeholder="10-digit mobile *"
+                  maxLength={10}
+                  value={wlPhone}
+                  onChange={(e) => setWlPhone(e.target.value.replace(/\D/g, ""))}
+                />
+              </div>
+
+              <input
+                className="waitlist-input"
+                placeholder="Email (optional)"
+                value={wlEmail}
+                onChange={(e) => setWlEmail(e.target.value)}
+                style={{ marginTop: 10 }}
+              />
+
+              <button
+                className="waitlist-btn"
+                onClick={submitWaitlist}
+                disabled={wlSubmitting || !/^[6-9]\d{9}$/.test(wlPhone)}
+              >
+                {wlSubmitting ? "Submitting..." : "Notify Me"}
+              </button>
+
+              {wlError && <div className="waitlist-msg" style={{ color: "#dc2626" }}>{wlError}</div>}
+              {wlSuccess && <div className="waitlist-msg" style={{ color: "#166534" }}>Request submitted. We'll contact you soon.</div>}
+            </div>
           </div>
         ) : (
           trainers.map(trainer => {
