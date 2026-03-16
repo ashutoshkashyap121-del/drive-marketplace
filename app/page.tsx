@@ -53,9 +53,9 @@ const ALL_CITIES = [
 
 const STATS = [
   { value: "50+", label: "Cities" },
-  { value: "2,400+", label: "Students waitlisted" },
-  { value: "100%", label: "Verified trainers" },
-  { value: "4.8★", label: "Avg trainer rating" },
+  { value: "1,000+", label: "Driving Schools Listed" },
+  { value: "4.8★",   label: "Avg School Rating" },
+  { value: "₹5,500", label: "Starting Price" },
 ];
 
 const HOW_IT_WORKS = [

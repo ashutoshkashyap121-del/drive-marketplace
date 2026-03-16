@@ -1,38 +1,57 @@
 import { NextRequest, NextResponse } from "next/server";
-import {prisma} from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
+
+// City alias mapping — Delhi NCR expands to all NCR cities
+const CITY_ALIASES: Record<string, string[]> = {
+  "delhi ncr": ["Delhi", "Noida", "Gurgaon", "Faridabad", "Ghaziabad"],
+  "delhi":     ["Delhi"],
+  "ncr":       ["Delhi", "Noida", "Gurgaon", "Faridabad", "Ghaziabad"],
+  "mumbai":    ["Mumbai", "Navi Mumbai", "Thane"],
+  "bangalore": ["Bangalore", "Bengaluru"],
+  "bengaluru": ["Bangalore", "Bengaluru"],
+};
 
 export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
-  const pincode = searchParams.get("pincode")?.trim();
-  const vehicle = searchParams.get("vehicle"); // optional filter
+  const city        = req.nextUrl.searchParams.get("city") ?? "";
+  const pincode     = req.nextUrl.searchParams.get("pincode") ?? "";
+  const vehicleType = req.nextUrl.searchParams.get("vehicleType") ?? "";
+  const page        = Number(req.nextUrl.searchParams.get("page") ?? "1");
+  const limit       = Number(req.nextUrl.searchParams.get("limit") ?? "20");
+  const skip        = (page - 1) * limit;
 
-  if (!pincode || pincode.length < 6) {
-    return NextResponse.json(
-      { success: false, message: "Enter a valid 6-digit pincode" },
-      { status: 400 }
-    );
+  const cityLower   = city.toLowerCase().trim();
+  const cityTargets = CITY_ALIASES[cityLower] ?? (city ? [city] : []);
+
+  const where: any = { status: "APPROVED" };
+
+  if (cityTargets.length > 0) {
+    where.city = { in: cityTargets, mode: "insensitive" };
   }
 
-  const trainers = await prisma.trainer.findMany({
-    where: {
-      status: "APPROVED",                          // only show approved trainers
-      serviceArea: { has: pincode },               // Prisma array filter
-      ...(vehicle ? { vehicleTypes: { has: vehicle as any } } : {}),
-    },
-    orderBy: { experience: "desc" },
-    select: {
-      id: true,
-      name: true,
-      city: true,
-      bio: true,
-      experience: true,
-      vehicleTypes: true,
-      languages: true,
-      basePrice: true,
-      trainerType: true,
-      serviceArea: true,
-    },
-  });
+  if (vehicleType) {
+    where.vehicleTypes = { has: vehicleType };
+  }
 
-  return NextResponse.json({ success: true, trainers });
+  // Pincode search — show trainers whose serviceArea includes this pincode
+  if (pincode) {
+    where.serviceArea = { has: pincode };
+  }
+
+  const [trainers, total] = await Promise.all([
+    prisma.trainer.findMany({
+      where,
+      skip,
+      take: limit,
+      orderBy: [{ rating: "desc" }, { createdAt: "desc" }],
+      select: {
+        id: true, name: true, city: true, experience: true,
+        rating: true, basePrice: true, packagesJson: true,
+        adminNotes: true, languages: true, vehicleTypes: true,
+        serviceArea: true, pincode: true,
+      },
+    }),
+    prisma.trainer.count({ where }),
+  ]);
+
+  return NextResponse.json({ trainers, total, page, pages: Math.ceil(total / limit) });
 }
