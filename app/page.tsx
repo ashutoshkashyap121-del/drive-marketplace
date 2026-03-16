@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import TrainerCard from "@/components/TrainerCard";
 import Footer from "@/components/Footer";
 
@@ -75,7 +76,10 @@ const FEATURES = [
 ];
 
 export default function HomePage() {
+  const router = useRouter();
   const [query, setQuery] = useState("");
+  const [homeVehicle, setHomeVehicle] = useState<"CAR" | "BIKE">("CAR");
+  const [homePincode, setHomePincode] = useState("");
   const [showCityDropdown, setShowCityDropdown] = useState(false);
   const [searchState, setSearchState] = useState<"idle" | "loading" | "trainers" | "waitlist">("idle");
   const [trainers, setTrainers] = useState<Trainer[]>([]);
@@ -106,24 +110,19 @@ export default function HomePage() {
   }, []);
 
   const handleSearch = async (city: string) => {
-    if (!city.trim()) return;
-    setSearchState("loading");
+    const normalizedCity = city.trim();
+    if (!normalizedCity) return;
     setShowCityDropdown(false);
-    try {
-      const res = await fetch(`/api/trainers/by-city?city=${encodeURIComponent(city)}`);
-      const data = await res.json();
-      if (data.trainers && data.trainers.length > 0) {
-        setTrainers(data.trainers);
-        setSearchState("trainers");
-      } else {
-        setWaitlistCity(city);
-        setWaitlistCount(data.waitlistCount || 0);
-        setSearchState("waitlist");
-      }
-    } catch {
-      setSearchState("idle");
+
+    const params = new URLSearchParams({
+      city: normalizedCity,
+      vehicle: homeVehicle,
+    });
+    if (/^\d{6}$/.test(homePincode)) {
+      params.set("pincode", homePincode);
     }
-    setTimeout(() => resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
+
+    router.push(`/trainers?${params.toString()}`);
   };
 
   const handleWaitlist = async () => {
@@ -207,6 +206,38 @@ export default function HomePage() {
 
           {/* Search bar */}
           <div className="fade-up d3" style={{ position: "relative", maxWidth: 520, margin: "0 auto" }} ref={dropdownRef}>
+            <div style={{ display: "flex", gap: 8, justifyContent: "center", marginBottom: 10 }}>
+              <button
+                onClick={() => setHomeVehicle("CAR")}
+                style={{
+                  border: "1px solid rgba(255,255,255,0.25)",
+                  background: homeVehicle === "CAR" ? "#F59E0B" : "rgba(255,255,255,0.08)",
+                  color: homeVehicle === "CAR" ? "#0F172A" : "#FFFFFF",
+                  borderRadius: 999,
+                  padding: "6px 14px",
+                  fontSize: 12,
+                  fontWeight: 700,
+                  cursor: "pointer",
+                }}
+              >
+                Car
+              </button>
+              <button
+                onClick={() => setHomeVehicle("BIKE")}
+                style={{
+                  border: "1px solid rgba(255,255,255,0.25)",
+                  background: homeVehicle === "BIKE" ? "#F59E0B" : "rgba(255,255,255,0.08)",
+                  color: homeVehicle === "BIKE" ? "#0F172A" : "#FFFFFF",
+                  borderRadius: 999,
+                  padding: "6px 14px",
+                  fontSize: 12,
+                  fontWeight: 700,
+                  cursor: "pointer",
+                }}
+              >
+                Bike
+              </button>
+            </div>
             <div style={{ display: "flex", background: "#FFFFFF", borderRadius: 14, overflow: "hidden", boxShadow: "0 8px 32px rgba(0,0,0,0.2)" }}>
               <input
                 value={query}
@@ -222,6 +253,23 @@ export default function HomePage() {
               >
                 Search
               </button>
+            </div>
+            <div style={{ marginTop: 10 }}>
+              <input
+                value={homePincode}
+                onChange={(e) => setHomePincode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                placeholder="Optional pincode (6 digits) for area-specific results"
+                inputMode="numeric"
+                style={{
+                  width: "100%",
+                  padding: "11px 14px",
+                  borderRadius: 10,
+                  border: "1px solid rgba(255,255,255,0.2)",
+                  background: "rgba(255,255,255,0.08)",
+                  color: "#FFFFFF",
+                  fontSize: 13,
+                }}
+              />
             </div>
             {showCityDropdown && filteredCities.length > 0 && (
               <div style={{ position: "absolute", top: "calc(100% + 6px)", left: 0, right: 0, background: "#fff", borderRadius: 12, boxShadow: "0 8px 32px rgba(0,0,0,0.15)", zIndex: 100, overflow: "hidden" }}>
