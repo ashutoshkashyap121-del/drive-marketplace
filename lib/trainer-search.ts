@@ -25,7 +25,7 @@ function getVehicleFilters(vehicleGroup: string): VehicleType[] {
   return [];
 }
 
-function getCityTargets(city: string): string[] {
+export function getCityTargets(city: string): string[] {
   const normalizedCity = city.trim().toLowerCase();
   return CITY_ALIASES[normalizedCity] ?? (city.trim() ? [city.trim()] : []);
 }
