@@ -69,6 +69,8 @@ export default function TrainersClient() {
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
   const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [fallbackPincode, setFallbackPincode] = useState("");
+  const [requestedPincode, setRequestedPincode] = useState("");
   const [wlName, setWlName] = useState("");
   const [wlPhone, setWlPhone] = useState("");
   const [wlEmail, setWlEmail] = useState("");
@@ -119,15 +121,23 @@ export default function TrainersClient() {
   }
 
   useEffect(() => {
-    if (!city || !vehicle) return;
+    if (!city || !vehicle) {
+      setFallbackPincode("");
+      setRequestedPincode("");
+      return;
+    }
     if (pincode.length > 0 && pincode.length < 6) {
       setTrainers([]);
       setSearched(false);
+      setFallbackPincode("");
+      setRequestedPincode("");
       return;
     }
 
     setLoading(true);
     setSearched(true);
+    setFallbackPincode("");
+    setRequestedPincode("");
 
     const url = `/api/trainers?city=${encodeURIComponent(city)}&vehicle=${vehicle}${
       pincode.length === 6 ? `&pincode=${pincode}` : ""
@@ -138,9 +148,16 @@ export default function TrainersClient() {
       .then(data => {
         const list = Array.isArray(data) ? data : (data.trainers ?? []);
         setTrainers(list);
+        setFallbackPincode(!Array.isArray(data) && data.fallbackUsed ? (data.fallbackPincode ?? "") : "");
+        setRequestedPincode(!Array.isArray(data) && data.fallbackUsed ? (data.requestedPincode ?? "") : "");
         setLoading(false);
       })
-      .catch(() => { setTrainers([]); setLoading(false); });
+      .catch(() => {
+        setTrainers([]);
+        setFallbackPincode("");
+        setRequestedPincode("");
+        setLoading(false);
+      });
   }, [city, vehicle, pincode]);
 
   return (
@@ -286,6 +303,23 @@ export default function TrainersClient() {
 
       {/* Cards */}
       <div className="cards-area">
+        {!!fallbackPincode && (
+          <div
+            style={{
+              marginBottom: 14,
+              background: "#FEF3C7",
+              border: "1px solid #FDE68A",
+              color: "#92400E",
+              borderRadius: 12,
+              padding: "10px 14px",
+              fontSize: "0.84rem",
+              fontWeight: 600,
+            }}
+          >
+            No trainers found in pincode {requestedPincode}. Showing nearest available pincode: {fallbackPincode}.
+          </div>
+        )}
+
         {!city || !vehicle ? (
           <div className="empty-state">
             <div className="empty-icon">🔍</div>
