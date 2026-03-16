@@ -96,6 +96,7 @@ export default function Footer() {
             <Link href="/terms" className="footer-link">Terms of Service</Link>
             <Link href="/privacy" className="footer-link">Privacy Policy</Link>
             <Link href="/refund" className="footer-link">Refund Policy</Link>
+            <Link href="/track-refund" className="footer-link">Track Refund</Link>
           </div>
         </div>
       </div>
@@ -125,6 +126,7 @@ export default function Footer() {
           <Link href="/terms" className="footer-link" style={{ fontSize: 13 }}>Terms</Link>
           <Link href="/privacy" className="footer-link" style={{ fontSize: 13 }}>Privacy</Link>
           <Link href="/refund" className="footer-link" style={{ fontSize: 13 }}>Refunds</Link>
+          <Link href="/track-refund" className="footer-link" style={{ fontSize: 13 }}>Track Refund</Link>
         </div>
       </div>
     </footer>

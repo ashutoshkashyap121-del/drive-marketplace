@@ -72,7 +72,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE}/how-it-works-for-trainers`,  priority: 0.9, changeFrequency: "monthly", lastModified: now },
     { url: `${BASE}/hire-a-driver`,              priority: 0.9, changeFrequency: "monthly", lastModified: now },
     // ── Utility ──
+    { url: `${BASE}/about`,                      priority: 0.4, changeFrequency: "monthly", lastModified: now },
+    { url: `${BASE}/careers`,                    priority: 0.4, changeFrequency: "monthly", lastModified: now },
+    { url: `${BASE}/contact`,                    priority: 0.4, changeFrequency: "monthly", lastModified: now },
     { url: `${BASE}/refund`,                     priority: 0.3, changeFrequency: "monthly", lastModified: now },
+    { url: `${BASE}/track-refund`,               priority: 0.3, changeFrequency: "monthly", lastModified: now },
     { url: `${BASE}/remove-listing`,             priority: 0.3, changeFrequency: "monthly", lastModified: now },
     { url: `${BASE}/privacy`,                    priority: 0.3, changeFrequency: "yearly",  lastModified: now },
     { url: `${BASE}/terms`,                      priority: 0.3, changeFrequency: "yearly",  lastModified: now },

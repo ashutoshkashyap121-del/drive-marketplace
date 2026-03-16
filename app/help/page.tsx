@@ -121,6 +121,7 @@ export default function HelpPage() {
           {[
             { icon: "❌", label: "Cancel a Booking", href: "/cancel", color: "#FEF2F2", border: "#FECACA", text: "#DC2626" },
             { icon: "💰", label: "Refund Policy", href: "/refund", color: "#FEF3C7", border: "#FDE68A", text: "#92400E" },
+            { icon: "TR", label: "Track Refund", href: "/track-refund", color: "#F0F9FF", border: "#BAE6FD", text: "#0C4A6E" },
             { icon: "🔍", label: "Find a Trainer", href: "/trainers", color: "#EFF6FF", border: "#BFDBFE", text: "#1E40AF" },
             { icon: "📧", label: "Email Support", href: "mailto:support@learndrive.in", color: "#F0FDF4", border: "#BBF7D0", text: "#166534" },
             { icon: "📞", label: "Call Support", href: "tel:+918700896528", color: "#F5F3FF", border: "#DDD6FE", text: "#5B21B6" },
@@ -178,7 +179,7 @@ export default function HelpPage() {
 
         {/* Footer links */}
         <div style={{ display: "flex", gap: 20, justifyContent: "center", marginTop: 40, flexWrap: "wrap" }}>
-          {[["Terms of Service", "/terms"], ["Privacy Policy", "/privacy"], ["Refund Policy", "/refund"], ["Home", "/"]].map(([label, href]) => (
+          {[["Terms of Service", "/terms"], ["Privacy Policy", "/privacy"], ["Refund Policy", "/refund"], ["Track Refund", "/track-refund"], ["Home", "/"]].map(([label, href]) => (
             <Link key={href} href={href} style={{ fontSize: "0.82rem", color: "#94A3B8", textDecoration: "none" }}>
               {label}
             </Link>
