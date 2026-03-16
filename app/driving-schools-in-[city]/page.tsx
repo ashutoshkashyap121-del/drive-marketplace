@@ -36,11 +36,12 @@ export function generateStaticParams() {
 }
 
 interface Props {
-  params: { city: string };
+  params: Promise<{ city: string }>;
 }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const citySlug = (params?.city ?? "").toLowerCase();
+export async function generateMetadata({ params }: Props) {
+  const { city } = await params;
+  const citySlug = (city ?? "").toLowerCase();
   const meta = CITY_META[citySlug];
   if (!meta) return { title: "Not Found" };
 
@@ -58,7 +59,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function CityLandingPage({ params }: Props) {
-  const citySlug = (params?.city ?? "").toLowerCase();
+  const { city } = await params;
+  const citySlug = (city ?? "").toLowerCase();
   const meta = CITY_META[citySlug];
 
   // If slug doesn't match a known city, 404
