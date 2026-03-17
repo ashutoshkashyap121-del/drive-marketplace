@@ -1,12 +1,13 @@
-// app/api/admin/outreach/send/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { authorizeAdminRequest } from "@/lib/admin";
 
 const FAST2SMS_KEY = process.env.FAST2SMS_API_KEY!;
 const WA_PHONE_ID = process.env.WHATSAPP_PHONE_NUMBER_ID || "1025099124020438";
 
 async function sendWhatsApp(phone: string, trainerName: string): Promise<boolean> {
   const mobile = phone.replace(/^\+91/, "").replace(/\D/g, "");
+
   try {
     const res = await fetch("https://www.fast2sms.com/dev/whatsapp", {
       method: "POST",
@@ -21,12 +22,11 @@ async function sendWhatsApp(phone: string, trainerName: string): Promise<boolean
         template: {
           name: "trainer_outreach",
           language: { code: "en" },
-          components: [
-            { type: "body", parameters: [{ type: "text", text: trainerName }] },
-          ],
+          components: [{ type: "body", parameters: [{ type: "text", text: trainerName }] }],
         },
       }),
     });
+
     const data = await res.json();
     return data.return === true;
   } catch {
@@ -51,6 +51,7 @@ async function sendSMS(phone: string, trainerName: string): Promise<boolean> {
         numbers: phone,
       }),
     });
+
     const data = await res.json();
     return data.return === true;
   } catch {
@@ -59,19 +60,17 @@ async function sendSMS(phone: string, trainerName: string): Promise<boolean> {
 }
 
 export async function POST(req: NextRequest) {
-  const adminSecret = req.headers.get("x-admin-secret");
-  if (adminSecret !== process.env.ADMIN_SECRET) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const auth = await authorizeAdminRequest(req, { requireCsrf: true });
+  if (!auth.ok) {
+    return auth.response;
   }
 
   const { leadId, phone, name, sendAll } = await req.json();
 
-  // Single lead
   if (leadId && phone && name) {
     const waSuccess = await sendWhatsApp(phone, name);
     const smsSuccess = waSuccess ? true : await sendSMS(phone, name);
 
-    // Log in DB
     await prisma.outreachLead.update({
       where: { id: leadId },
       data: {
@@ -85,14 +84,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ waSuccess, smsSuccess });
   }
 
-  // Send to all pending leads
   if (sendAll) {
     const leads = await prisma.outreachLead.findMany({
       where: { outreachStatus: "PENDING" },
       take: 100,
     });
 
-    let contacted = 0, failed = 0;
+    let contacted = 0;
+    let failed = 0;
+
     for (const lead of leads) {
       const waSuccess = await sendWhatsApp(lead.phone, lead.name);
       const smsSuccess = waSuccess ? true : await sendSMS(lead.phone, lead.name);
@@ -107,11 +107,13 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      if (waSuccess || smsSuccess) contacted++;
-      else failed++;
+      if (waSuccess || smsSuccess) {
+        contacted++;
+      } else {
+        failed++;
+      }
 
-      // Small delay to avoid rate limits
-      await new Promise((r) => setTimeout(r, 300));
+      await new Promise((resolve) => setTimeout(resolve, 300));
     }
 
     return NextResponse.json({ contacted, failed, total: leads.length });

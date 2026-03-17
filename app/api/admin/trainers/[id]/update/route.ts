@@ -1,23 +1,27 @@
-// app/api/admin/trainers/[id]/update/route.ts
-
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { authorizeAdminRequest } from "@/lib/admin";
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }  // ✅ Next.js 15: params is a Promise
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    const auth = await authorizeAdminRequest(req, { requireCsrf: true });
+    if (!auth.ok) {
+      return auth.response;
+    }
+
     const { id } = await params;
-    const trainerId = parseInt(id);
-    if (isNaN(trainerId)) {
+    const trainerId = parseInt(id, 10);
+
+    if (Number.isNaN(trainerId)) {
       return NextResponse.json({ error: "Invalid trainer ID" }, { status: 400 });
     }
 
     const body = await req.json();
     const { packagesJson, basePrice } = body;
 
-    // Validate packagesJson is a valid JSON array
     if (packagesJson !== undefined && packagesJson !== null) {
       try {
         const parsed = JSON.parse(packagesJson);

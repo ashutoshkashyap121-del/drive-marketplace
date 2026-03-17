@@ -19,6 +19,12 @@ type Booking = {
   };
 };
 
+function getCsrfToken(): string {
+  if (typeof document === "undefined") return "";
+  const match = document.cookie.match(/(?:^|;\s*)csrf_token=([^;]+)/);
+  return match ? decodeURIComponent(match[1]) : "";
+}
+
 export default function AdminBookingsPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
@@ -48,6 +54,7 @@ export default function AdminBookingsPage() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "x-csrf-token": getCsrfToken(),
         },
         body: JSON.stringify({ id, status: newStatus }),
       });

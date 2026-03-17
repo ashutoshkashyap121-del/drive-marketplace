@@ -1,13 +1,11 @@
-// app/api/trainer-outreach/sms/route.ts
-// Sends SMS to selected trainers via Fast2SMS
-
 import { NextRequest, NextResponse } from "next/server";
+import { authorizeAdminRequest } from "@/lib/admin";
 
 export async function POST(req: NextRequest) {
   try {
-    const adminSecret = req.headers.get("x-admin-secret");
-    if (adminSecret !== process.env.ADMIN_SECRET) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = await authorizeAdminRequest(req, { requireCsrf: true });
+    if (!auth.ok) {
+      return auth.response;
     }
 
     const { numbers, message } = await req.json();
@@ -19,7 +17,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Message required" }, { status: 400 });
     }
 
-    // Clean numbers — remove +91, spaces, dashes
     const cleaned = numbers
       .map((n: string) => n.replace(/\D/g, "").replace(/^91/, "").slice(-10))
       .filter((n: string) => n.length === 10);
@@ -28,7 +25,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No valid phone numbers found" }, { status: 400 });
     }
 
-    // Fast2SMS bulk DLT route
     const response = await fetch("https://www.fast2sms.com/dev/bulkV2", {
       method: "POST",
       headers: {
@@ -36,8 +32,8 @@ export async function POST(req: NextRequest) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        route: "q", // Quick transactional route
-        message: message,
+        route: "q",
+        message,
         language: "english",
         flash: 0,
         numbers: cleaned.join(","),
@@ -50,7 +46,7 @@ export async function POST(req: NextRequest) {
       console.error("Fast2SMS error:", data);
       return NextResponse.json(
         { error: data.message?.[0] || "SMS sending failed" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 

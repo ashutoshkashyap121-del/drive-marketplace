@@ -42,6 +42,12 @@ const RATING_OPTIONS = [
   { label: "Below 3.5 ★",     value: "below3.5" },
 ];
 
+function getCsrfToken(): string {
+  if (typeof document === "undefined") return "";
+  const match = document.cookie.match(/(?:^|;\s*)csrf_token=([^;]+)/);
+  return match ? decodeURIComponent(match[1]) : "";
+}
+
 export default function ScrapedListingsPage() {
   const [trainers, setTrainers]         = useState<ScrapedTrainer[]>([]);
   const [loading, setLoading]           = useState(true);
@@ -68,7 +74,10 @@ export default function ScrapedListingsPage() {
     setActionLoading(id);
     await fetch("/api/admin/scraped-listings", {
       method:  "PATCH",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "x-csrf-token": getCsrfToken(),
+      },
       body:    JSON.stringify({ id, status: newStatus }),
     });
     setTrainers((prev) => prev.filter((t) => t.id !== id));
@@ -88,7 +97,10 @@ export default function ScrapedListingsPage() {
     for (const t of visible) {
       await fetch("/api/admin/scraped-listings", {
         method:  "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "x-csrf-token": getCsrfToken(),
+        },
         body:    JSON.stringify({ id: t.id, status: "APPROVED" }),
       });
     }

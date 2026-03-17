@@ -1,8 +1,8 @@
 export const runtime = "nodejs";
+
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { verifyAdmin } from "@/lib/admin";
-import { verifyCSRF } from "@/lib/csrf";
+import { authorizeAdminRequest } from "@/lib/admin";
 import { logAdminAction } from "@/lib/audit";
 import { notifyTrainerApproved, notifyTrainerRejected } from "@/lib/notifications";
 import { smsTrainerApproved, smsTrainerRejected } from "@/lib/sms";
@@ -11,12 +11,9 @@ const VALID_ACTIONS = ["APPROVED", "REJECTED", "SUSPENDED"];
 
 export async function POST(req: Request) {
   try {
-    if (!(await verifyAdmin())) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    if (!(await verifyCSRF(req))) {
-      return NextResponse.json({ error: "Invalid CSRF token" }, { status: 403 });
+    const auth = await authorizeAdminRequest(req, { requireCsrf: true });
+    if (!auth.ok) {
+      return auth.response;
     }
 
     const body = await req.json();
@@ -25,7 +22,7 @@ export async function POST(req: Request) {
     if (!trainerId || !VALID_ACTIONS.includes(action)) {
       return NextResponse.json(
         { error: "trainerId and valid action (APPROVED, REJECTED, SUSPENDED) required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -50,7 +47,6 @@ export async function POST(req: Request) {
       metadata: { previousStatus: existing.status, newStatus: action, reason: reason || null },
     });
 
-    // ── SMS notifications (awaited so Vercel doesn't kill before sending) ─────
     if (action === "APPROVED") {
       try {
         await smsTrainerApproved({
@@ -58,7 +54,9 @@ export async function POST(req: Request) {
           mobile: existing.mobile,
           city: existing.city,
         });
-      } catch (err) { console.error("[SMS_APPROVED_ERROR]", err); }
+      } catch (err) {
+        console.error("[SMS_APPROVED_ERROR]", err);
+      }
 
       try {
         if (existing.email) {
@@ -69,7 +67,9 @@ export async function POST(req: Request) {
             city: existing.city,
           });
         }
-      } catch (err) { console.error("[EMAIL_APPROVED_ERROR]", err); }
+      } catch (err) {
+        console.error("[EMAIL_APPROVED_ERROR]", err);
+      }
     }
 
     if (action === "REJECTED") {
@@ -79,7 +79,9 @@ export async function POST(req: Request) {
           mobile: existing.mobile,
           reason: reason || undefined,
         });
-      } catch (err) { console.error("[SMS_REJECTED_ERROR]", err); }
+      } catch (err) {
+        console.error("[SMS_REJECTED_ERROR]", err);
+      }
 
       try {
         if (existing.email) {
@@ -89,11 +91,12 @@ export async function POST(req: Request) {
             reason: reason || undefined,
           });
         }
-      } catch (err) { console.error("[EMAIL_REJECTED_ERROR]", err); }
+      } catch (err) {
+        console.error("[EMAIL_REJECTED_ERROR]", err);
+      }
     }
 
     return NextResponse.json({ success: true, trainer: updated });
-
   } catch (error) {
     console.error("ADMIN TRAINER APPROVE ERROR:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });

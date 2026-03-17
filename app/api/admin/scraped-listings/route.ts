@@ -1,14 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { authorizeAdminRequest } from "@/lib/admin";
 
-// GET — list scraped trainers by status
 export async function GET(req: NextRequest) {
+  const auth = await authorizeAdminRequest(req);
+  if (!auth.ok) {
+    return auth.response;
+  }
+
   const status = req.nextUrl.searchParams.get("status") ?? "PENDING";
 
   const [trainers, pending, approved, rejected] = await Promise.all([
     prisma.trainer.findMany({
       where: {
-        status: status as any,
+        status: status as never,
         adminNotes: { contains: "scraped_gmb" },
       },
       orderBy: { createdAt: "desc" },
@@ -33,8 +38,12 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({ trainers, stats: { pending, approved, rejected } });
 }
 
-// PATCH — approve / reject individual or bulk
 export async function PATCH(req: NextRequest) {
+  const auth = await authorizeAdminRequest(req, { requireCsrf: true });
+  if (!auth.ok) {
+    return auth.response;
+  }
+
   const body = await req.json();
 
   if (body.bulkApproveAll) {

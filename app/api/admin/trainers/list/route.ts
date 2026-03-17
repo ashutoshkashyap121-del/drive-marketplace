@@ -1,11 +1,14 @@
-// app/api/admin/trainers/list/route.ts
-// Replace your existing list route with this — adds packagesJson + extra fields
-
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { authorizeAdminRequest } from "@/lib/admin";
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
+    const auth = await authorizeAdminRequest(req);
+    if (!auth.ok) {
+      return auth.response;
+    }
+
     const trainers = await prisma.trainer.findMany({
       select: {
         id: true,
@@ -20,10 +23,7 @@ export async function GET() {
         languages: true,
         vehicleTypes: true,
       },
-      orderBy: [
-        { status: "asc" },   // PENDING first (alphabetically before APPROVED)
-        { createdAt: "desc" },
-      ],
+      orderBy: [{ status: "asc" }, { createdAt: "desc" }],
     });
 
     return NextResponse.json(trainers);

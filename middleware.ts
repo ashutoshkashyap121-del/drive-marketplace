@@ -3,24 +3,34 @@ import type { NextRequest } from "next/server";
 
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
+  const isAdminPage = pathname === "/admin" || pathname.startsWith("/admin/");
+  const isAdminApi = pathname.startsWith("/api/admin/");
+  const isAdminLoginApi = pathname === "/api/admin/login";
+  const adminSession = req.cookies.get("admin_session")?.value;
+  const adminSecret = req.headers.get("x-admin-secret");
+  const hasAdminSecret =
+    Boolean(process.env.ADMIN_SECRET) && adminSecret === process.env.ADMIN_SECRET;
 
-  // Allow admin login page
-  if (pathname === "/admin") {
-    return NextResponse.next();
+  const response = NextResponse.next();
+
+  if (isAdminPage || isAdminApi) {
+    response.headers.set("x-robots-tag", "noindex, nofollow, noarchive");
   }
 
-  // Protect all /admin routes except login
-  if (pathname.startsWith("/admin")) {
-    const session = req.cookies.get("admin_session")?.value;
+  if (pathname === "/admin" || isAdminLoginApi) {
+    return response;
+  }
 
-    if (!session) {
-      return NextResponse.redirect(new URL("/admin", req.url));
+  if ((isAdminPage || isAdminApi) && !adminSession && !hasAdminSecret) {
+    if (isAdminApi) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    return NextResponse.redirect(new URL("/admin", req.url));
   }
 
-  return NextResponse.next();
+  return response;
 }
 
 export const config = {
-  matcher: ["/admin/:path*"],
+  matcher: ["/admin/:path*", "/api/admin/:path*"],
 };

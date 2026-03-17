@@ -1,10 +1,13 @@
 // app/admin/dashboard/page.tsx
 import { prisma } from "@/lib/prisma";
+import { requireAdminPageAccess } from "@/lib/admin";
 import AdminDashboardClient from "./AdminDashboardClient";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminDashboardPage() {
+  await requireAdminPageAccess();
+
   const [pending, approved, rejected] = await Promise.all([
     prisma.trainer.count({ where: { status: "PENDING" } }),
     prisma.trainer.count({ where: { status: "APPROVED" } }),

@@ -31,6 +31,12 @@ interface Trainer {
   email?: string | null;
 }
 
+function getCsrfToken(): string {
+  if (typeof document === "undefined") return "";
+  const match = document.cookie.match(/(?:^|;\s*)csrf_token=([^;]+)/);
+  return match ? decodeURIComponent(match[1]) : "";
+}
+
 const EMPTY_PKG: Package = {
   name: "",
   price: 0,
@@ -224,8 +230,11 @@ function TrainerRow({
   const approve = async () => {
     await fetch("/api/admin/trainers/approve", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ trainerId: trainer.id }),
+      headers: {
+        "Content-Type": "application/json",
+        "x-csrf-token": getCsrfToken(),
+      },
+      body: JSON.stringify({ trainerId: trainer.id, action: "APPROVED" }),
     });
     onRefresh();
   };
@@ -236,7 +245,10 @@ function TrainerRow({
     try {
       const res = await fetch(`/api/admin/trainers/${trainer.id}/update`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "x-csrf-token": getCsrfToken(),
+        },
         body: JSON.stringify({
           packagesJson: JSON.stringify(packages),
           basePrice: basePrice ? Number(basePrice) : null,

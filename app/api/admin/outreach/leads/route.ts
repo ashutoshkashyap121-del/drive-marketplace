@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { authorizeAdminRequest } from "@/lib/admin";
 
 export async function GET(req: NextRequest) {
-  const adminSecret = req.headers.get("x-admin-secret");
-  if (adminSecret !== process.env.ADMIN_SECRET) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const auth = await authorizeAdminRequest(req);
+  if (!auth.ok) {
+    return auth.response;
   }
 
   const leads = await prisma.outreachLead.findMany({

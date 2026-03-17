@@ -2,8 +2,7 @@ export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { verifyAdmin } from "@/lib/admin";
-import { verifyCSRF } from "@/lib/csrf";
+import { authorizeAdminRequest } from "@/lib/admin";
 import { logAdminAction } from "@/lib/audit";
 import { smsLearnerBookingConfirmed } from "@/lib/sms";
 
@@ -11,12 +10,9 @@ const VALID_STATUSES = ["PENDING", "CONFIRMED", "COMPLETED", "CANCELLED"];
 
 export async function POST(req: Request) {
   try {
-    if (!(await verifyAdmin())) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    if (!(await verifyCSRF(req))) {
-      return NextResponse.json({ error: "Invalid CSRF token" }, { status: 403 });
+    const auth = await authorizeAdminRequest(req, { requireCsrf: true });
+    if (!auth.ok) {
+      return auth.response;
     }
 
     const body = await req.json();
@@ -66,7 +62,6 @@ export async function POST(req: Request) {
       },
     });
 
-    // ── SMS learner when booking is confirmed (awaited so Vercel doesn't kill) ─
     if (status === "CONFIRMED" && existing.status !== "CONFIRMED") {
       try {
         await smsLearnerBookingConfirmed({
@@ -76,11 +71,12 @@ export async function POST(req: Request) {
           trainerMobile: existing.trainer.mobile,
           bookingId: Number(bookingId),
         });
-      } catch (err) { console.error("[SMS_BOOKING_CONFIRMED_ERROR]", err); }
+      } catch (err) {
+        console.error("[SMS_BOOKING_CONFIRMED_ERROR]", err);
+      }
     }
 
     return NextResponse.json({ success: true, booking: updated });
-
   } catch (error) {
     console.error("ADMIN BOOKING UPDATE ERROR:", error);
     return NextResponse.json({ error: "Failed to update booking" }, { status: 500 });

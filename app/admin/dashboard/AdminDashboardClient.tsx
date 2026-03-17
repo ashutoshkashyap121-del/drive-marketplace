@@ -159,7 +159,12 @@ export default function AdminDashboardClient({
   }
 
   async function handleLogout() {
-    await fetch("/api/admin/logout", { method: "POST" });
+    await fetch("/api/admin/logout", {
+      method: "POST",
+      headers: {
+        "x-csrf-token": getCsrfToken(),
+      },
+    });
     router.push("/admin");
   }
 

@@ -1,88 +1,56 @@
-export const runtime = "nodejs";
-
 import { NextRequest, NextResponse } from "next/server";
-import {prisma} from "@/lib/prisma";
-import { verifyAdmin } from "@/lib/admin";
-import { verifyCSRF } from "@/lib/csrf";
+import { prisma } from "@/lib/prisma";
+import { authorizeAdminRequest } from "@/lib/admin";
 import { logAdminAction } from "@/lib/audit";
+
+const VALID_ACTIONS = ["APPROVED", "REJECTED", "SUSPENDED"];
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    // 🔐 Session validation
-    if (!(await verifyAdmin())) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
-    }
-
-    // 🛡️ CSRF validation
-    if (!verifyCSRF(req)) {
-      return NextResponse.json(
-        { error: "Invalid CSRF token" },
-        { status: 403 }
-      );
+    const auth = await authorizeAdminRequest(req, { requireCsrf: true });
+    if (!auth.ok) {
+      return auth.response;
     }
 
     const { id: rawId } = await params;
-    const id = parseInt(rawId);
+    const trainerId = parseInt(rawId, 10);
+    const { action, reason } = await req.json();
 
-    if (isNaN(id)) {
-      return NextResponse.json(
-        { error: "Invalid trainer ID" },
-        { status: 400 }
-      );
+    if (Number.isNaN(trainerId) || !VALID_ACTIONS.includes(action)) {
+      return NextResponse.json({ error: "Invalid trainer ID or action" }, { status: 400 });
     }
 
-    const { status } = await req.json();
-
-    if (!["APPROVED", "REJECTED"].includes(status)) {
-      return NextResponse.json(
-        { error: "Invalid status" },
-        { status: 400 }
-      );
-    }
-
-    // 🔎 Fetch old status
     const existing = await prisma.trainer.findUnique({
-      where: { id },
+      where: { id: trainerId },
       select: { status: true },
     });
 
     if (!existing) {
-      return NextResponse.json(
-        { error: "Trainer not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Trainer not found" }, { status: 404 });
     }
 
     const updated = await prisma.trainer.update({
-      where: { id },
-      data: { status },
+      where: { id: trainerId },
+      data: { status: action },
     });
 
-    // 📝 Audit log
     await logAdminAction({
-      action: "TRAINER_STATUS_UPDATED",
+      action: `TRAINER_${action}`,
       entityType: "Trainer",
-      entityId: id,
+      entityId: String(trainerId),
       metadata: {
         previousStatus: existing.status,
-        newStatus: status,
+        newStatus: action,
+        reason: reason || null,
       },
     });
 
     return NextResponse.json({ success: true, trainer: updated });
-
   } catch (error) {
-    console.error("ADMIN TRAINER STATUS UPDATE ERROR:", error);
-
-    return NextResponse.json(
-      { error: "Failed to update status" },
-      { status: 500 }
-    );
+    console.error("ADMIN TRAINER STATUS ERROR:", error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

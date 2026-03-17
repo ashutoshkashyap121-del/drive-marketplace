@@ -1,14 +1,11 @@
-// app/api/trainer-outreach/save-leads/route.ts
-// Saves leads found via Google Places into OutreachLead table
-// so ai-ops can bulk-send WhatsApp/SMS to them automatically
-
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { authorizeAdminRequest } from "@/lib/admin";
 
 export async function POST(req: NextRequest) {
-  const adminSecret = req.headers.get("x-admin-secret");
-  if (adminSecret !== process.env.ADMIN_SECRET) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const auth = await authorizeAdminRequest(req, { requireCsrf: true });
+  if (!auth.ok) {
+    return auth.response;
   }
 
   const { leads } = await req.json();
@@ -22,7 +19,10 @@ export async function POST(req: NextRequest) {
 
   for (const lead of leads) {
     const phone = lead.phone?.replace(/\D/g, "").replace(/^91/, "").slice(-10);
-    if (!phone || phone.length !== 10) { skipped++; continue; }
+    if (!phone || phone.length !== 10) {
+      skipped++;
+      continue;
+    }
 
     try {
       await prisma.outreachLead.create({
@@ -36,7 +36,6 @@ export async function POST(req: NextRequest) {
       });
       saved++;
     } catch {
-      // Unique constraint — already exists
       skipped++;
     }
   }
