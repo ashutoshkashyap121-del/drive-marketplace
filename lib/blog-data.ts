@@ -9559,8 +9559,570 @@ India's road transport system is managed through the **Parivahan portal** (pariv
 Questions? [support@learndrive.in](mailto:support@learndrive.in)
 `,
   },
+  {
+    slug: "top-mistakes-first-time-car-buyers-india",
+    title: "Top Mistakes First-Time Car Buyers Make in India",
+    description: "Avoid common buying errors: budget mismatch, wrong variant selection, high EMI, and missing ownership costs.",
+    category: "Driving Basics",
+    readTime: 6,
+    date: "2026-01-05",
+    author: "LearnDrive Team",
+    tags: ["first car", "car buying", "India", "ownership cost"],
+    content: `
+## Top Mistakes First-Time Car Buyers Make in India
 
+Buying your first car is exciting, but most buyers focus only on the showroom price.
 
+### What goes wrong
+- Stretching budget too much and struggling with EMI
+- Ignoring insurance, fuel, servicing, and parking costs
+- Choosing features over safety
+- Not test-driving in real traffic
+
+### Safer buying approach
+1. Set a total monthly ownership cap before choosing a model.
+2. Compare at least 2 variants based on safety and resale value.
+3. Take a city + highway test drive.
+4. Ask for full on-road breakup and yearly maintenance estimate.
+
+### Practical tip
+Your first car should be easy to drive and cheap to maintain. Confidence matters more than premium features.
+
+Need driving confidence after purchase? [Find a trainer](/trainers).
+    `,
+  },
+  {
+    slug: "how-to-prepare-car-for-long-road-trip-india",
+    title: "How to Prepare Your Car for a Long Road Trip in India",
+    description: "A practical pre-trip checklist for tyres, brakes, fluids, lights, documents, and emergency kit.",
+    category: "Driving Basics",
+    readTime: 7,
+    date: "2026-01-06",
+    author: "LearnDrive Team",
+    tags: ["road trip", "car prep", "India highways", "safety"],
+    content: `
+## How to Prepare Your Car for a Long Road Trip in India
+
+A smooth trip starts before you leave.
+
+### 24-hour checklist
+- Tyre pressure (including spare)
+- Brake response and handbrake
+- Engine oil, coolant, washer fluid
+- Headlights, brake lights, indicators
+- FASTag balance and fuel plan
+
+### Carry these always
+- RC, insurance, PUC, DL (physical or DigiLocker)
+- Tyre inflator, puncture kit, jumper cable
+- Torch, power bank, first-aid kit, drinking water
+
+### Driving rhythm
+Take breaks every 2-3 hours. Fatigue causes late braking and poor lane judgment.
+
+Before your first highway trip, do 2-3 supervised practice sessions with a trainer. [Book here](/trainers).
+    `,
+  },
+  {
+    slug: "defensive-driving-for-new-drivers-india",
+    title: "Defensive Driving for New Drivers in India",
+    description: "Core defensive driving habits to prevent collisions in mixed traffic and unpredictable road conditions.",
+    category: "Traffic Rules",
+    readTime: 6,
+    date: "2026-01-07",
+    author: "LearnDrive Team",
+    tags: ["defensive driving", "new drivers", "road safety", "India"],
+    content: `
+## Defensive Driving for New Drivers in India
+
+Defensive driving means planning for other people’s mistakes.
+
+### 5 habits that reduce risk
+- Maintain 3-second following distance
+- Scan mirrors every 8-10 seconds
+- Slow down at intersections even on green
+- Avoid blind spot cruising
+- Expect sudden lane cuts from two-wheelers
+
+### Golden rule
+Do not drive in another vehicle's blind spot for long. Either pass clearly or fall back.
+
+### City use case
+At busy junctions, reduce speed early and cover the brake. This gives you reaction time.
+
+Want hands-on defensive driving practice? [Find a local trainer](/trainers).
+    `,
+  },
+  {
+    slug: "beginner-guide-to-car-maintenance-india",
+    title: "Beginner Guide to Car Maintenance in India",
+    description: "Simple monthly maintenance routine for new drivers to improve safety, mileage, and reliability.",
+    category: "Driving Basics",
+    readTime: 5,
+    date: "2026-01-08",
+    author: "LearnDrive Team",
+    tags: ["car maintenance", "new driver", "ownership", "India"],
+    content: `
+## Beginner Guide to Car Maintenance in India
+
+You do not need deep mechanical knowledge to keep your car healthy.
+
+### Monthly routine
+- Check tyre pressure and tread wear
+- Top up windshield washer fluid
+- Inspect battery terminals for corrosion
+- Check engine oil level on flat ground
+
+### Every 6 months
+- Wheel alignment and balancing
+- Brake pad inspection
+- AC filter cleaning/replacement
+
+### Why this matters
+Basic preventive checks reduce breakdown risk and improve braking confidence.
+
+If you’re new to ownership and driving, combine maintenance basics with practical driving lessons. [Explore trainers](/trainers).
+    `,
+  },
+  {
+    slug: "how-to-drive-in-heavy-rain-safely-india",
+    title: "How to Drive Safely in Heavy Rain in India",
+    description: "Rain driving techniques: visibility, braking distance, hydroplaning control, and flood-zone decisions.",
+    category: "Traffic Rules",
+    readTime: 6,
+    date: "2026-01-09",
+    author: "LearnDrive Team",
+    tags: ["rain driving", "monsoon", "road safety", "India"],
+    content: `
+## How to Drive Safely in Heavy Rain in India
+
+Rain reduces tyre grip and visibility at the same time.
+
+### What to do
+- Turn on headlights (not high beam)
+- Increase following distance to 4-5 seconds
+- Brake early and progressively
+- Avoid hard steering on waterlogged patches
+
+### If car starts hydroplaning
+1. Ease off accelerator.
+2. Keep steering straight.
+3. Do not slam brakes.
+
+### Flooded roads
+If water is above wheel-center height, avoid entry. Stalled engine + hidden potholes = high risk.
+
+Practice wet-road control in a safe area with supervision before monsoon starts. [Book training](/trainers).
+    `,
+  },
+  {
+    slug: "how-to-handle-brake-failure-emergency",
+    title: "How to Handle Brake Failure in an Emergency",
+    description: "Emergency response plan for partial or full brake failure while driving in city or highway conditions.",
+    category: "Traffic Rules",
+    readTime: 5,
+    date: "2026-01-10",
+    author: "LearnDrive Team",
+    tags: ["brake failure", "emergency", "road safety", "driving tips"],
+    content: `
+## How to Handle Brake Failure in an Emergency
+
+Brake failure is rare but requires fast, calm action.
+
+### Immediate steps
+1. Pump brake pedal quickly (may build pressure).
+2. Downshift gradually to use engine braking.
+3. Use handbrake slowly, never yank.
+4. Move to left shoulder and warn others with hazard lights.
+
+### Never do this
+- Do not switch engine OFF while moving.
+- Do not pull handbrake fully at speed.
+
+### Prevention
+Regular brake fluid checks and service intervals greatly reduce failure risk.
+
+Every new driver should learn emergency response drills once. [Find trainers](/trainers).
+    `,
+  },
+  {
+    slug: "city-driving-vs-highway-driving-differences",
+    title: "City Driving vs Highway Driving: Key Differences",
+    description: "Understand braking, lane discipline, speed management, and mirror use across city and highway environments.",
+    category: "Driving Basics",
+    readTime: 6,
+    date: "2026-01-11",
+    author: "LearnDrive Team",
+    tags: ["city driving", "highway driving", "new driver", "safety"],
+    content: `
+## City Driving vs Highway Driving: Key Differences
+
+Many learners are comfortable in one environment but not the other.
+
+### City driving
+- More stops, tighter gaps, pedestrian unpredictability
+- Lower speed, higher decision frequency
+- Constant clutch-brake coordination (manual)
+
+### Highway driving
+- Fewer stops, higher speed, longer planning horizon
+- Lane discipline and mirror checks are critical
+- Overtake decisions must be early and clear
+
+### Skill progression
+Master city control first, then move to controlled highway sessions.
+
+Need structured progression from city to highway? [Find certified trainers](/trainers).
+    `,
+  },
+  {
+    slug: "complete-guide-to-indian-traffic-signs-2026",
+    title: "Complete Guide to Indian Traffic Signs (2026)",
+    description: "Easy breakdown of mandatory, cautionary, and informatory signs for learner licence and practical driving.",
+    category: "Traffic Rules",
+    readTime: 8,
+    date: "2026-01-12",
+    author: "LearnDrive Team",
+    tags: ["traffic signs", "RTO test", "road rules", "India"],
+    content: `
+## Complete Guide to Indian Traffic Signs (2026)
+
+Traffic signs are a major part of LL and DL tests.
+
+### 3 broad categories
+- Mandatory signs: legal instructions (stop, no entry, speed limits)
+- Cautionary signs: hazard warnings (curve, school ahead)
+- Informatory signs: route and service information
+
+### Fast memory method
+Group signs by shape and color first, then learn meaning.
+
+### Test prep tip
+Use timed mock tests so recall is quick under pressure.
+
+Practice before your RTO exam: [RTO mock test](/rto-test).
+    `,
+  },
+  {
+    slug: "what-documents-to-keep-in-car-india",
+    title: "What Documents to Keep in Your Car in India",
+    description: "Updated document checklist for private car owners to avoid challans and compliance issues.",
+    category: "RTO Tips",
+    readTime: 5,
+    date: "2026-01-13",
+    author: "LearnDrive Team",
+    tags: ["car documents", "challan", "RTO", "India"],
+    content: `
+## What Documents to Keep in Your Car in India
+
+Missing documents can lead to avoidable fines.
+
+### Keep these ready
+- Driving Licence
+- RC
+- Valid insurance
+- PUC certificate
+
+### Physical vs digital
+DigiLocker and mParivahan documents are generally accepted. Keep your phone charged and app login accessible.
+
+### Good practice
+Store a soft copy folder and set expiry reminders for insurance and PUC.
+
+Need RTO compliance help? [Check guides on LearnDrive](/blog).
+    `,
+  },
+  {
+    slug: "how-to-check-used-car-before-buying-india",
+    title: "How to Check a Used Car Before Buying in India",
+    description: "Pre-purchase used car checklist covering service history, accident signs, tyres, suspension, and legal checks.",
+    category: "Driving Basics",
+    readTime: 7,
+    date: "2026-01-14",
+    author: "LearnDrive Team",
+    tags: ["used car", "inspection", "India", "car buying"],
+    content: `
+## How to Check a Used Car Before Buying in India
+
+Used cars can be great value if inspected correctly.
+
+### Mechanical checks
+- Cold-start sound and idle stability
+- Clutch bite point and gear smoothness
+- Brake pull, suspension noise, steering play
+
+### Body and history checks
+- Panel gap mismatch or repaint signs
+- Service records and insurance claims
+- Odometer consistency with wear
+
+### Legal checks
+Verify RC owner details, pending challans, and loan hypothecation status.
+
+Test drive in city traffic before final payment.
+    `,
+  },
+  {
+    slug: "winter-driving-tips-north-india",
+    title: "Winter Driving Tips for North India",
+    description: "Fog and low-visibility driving guide for Delhi NCR, Punjab, Haryana, UP, and nearby regions.",
+    category: "Traffic Rules",
+    readTime: 5,
+    date: "2026-01-15",
+    author: "LearnDrive Team",
+    tags: ["winter driving", "fog", "north India", "safety"],
+    content: `
+## Winter Driving Tips for North India
+
+Fog season requires slower speed and better spacing.
+
+### Low-visibility rules
+- Use low beam, not high beam
+- Keep demister and wipers working
+- Follow lane markers, not tail-lights blindly
+- Increase distance significantly
+
+### If visibility drops sharply
+Move safely to shoulder or a secure stop point and wait.
+
+Never rush in dense fog. Delay is safer than collision risk.
+    `,
+  },
+  {
+    slug: "safe-driving-with-kids-india",
+    title: "Safe Driving with Kids in India",
+    description: "Child safety essentials for Indian families: seating, speed behavior, stop planning, and emergency readiness.",
+    category: "Traffic Rules",
+    readTime: 5,
+    date: "2026-01-16",
+    author: "LearnDrive Team",
+    tags: ["child safety", "family driving", "road safety", "India"],
+    content: `
+## Safe Driving with Kids in India
+
+Children increase in-car distraction, so planning matters.
+
+### Core rules
+- Seat children in rear seats
+- Use age-appropriate restraints
+- Avoid loose items in cabin
+- Plan hydration and restroom breaks
+
+### Driving behavior
+Smooth braking and gentle lane changes reduce motion discomfort and panic.
+
+### Emergency prep
+Keep emergency contacts, medicines, and first-aid handy.
+    `,
+  },
+  {
+    slug: "how-to-choose-first-car-under-10-lakh",
+    title: "How to Choose Your First Car Under Rs 10 Lakh",
+    description: "Simple framework to shortlist beginner-friendly cars under Rs 10 lakh based on safety and cost-to-own.",
+    category: "Driving Basics",
+    readTime: 6,
+    date: "2026-01-17",
+    author: "LearnDrive Team",
+    tags: ["first car", "budget car", "India", "car shortlist"],
+    content: `
+## How to Choose Your First Car Under Rs 10 Lakh
+
+A good first car should be easy, safe, and affordable to maintain.
+
+### Shortlisting criteria
+- Safety rating and airbags
+- Service network in your city
+- Mileage and annual maintenance cost
+- Easy visibility and light steering
+
+### Avoid this
+Do not choose only by touchscreen size or discounts.
+
+Pick a car you can confidently drive every day, not just one that looks premium.
+    `,
+  },
+  {
+    slug: "how-to-improve-fuel-economy-manual-car",
+    title: "How to Improve Fuel Economy in a Manual Car",
+    description: "Driving and maintenance habits that improve real-world mileage in Indian city and highway conditions.",
+    category: "Driving Basics",
+    readTime: 5,
+    date: "2026-01-18",
+    author: "LearnDrive Team",
+    tags: ["fuel economy", "manual car", "mileage", "India"],
+    content: `
+## How to Improve Fuel Economy in a Manual Car
+
+Mileage improves when engine load and driving inputs are smooth.
+
+### Practical habits
+- Shift early without lugging engine
+- Avoid hard acceleration from signals
+- Maintain tyre pressure weekly
+- Reduce unnecessary idling
+
+### Service impact
+Clean air filter and timely oil change directly affect efficiency.
+
+Consistent habits can improve mileage meaningfully over monthly usage.
+    `,
+  },
+  {
+    slug: "how-to-improve-fuel-economy-automatic-car",
+    title: "How to Improve Fuel Economy in an Automatic Car",
+    description: "Easy mileage improvements for CVT/AMT/AT users through smoother throttle, planning, and car care.",
+    category: "Driving Basics",
+    readTime: 5,
+    date: "2026-01-19",
+    author: "LearnDrive Team",
+    tags: ["fuel economy", "automatic car", "CVT", "AMT"],
+    content: `
+## How to Improve Fuel Economy in an Automatic Car
+
+Automatic cars reward smooth inputs and anticipatory driving.
+
+### Do this regularly
+- Accelerate progressively
+- Anticipate traffic to avoid brake-accelerate cycles
+- Use eco mode when appropriate
+- Keep tyres inflated to recommended PSI
+
+### Avoid this
+Frequent kick-down acceleration in city traffic consumes extra fuel.
+
+Plan ahead, keep speed steady, and service on schedule.
+    `,
+  },
+  {
+    slug: "pre-driving-checklist-for-daily-commute",
+    title: "Pre-Driving Checklist for Your Daily Commute",
+    description: "A 2-minute daily checklist to reduce breakdown risk and improve confidence before every drive.",
+    category: "Driving Basics",
+    readTime: 4,
+    date: "2026-01-20",
+    author: "LearnDrive Team",
+    tags: ["daily commute", "checklist", "safe driving", "car prep"],
+    content: `
+## Pre-Driving Checklist for Your Daily Commute
+
+Two minutes before driving can prevent major issues.
+
+### Quick routine
+- Check mirrors and seat position
+- Confirm fuel level and warning lights
+- Look around tyres for visible damage
+- Test brakes lightly in first few meters
+
+### Why useful
+This routine catches small issues before they become costly or unsafe.
+
+Repeat daily and make it automatic.
+    `,
+  },
+  {
+    slug: "first-1000-km-driving-plan-new-drivers",
+    title: "First 1000 KM Driving Plan for New Drivers",
+    description: "Step-by-step confidence plan for beginner drivers from quiet roads to mixed traffic and highways.",
+    category: "Trainer Tips",
+    readTime: 6,
+    date: "2026-01-21",
+    author: "LearnDrive Team",
+    tags: ["new driver", "confidence", "practice plan", "India"],
+    content: `
+## First 1000 KM Driving Plan for New Drivers
+
+Confidence should be built in stages, not randomly.
+
+### Suggested progression
+1. 0-200 km: quiet roads, clutch-brake control, parking.
+2. 200-500 km: moderate city traffic and junction handling.
+3. 500-800 km: peak traffic, lane discipline, flyovers.
+4. 800-1000 km: supervised highway sessions.
+
+### Track progress
+Maintain a simple log of routes, conditions, and mistakes to correct.
+
+Structured practice accelerates safe independence.
+    `,
+  },
+  {
+    slug: "driving-anxiety-how-to-overcome-india",
+    title: "Driving Anxiety: How to Overcome It in India",
+    description: "Practical methods to reduce fear of driving in traffic and gradually build real road confidence.",
+    category: "Trainer Tips",
+    readTime: 6,
+    date: "2026-01-22",
+    author: "LearnDrive Team",
+    tags: ["driving anxiety", "confidence", "new driver", "India"],
+    content: `
+## Driving Anxiety: How to Overcome It in India
+
+Driving anxiety is common, especially in dense city traffic.
+
+### What helps
+- Fixed route repetition at low-traffic times
+- Short sessions with clear goals
+- Breathing reset before starting
+- Instructor feedback after each session
+
+### Avoid this pattern
+Do not jump from no-driving to peak-hour roads directly.
+
+Gradual exposure with coaching works best for long-term confidence.
+    `,
+  },
+  {
+    slug: "parallel-parking-step-by-step-india",
+    title: "Parallel Parking Step-by-Step for Indian Roads",
+    description: "Simple parallel parking method with reference points, steering timing, and correction strategy.",
+    category: "Driving Basics",
+    readTime: 5,
+    date: "2026-01-23",
+    author: "LearnDrive Team",
+    tags: ["parallel parking", "parking tips", "new driver", "India"],
+    content: `
+## Parallel Parking Step-by-Step for Indian Roads
+
+Parallel parking becomes easy with repeatable reference points.
+
+### Basic method
+1. Stop parallel with target car, about one meter gap.
+2. Reverse slowly and turn full lock toward curb at rear-window alignment point.
+3. Straighten when car enters slot diagonally.
+4. Counter-steer to align parallel inside the slot.
+
+### Correction rule
+If angle is too sharp, move forward once and reset cleanly.
+
+Practice in low-traffic streets first.
+    `,
+  },
+  {
+    slug: "lane-changing-rules-and-blind-spot-check-india",
+    title: "Lane Changing Rules and Blind Spot Checks in India",
+    description: "Safe lane-change process for Indian city roads and highways with mirror sequence and timing.",
+    category: "Traffic Rules",
+    readTime: 5,
+    date: "2026-01-24",
+    author: "LearnDrive Team",
+    tags: ["lane change", "blind spot", "road safety", "India"],
+    content: `
+## Lane Changing Rules and Blind Spot Checks in India
+
+Unsafe lane changes are a major cause of near-miss incidents.
+
+### Correct sequence
+1. Check inside + side mirrors.
+2. Turn indicator on for at least 3 flashes.
+3. Shoulder check blind spot quickly.
+4. Change lane smoothly without sudden acceleration.
+
+### Common mistake
+Indicator and movement together with no blind-spot check.
+
+Use one lane change at a time; avoid weaving across multiple lanes.
+    `,
+  },
 ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
 export function getBlogPost(slug: string): BlogPost | undefined {
