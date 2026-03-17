@@ -40,7 +40,7 @@ const BENEFITS = [
   { icon: "₹0", title: "Free to list", desc: "No upfront cost. No subscription. No hidden fees. You only pay 15% when you get a booking." },
   { icon: "📱", title: "Bookings on WhatsApp", desc: "Every booking alert goes straight to your WhatsApp. No app to download, no dashboard to check." },
   { icon: "🔒", title: "Secure online payments", desc: "Students pay via Razorpay. Money is collected and transferred to you. No cash handling." },
-  { icon: "🏙️", title: "24+ cities covered", desc: "Delhi, Mumbai, Bangalore, Hyderabad, Chennai, Pune and 20+ more cities. Expand your reach." },
+  { icon: "🏙️", title: "24 cities covered", desc: "Delhi, Mumbai, Bangalore, Hyderabad, Chennai, Pune and 20+ more cities. Expand your reach." },
   { icon: "📣", title: "No marketing needed", desc: "LearnDrive brings students to you. You focus on teaching, we handle the rest." },
   { icon: "85%", title: "You keep most", desc: "Schools keep 85% of every booking. LearnDrive takes only 15% as a platform fee." },
 ];
@@ -105,7 +105,7 @@ export default function ListYourDrivingSchool() {
         <div style={{ background: "#fff", borderBottom: "1px solid #E2E8F0", padding: "28px 5%" }}>
           <div style={{ maxWidth: 1000, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 24, textAlign: "center" }}>
             {[
-              { value: "24+", label: "Cities covered" },
+              { value: "24", label: "Cities covered" },
               { value: "₹0", label: "Cost to list" },
               { value: "85%", label: "You keep per booking" },
               { value: "24hrs", label: "To go live" },

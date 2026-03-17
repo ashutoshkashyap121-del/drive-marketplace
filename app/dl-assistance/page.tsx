@@ -3,7 +3,7 @@ import DLAssistancePage from "./client";
 
 export const metadata: Metadata = {
   title: "Driving Licence Assistance Service India — Get DL Without RTO Confusion | LearnDrive",
-  description: "Get your driving licence without the RTO confusion. Our AI fills your Sarathi form, books your RTO slot, sends document checklist and reminders. Just ₹499. Available in Delhi, Mumbai, Bangalore and 50+ cities.",
+  description: "Get your driving licence without the RTO confusion. Our AI fills your Sarathi form, books your RTO slot, sends document checklist and reminders. Just ₹499. Available in Delhi, Mumbai, Bangalore and 24 cities.",
   keywords: [
     "driving licence assistance india",
     "get driving licence online india",
@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   ],
   openGraph: {
     title: "Get Your Driving Licence Without RTO Confusion — ₹499 | LearnDrive",
-    description: "AI fills your forms, books RTO slot, sends document checklist and reminders. 96% success rate. 50+ cities.",
+    description: "AI fills your forms, books RTO slot, sends document checklist and reminders. 96% success rate. 24 cities.",
     url: "https://learndrive.in/dl-assistance",
     type: "website",
   },

@@ -237,7 +237,7 @@ export default function RTOFinderPage() {
         <div className="mt-10 bg-gradient-to-r from-orange-500 to-orange-400 rounded-2xl p-8 text-white text-center">
           <p className="text-2xl font-bold">Find a Driving Trainer Near You</p>
           <p className="text-orange-100 mt-2 text-sm">
-            Certified trainers in Delhi, Mumbai, Bangalore, Hyderabad, Pune and 50+ cities
+            Certified trainers in Delhi, Mumbai, Bangalore, Hyderabad, Pune and 24 cities
           </p>
           <Link
             href="/trainers"
