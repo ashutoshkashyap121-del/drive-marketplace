@@ -1,5 +1,9 @@
 import { Metadata } from "next";
 import Link from "next/link";
+import {
+  LISTING_OTHER_CITY_COUNT,
+  LIVE_CITY_COUNT,
+} from "@/lib/live-coverage";
 
 export const metadata: Metadata = {
   title: "List Your Driving School Online for Free | LearnDrive",
@@ -40,7 +44,7 @@ const BENEFITS = [
   { icon: "₹0", title: "Free to list", desc: "No upfront cost. No subscription. No hidden fees. You only pay 15% when you get a booking." },
   { icon: "📱", title: "Bookings on WhatsApp", desc: "Every booking alert goes straight to your WhatsApp. No app to download, no dashboard to check." },
   { icon: "🔒", title: "Secure online payments", desc: "Students pay via Razorpay. Money is collected and transferred to you. No cash handling." },
-  { icon: "🏙️", title: "24 cities covered", desc: "Delhi, Mumbai, Bangalore, Hyderabad, Chennai, Pune and 20+ more cities. Expand your reach." },
+  { icon: "🏙️", title: `${LIVE_CITY_COUNT} cities covered`, desc: `Delhi, Mumbai, Bangalore, Hyderabad, Chennai, Pune and ${LISTING_OTHER_CITY_COUNT} more cities. Expand your reach.` },
   { icon: "📣", title: "No marketing needed", desc: "LearnDrive brings students to you. You focus on teaching, we handle the rest." },
   { icon: "85%", title: "You keep most", desc: "Schools keep 85% of every booking. LearnDrive takes only 15% as a platform fee." },
 ];
@@ -49,7 +53,7 @@ const FAQS = [
   { q: "Is listing my driving school free?", a: "Yes, completely free. There is no subscription or monthly fee. LearnDrive charges a 15% commission only when you receive a confirmed, paid booking." },
   { q: "How quickly will I start getting bookings?", a: "Most schools start receiving their first booking enquiries within 1-2 weeks of going live, depending on your city and competition." },
   { q: "Do I need to be RTO-registered to list?", a: "Yes, you need a valid driving school registration from your local RTO. Independent certified trainers with a personal driving licence can also list." },
-  { q: "What cities does LearnDrive operate in?", a: "We currently cover 24 cities: Delhi, Mumbai, Bangalore, Hyderabad, Chennai, Pune, Kolkata, Jaipur, Ahmedabad, Surat, Lucknow, Chandigarh, Bhopal, Indore, Nagpur, Patna, Coimbatore, Kochi, Visakhapatnam, Noida, Gurgaon, Vadodara, Rajkot and Faridabad. More cities coming soon." },
+  { q: "What cities does LearnDrive operate in?", a: `We currently cover ${LIVE_CITY_COUNT} cities: Delhi, Mumbai, Bangalore, Hyderabad, Chennai, Pune, Kolkata, Jaipur, Ahmedabad, Surat, Lucknow, Chandigarh, Bhopal, Indore, Nagpur, Patna, Coimbatore, Kochi, Visakhapatnam, Noida, Gurgaon, Vadodara, Rajkot and Faridabad. More cities coming soon.` },
   { q: "How does LearnDrive handle payments?", a: "Students pay online via Razorpay (UPI, cards, net banking). LearnDrive collects the payment and transfers your 85% share within 24 hours of course completion." },
   { q: "What if a student cancels?", a: "LearnDrive handles all cancellations and refunds. You are notified immediately and a replacement booking is prioritised." },
 ];
@@ -105,7 +109,7 @@ export default function ListYourDrivingSchool() {
         <div style={{ background: "#fff", borderBottom: "1px solid #E2E8F0", padding: "28px 5%" }}>
           <div style={{ maxWidth: 1000, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 24, textAlign: "center" }}>
             {[
-              { value: "24", label: "Cities covered" },
+              { value: String(LIVE_CITY_COUNT), label: "Cities covered" },
               { value: "₹0", label: "Cost to list" },
               { value: "85%", label: "You keep per booking" },
               { value: "24hrs", label: "To go live" },

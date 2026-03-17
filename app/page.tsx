@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import TrainerCard from "@/components/TrainerCard";
 import Footer from "@/components/Footer";
+import { LIVE_CITY_COUNT } from "@/lib/live-coverage";
 
 const RECENT_BLOGS = [
   { slug: "how-to-get-driving-licence-india", title: "How to Get a Driving Licence in India (2025 Complete Guide)", description: "Step-by-step guide to getting your driving licence in India – from learner's licence to permanent licence, RTO test tips, and documents checklist.", category: "Licence Guide", readTime: 8 },
@@ -54,14 +55,14 @@ const ALL_CITIES = [
 ];
 
 const STATS = [
-  { value: "24", label: "Cities" },
+  { value: String(LIVE_CITY_COUNT), label: "Cities" },
   { value: "1,000+", label: "Driving Schools Listed" },
   { value: "4.8★",   label: "Avg School Rating" },
   { value: "₹5,500", label: "Starting Price" },
 ];
 
 const HOW_IT_WORKS = [
-  { step: "01", icon: "📍", title: "Pick your city", desc: "Search from 24 cities across India. We'll show trainers covering your area." },
+  { step: "01", icon: "📍", title: "Pick your city", desc: `Search from ${LIVE_CITY_COUNT} cities across India. We'll show trainers covering your area.` },
   { step: "02", icon: "👤", title: "Choose your trainer", desc: "See experience, areas covered, pricing, and languages. Pick the right fit." },
   { step: "03", icon: "📅", title: "Book a slot", desc: "Schedule your first session online. Pay securely. Start learning." },
 ];
@@ -192,7 +193,7 @@ export default function HomePage() {
         <div style={{ maxWidth: 700, margin: "0 auto", textAlign: "center" }}>
           <div className="fade-up" style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "rgba(245,158,11,0.15)", border: "1px solid rgba(245,158,11,0.3)", color: "#FCD34D", borderRadius: 99, padding: "5px 14px", fontSize: 13, fontWeight: 600, marginBottom: 28 }}>
             <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#F59E0B", display: "inline-block" }} />
-            Now live in 24 cities across India
+            {`Now live in ${LIVE_CITY_COUNT} cities across India`}
           </div>
 
           <h1 className="font-display fade-up d1" style={{ fontSize: "clamp(2.4rem, 6vw, 4rem)", fontWeight: 800, color: "#FFFFFF", lineHeight: 1.1, marginBottom: 18 }}>

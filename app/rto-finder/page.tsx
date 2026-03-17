@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import { rtoData, states, searchRTOs, type RTO } from "@/lib/rto-data";
+import { LIVE_CITY_COUNT } from "@/lib/live-coverage";
 
 function RTOCard({ rto }: { rto: RTO }) {
   return (
@@ -237,7 +238,7 @@ export default function RTOFinderPage() {
         <div className="mt-10 bg-gradient-to-r from-orange-500 to-orange-400 rounded-2xl p-8 text-white text-center">
           <p className="text-2xl font-bold">Find a Driving Trainer Near You</p>
           <p className="text-orange-100 mt-2 text-sm">
-            Certified trainers in Delhi, Mumbai, Bangalore, Hyderabad, Pune and 24 cities
+            {`Certified trainers in Delhi, Mumbai, Bangalore, Hyderabad, Pune and ${LIVE_CITY_COUNT} cities`}
           </p>
           <Link
             href="/trainers"

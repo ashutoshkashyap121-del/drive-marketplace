@@ -1,6 +1,10 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
+import {
+  DL_ASSISTANCE_OTHER_CITY_COUNT,
+  LIVE_CITY_COUNT,
+} from "@/lib/live-coverage";
 
 const steps = [
   {
@@ -56,7 +60,7 @@ const faqs = [
   },
   {
     q: "Which cities do you cover?",
-    a: "We currently cover Delhi NCR, Mumbai, Bangalore, Hyderabad, Chennai, Pune, Jaipur and 16 other cities across India.",
+    a: `We currently cover Delhi NCR, Mumbai, Bangalore, Hyderabad, Chennai, Pune, Jaipur and ${DL_ASSISTANCE_OTHER_CITY_COUNT} other cities across India.`,
   },
   {
     q: "What if my test fails?",
@@ -154,7 +158,7 @@ export default function DLAssistancePage() {
         {/* Hero */}
         <div style={{ background: "linear-gradient(135deg, #1a2540 0%, #2d3f6b 100%)", color: "white", padding: "64px 24px", textAlign: "center" }}>
           <div style={{ display: "inline-block", background: "rgba(245,158,11,0.2)", color: "#f59e0b", padding: "6px 16px", borderRadius: 20, fontSize: 13, fontWeight: 600, marginBottom: 20, border: "1px solid rgba(245,158,11,0.3)" }}>
-            🇮🇳 Available across 24 Indian cities
+            {`🇮🇳 Available across ${LIVE_CITY_COUNT} Indian cities`}
           </div>
           <h1 style={{ fontSize: "clamp(28px, 5vw, 48px)", fontWeight: 900, lineHeight: 1.2, marginBottom: 20, maxWidth: 700, margin: "0 auto 20px" }}>
             Get Your Driving Licence<br />
@@ -189,7 +193,7 @@ export default function DLAssistancePage() {
             {[
               { value: "2,000+", label: "Licences assisted" },
               { value: "96%", label: "Success rate" },
-              { value: "24", label: "Cities covered" },
+              { value: String(LIVE_CITY_COUNT), label: "Cities covered" },
             ].map((s) => (
               <div key={s.label} style={{ background: "white", borderRadius: 16, padding: "24px 16px", border: "1px solid #e5e7eb" }}>
                 <div style={{ fontSize: 32, fontWeight: 900, color: "#1a2540" }}>{s.value}</div>

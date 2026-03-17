@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import DLAssistancePage from "./client";
+import { LIVE_CITY_COUNT } from "@/lib/live-coverage";
 
 export const metadata: Metadata = {
-  title: "Driving Licence Assistance Service India — Get DL Without RTO Confusion | LearnDrive",
-  description: "Get your driving licence without the RTO confusion. Our AI fills your Sarathi form, books your RTO slot, sends document checklist and reminders. Just ₹499. Available in Delhi, Mumbai, Bangalore and 24 cities.",
+  title: "Driving Licence Assistance Service India - Get DL Without RTO Confusion | LearnDrive",
+  description: `Get your driving licence without the RTO confusion. Our AI fills your Sarathi form, books your RTO slot, sends document checklist and reminders. Just Rs499. Available in Delhi, Mumbai, Bangalore and ${LIVE_CITY_COUNT} cities.`,
   keywords: [
     "driving licence assistance india",
     "get driving licence online india",
@@ -17,8 +18,8 @@ export const metadata: Metadata = {
     "driving licence without RTO visit",
   ],
   openGraph: {
-    title: "Get Your Driving Licence Without RTO Confusion — ₹499 | LearnDrive",
-    description: "AI fills your forms, books RTO slot, sends document checklist and reminders. 96% success rate. 24 cities.",
+    title: "Get Your Driving Licence Without RTO Confusion - Rs499 | LearnDrive",
+    description: `AI fills your forms, books RTO slot, sends document checklist and reminders. 96% success rate. ${LIVE_CITY_COUNT} cities.`,
     url: "https://learndrive.in/dl-assistance",
     type: "website",
   },
