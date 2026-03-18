@@ -50,6 +50,7 @@ export default function Footer() {
               { href: "https://www.facebook.com/profile.php?id=61579668686130", label: "Facebook", icon: "📘" },
               { href: "https://instagram.com/learndrive.in", label: "Instagram", icon: "📸" },
               { href: "https://linkedin.com/company/learndrive", label: "LinkedIn", icon: "💼" },
+              { href: "https://whatsapp.com/channel/0029VbCk5iC6WaKnB5TRo622", label: "WhatsApp Channel", icon: "💬" },
             ].map(s => (
               <a key={s.label} href={s.href} target="_blank" rel="noopener noreferrer" title={s.label}
                 style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, textDecoration: "none", transition: "background 0.15s" }}
