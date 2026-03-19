@@ -10123,6 +10123,409 @@ Indicator and movement together with no blind-spot check.
 Use one lane change at a time; avoid weaving across multiple lanes.
     `,
   },
+  {
+    slug: "freight-logistics-apps-india-2026",
+    title: "Top Freight Logistics Apps India Traders Are Using in 2026",
+    description: "A hands-on comparison of last-mile logistics platforms, vehicle tracking, and driver coordination apps.",
+    category: "Logistics Insights",
+    readTime: 6,
+    date: "2026-03-13",
+    author: "LearnDrive Team",
+    tags: ["logistics apps", "freight tech", "last-mile", "India"],
+    content: `
+## Freight Logistics Apps India Traders Want in 2026
+
+Choose platforms that centralize bookings, driver tracking, and compliance documents.
+
+### What to look for
+- Real-time ETA sharing for customers and partners
+- Digital POD with OCR-based invoices
+- Driver verification / licence tracking dashboard
+- Fleet health alert tied to preventive maintenance
+
+Adopt a hybrid approach: combine a marketplace app for on-demand loads with a routing tool that integrates with your billing system.
+    `,
+  },
+  {
+    slug: "driving-infrastructure-investment-india-2026",
+    title: "How India’s New Expressway Corridors Change Driving Priorities for 2026",
+    description: "What to expect from the Delhi-Mumbai and Mumbai-Nagpur corridors, plus smart highway features drivers must know.",
+    category: "Transport Trends",
+    readTime: 7,
+    date: "2026-03-12",
+    author: "LearnDrive Team",
+    tags: ["expressway", "Delhi Mumbai", "infrastructure", "smart highways"],
+    content: `
+## Driving on India’s New Expressway Corridors
+
+Fast corridors require fresh behaviour: sustained high speed, higher overtaking discipline, and electronics readiness.
+
+### Key prep steps
+1. Validate tyre pressure + chassis health before long expressway runs.
+2. Keep FASTag and insurance documents in a dedicated sleeve for enforcement checks.
+3. Program adaptive cruise alerts for fatigue on long straight stretches.
+
+If you’re booking a trainer for expressway prep, ask for at least two lessons focused on lane discipline and speed control.
+    `,
+  },
+  {
+    slug: "ev-incentives-2026-driving-school",
+    title: "EV Incentives for Driving Schools in India: What Trainers and Students Need to Know",
+    description: "Central and state EV subsidies, charging infrastructure grants, and how trainers can convert their dual-control cars.",
+    category: "Driving Basics",
+    readTime: 7,
+    date: "2026-03-11",
+    author: "LearnDrive Team",
+    tags: ["EV incentives", "driving school", "state subsidies", "charging"],
+    content: `
+## EV Incentives for Driving Schools in India
+
+Several state transport departments now waive registration fees for electric driving schools.
+
+### Benefits checklist
+- FAME III subsidies on electric dual-control cars
+- Lower insurance premiums if the car is listed under “public carriers”
+- Government-sponsored charging-points near training centers
+
+Trainer tip: Track incentive deadline dates (Telangana: Sept, Delhi: ongoing) and share them with students exploring EV careers.
+    `,
+  },
+  {
+    slug: "monsoon-readiness-road-safety-india",
+    title: "Monsoon-Ready Driving Checklist for Indian Roads",
+    description: "Field-tested steps to keep tyres, wipers, lights, and your driving attitude tuned for heavy rain.",
+    category: "Traffic Rules",
+    readTime: 6,
+    date: "2026-03-10",
+    author: "LearnDrive Team",
+    tags: ["monsoon", "rain driving", "safety", "tyres"],
+    content: `
+## Monsoon-Ready Driving Checklist
+
+- Replace aged wipers and top up washer fluid with rain-repellent additive.
+- Match tyre tread depth to the season; 3mm or more for wet traction.
+- Do a braking-zone rehearsal at low speed every week during the rains.
+
+When booking lessons, pick a route that mimics actual monsoon puddles so you learn weight transfer under water.
+    `,
+  },
+  {
+    slug: "driver-fatigue-technology-2026",
+    title: "How Indian Fleets Use Technology to Fight Driver Fatigue in 2026",
+    description: "Wearables, camera-based alerts, and scheduling rules that logistics coordinators should enforce.",
+    category: "Transport Trends",
+    readTime: 5,
+    date: "2026-03-09",
+    author: "LearnDrive Team",
+    tags: ["driver fatigue", "fleet tech", "logistics", "wearables"],
+    content: `
+## Tech to Fight Driver Fatigue
+
+Adopt these controls:
+- Wearable devices that blink when micro-sleeps are detected
+- In-cab cameras with AI distraction alerts
+- Dynamic rosters auto-limiting 10h of driving per shift
+
+Frontline fleets now treat fatigue like maintenance: log every driver’s rest break and pair it with ride feedback.
+    `,
+  },
+  {
+    slug: "rto-bureaucracy-digital-wins-2026",
+    title: "Digital RTO Wins 2026: Faster Licences, Faster Renewals",
+    description: "New online services, e-token systems, and QR-based document verification across major states.",
+    category: "RTO Tips",
+    readTime: 6,
+    date: "2026-03-08",
+    author: "LearnDrive Team",
+    tags: ["digital RTO", "licence renewal", "e-token", "QR"],
+    content: `
+## Digital RTO Wins for 2026
+
+- Andhra launches QR vahan + Sarathi data sync.
+- Maharashtra added e-token entry for learner’s licence slots.
+- Delhi now renews DL via geofenced digital lockers.
+
+Stick a reminder in your calendar for 30 days before expiry and upload documents to DigiLocker so the RTO app autofills submissions.
+    `,
+  },
+  {
+    slug: "safe-driving-with-ai-assist-india",
+    title: "Safe Driving with AI Assist: What Indian Drivers Should Trust (and What to Ignore)",
+    description: "Understanding ADAS features in new cars—adaptive cruise, lane assist, emergency braking—and how to train with them.",
+    category: "Driving Basics",
+    readTime: 6,
+    date: "2026-03-07",
+    author: "LearnDrive Team",
+    tags: ["ADAS", "safe driving", "AI assist", "lane keep"],
+    content: `
+## Safe Driving with AI Assist
+
+Focus on learning to trust but verify:
+- Use lane-keep assist in live traffic only after confirming you can override quickly.
+- Keep both hands on the wheel even when adaptive cruise is active.
+- Treat emergency braking assist as a backup, not a substitute for scanning.
+
+Add one ADAS demo per training session so you build intuition before relying on tech.
+    `,
+  },
+  {
+    slug: "ride-hailing-driver-support-india",
+    title: "What Ride-Hailing Drivers Want Most from Platforms in 2026",
+    description: "We surveyed active ride-hailing drivers to capture their needs around safety, earnings, and training.",
+    category: "Trainer Tips",
+    readTime: 7,
+    date: "2026-03-06",
+    author: "LearnDrive Team",
+    tags: ["ride-hailing", "driver support", "earnings", "India"],
+    content: `
+## What Drivers Need from Platforms
+
+- Transparent incentive statements every week
+- Emergency SOS and live trip sharing with a dispatcher
+- Micro-training on city shortcuts and surge behaviour
+
+Platforms that combine on-road coaching with payouts earn better retention; encourage your students to review their earnings dashboard weekly.
+    `,
+  },
+  {
+    slug: "fleet-electrification-daily-routines",
+    title: "How Fleet Electrification Changes Daily Driver Routines",
+    description: "Charging etiquette, range planning, and cold-weather prep for Indian light commercial EVs.",
+    category: "Transport Trends",
+    readTime: 6,
+    date: "2026-03-05",
+    author: "LearnDrive Team",
+    tags: ["fleet EV", "range planning", "truck drivers", "India"],
+    content: `
+## Fleet Electrification and Daily Routines
+
+Driver checklist:
+- Overnight charge to 90% (avoid 100% for longevity).
+- Map charging hubs along the route and log them in the fleet app.
+- Monitor regen braking; teach manual vs. one-pedal modes.
+
+When onboarding drivers, run a mock route with empty + loaded scenarios to show how range shifts.
+    `,
+  },
+  {
+    slug: "driving-school-hybrid-learning-model",
+    title: "Hybrid Learning for Driving Schools: Why Indian Students Prefer Split Online + on-road",
+    description: "Combine interactive theory via mobile apps with scheduled on-road sessions for better retention.",
+    category: "Trainer Tips",
+    readTime: 5,
+    date: "2026-03-04",
+    author: "LearnDrive Team",
+    tags: ["driving school", "hybrid learning", "online theory", "India"],
+    content: `
+## Hybrid Learning Works for Indian Students
+
+Give students:
+- Interactive modules they can revisit before class
+- Short quizzes that unlock checklists ahead of on-road demos
+- Analytics for trainers showing where students revisit the most
+
+This model saves time: theory lives online and on-road sessions focus on refining muscle memory.
+    `,
+  },
+  {
+    slug: "transport-compliance-app-india-2026",
+    title: "Transport Compliance Apps Every Logistics Manager Should Try in 2026",
+    description: "Track permits, challans, driver licenses, and insurance expiry on the go.",
+    category: "Logistics Insights",
+    readTime: 6,
+    date: "2026-03-03",
+    author: "LearnDrive Team",
+    tags: ["compliance app", "permits", "challans", "India"],
+    content: `
+## Transport Compliance Apps
+
+Look for:
+- Auto reminders for fitness certificate + insurance expiry
+- One tap challan search via RC number
+- Exportable compliance reports for audits
+
+Pair the app with a shared Excel log for drivers who still prefer printouts.
+    `,
+  },
+  {
+    slug: "national-logistics-policy-drivers-need-to-know",
+    title: "National Logistics Policy 2025: What Drivers and Fleet Owners Must Know",
+    description: "New incentives for intermodal transport, digital freight corridors, and driver welfare provisions.",
+    category: "Transport Trends",
+    readTime: 7,
+    date: "2026-03-02",
+    author: "LearnDrive Team",
+    tags: ["national logistics policy", "intermodal", "India", "driver welfare"],
+    content: `
+## National Logistics Policy 2025 Highlights
+
+Key takeaways for drivers:
+- Digitized permit renewals for 35-tonne vehicles
+- Welfare fund contributions tied to driver training programs
+- Freight corridor pilots with guaranteed lane access
+
+Share this policy summary in your driver briefings so compliance is not just on paper.
+    `,
+  },
+  {
+    slug: "india-trucking-road-tax-insights-2026",
+    title: "Road Tax and Toll Insights for Trucking Routes in India, 2026 Edition",
+    description: "Understand how the new e-toll architecture and road taxes vary state-by-state.",
+    category: "Transport Trends",
+    readTime: 6,
+    date: "2026-03-01",
+    author: "LearnDrive Team",
+    tags: ["toll", "road tax", "trucking", "India"],
+    content: `
+## Toll Pay and Road Tax 2026
+
+Regional info:
+- Maharashtra uses Khidki app for state-level permits.
+- Karnataka launched RFID-enabled toll wallets.
+- Haryana doubled weight-check fines without prior notice.
+
+Train drivers to pack digital receipts and stay under gross weight to avoid fines.
+    `,
+  },
+  {
+    slug: "smart-city-mobility-plans-india",
+    title: "Smart City Mobility Plans 2026: Where Driving School Traffic Will Grow",
+    description: "New smart city mobility corridors and EV-first streets mean trainers can place sessions near metro feeders.",
+    category: "Transport Trends",
+    readTime: 5,
+    date: "2026-02-28",
+    author: "LearnDrive Team",
+    tags: ["smart city", "mobility", "driving school", "India"],
+    content: `
+## Smart City Mobility and Training Spots
+
+Upcoming hotspots:
+- Ahmedabad smart corridor boosts demand for short-range dual-control rides.
+- Pune’s ITS initiative adds new traffic signal patterns for learners.
+- Surat’s green streets require low-impact braking (use regen on EV trainers).
+
+Plan batch batches near metro-connected hubs to capture commuter searches.
+    `,
+  },
+  {
+    slug: "women-safety-in-driving-in-india",
+    title: "Women’s Safety When Driving in India: A Practical Toolkit",
+    description: "Night-driving strategies, safe parking tips, and security apps for female drivers.",
+    category: "Driving Basics",
+    readTime: 6,
+    date: "2026-02-27",
+    author: "LearnDrive Team",
+    tags: ["women safety", "night driving", "parking", "India"],
+    content: `
+## Women’s Safety Toolkit
+
+Essential habits:
+- Share live location with a trusted contact when heading out at night.
+- Park in well-lit, CCTV-covered locations and back into bays.
+- Keep a pepper spray and car alarm, check out the `112` panic button features.
+
+Train women drivers on defensive parking and early exits so they feel confident alone.
+    `,
+  },
+  {
+    slug: "car-sharing-economy-india",
+    title: "How the Car-Sharing Economy is Reshaping Driving Lessons in Tier-2 Towns",
+    description: "Car-sharing demand brings new lesson types: 30-minute express sessions and buddy-trainer packages.",
+    category: "Trainer Tips",
+    readTime: 5,
+    date: "2026-02-26",
+    author: "LearnDrive Team",
+    tags: ["car-sharing", "driving lessons", "tier-2", "India"],
+    content: `
+## Car-Sharing and Driving Lessons
+
+Offer these packages:
+- Express 30-minute confidence booster for car-sharing drivers.
+- Partner with sharing apps to offer skill checks before onboarding.
+- Provide refresher rides for weekends when the vehicle is high-demand.
+
+This focus opens up a new lane for trainers outside metro areas.
+    `,
+  },
+  {
+    slug: "defensive-driving-certification-india",
+    title: "Defensive Driving Certification Options in India for 2026",
+    description: "NHAI, state police academies, and private institutes offering short-term certifications.",
+    category: "Traffic Rules",
+    readTime: 6,
+    date: "2026-02-25",
+    author: "LearnDrive Team",
+    tags: ["defensive driving", "certification", "NHAI", "India"],
+    content: `
+## Defensive Driving Certifications
+
+Programs to explore:
+- NHAI’s ISO-aligned Defensive Driving School for highway crews
+- Maharashtra Police offers 2-day certification with night drills
+- Private institutes bundle online theory + track sessions
+
+Encourage trainers to certify so corporate clients know the instructor is backed by national standards.
+    `,
+  },
+  {
+    slug: "hyperlocal-delivery-drivers-equipment",
+    title: "Hyperlocal Delivery Drivers: Equipment Checklist for Indian Cities",
+    description: "Helmet, PPE, fuel/e-battery planning, and digital manifests for app-based delivery riders.",
+    category: "Driving Basics",
+    readTime: 5,
+    date: "2026-02-24",
+    author: "LearnDrive Team",
+    tags: ["delivery drivers", "equipment", "hyperlocal", "India"],
+    content: `
+## Equipment Checklist
+
+For bike/scooter riders:
+- High-visibility vest + reflective tape
+- Portable battery pack for phone/GPS
+- Puncture kit + tyre inflator
+- Waterproof delivery bag with velcro
+
+Train riders on micro-stops, not accelerating mid-lane changes, and always validating each order’s POD.
+    `,
+  },
+  {
+    slug: "green-transport-policy-india-2026",
+    title: "Green Transport Policy 2026: What Logistics Startups Should Track",
+    description: "Policy levers for electric cargo three-wheelers, green freight corridors, and emissions reporting.",
+    category: "Transport Trends",
+    readTime: 7,
+    date: "2026-02-23",
+    author: "LearnDrive Team",
+    tags: ["green transport", "policy", "logistics startup", "India"],
+    content: `
+## Green Transport Policy Highlights
+
+- Subsidies for electric three-wheelers under 1.5 ton load
+- Mandatory emissions reports for fleets >20 vehicles
+- Green freight corridors with reserved night slots
+
+Startups should equip drivers with telematics and monthly carbon reports to stay ahead of compliance.
+    `,
+  },
+  {
+    slug: "customs-bond-truckers-india",
+    title: "Customs Bonded Trucking in India: What Drivers Must Know for Coastal Containers",
+    description: "Bonded yard protocols, digital manifest checks, and ICD speed rules around ports.",
+    category: "Logistics Insights",
+    readTime: 6,
+    date: "2026-02-22",
+    author: "LearnDrive Team",
+    tags: ["bonded trucking", "customs", "ports", "India"],
+    content: `
+## Customs Bonded Protocol
+
+Drivers need:
+- Valid gate pass + scanned manifest
+- Soft copy of customs bond (document number + expiry)
+- Awareness that port yards enforce 20 kmph speed limits
+
+Pair this guide with a quick reference card for each port so you can flash the right checklists during inspections.
+    `,
 ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
 export function getBlogPost(slug: string): BlogPost | undefined {
