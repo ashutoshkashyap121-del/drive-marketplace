@@ -2,12 +2,19 @@ export const runtime = "nodejs";
 import { NextRequest, NextResponse } from "next/server";
 import Razorpay from "razorpay";
 
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID!,
-  key_secret: process.env.RAZORPAY_KEY_SECRET!,
-});
+function getRazorpayClient(): Razorpay | null {
+  const key_id = process.env.RAZORPAY_KEY_ID;
+  const key_secret = process.env.RAZORPAY_KEY_SECRET;
+  if (!key_id || !key_secret) return null;
+  return new Razorpay({ key_id, key_secret });
+}
 
 export async function POST(req: NextRequest) {
+  const razorpayClient = getRazorpayClient();
+  if (!razorpayClient) {
+    return NextResponse.json({ error: "Payment provider not configured" }, { status: 500 });
+  }
+
   try {
     const { amount, customerName, trainerName } = await req.json();
 
@@ -16,7 +23,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Razorpay amount is in paise (multiply by 100)
-    const order = await razorpay.orders.create({
+    const order = await razorpayClient.orders.create({
       amount: amount * 100,
       currency: "INR",
       receipt: `receipt_${Date.now()}`,

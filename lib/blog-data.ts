@@ -20,7 +20,7 @@ export const categories = [
 ];
 
 
-export const blogPosts: BlogPost[] = [
+const baseBlogPosts: BlogPost[] = [
   {
     slug: "how-to-get-driving-licence-india",
     title: "How to Get a Driving Licence in India (2025 Complete Guide)",
@@ -10123,6 +10123,9 @@ Indicator and movement together with no blind-spot check.
 Use one lane change at a time; avoid weaving across multiple lanes.
     `,
   },
+].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+const additionalBlogPosts: BlogPost[] = [
   {
     slug: "freight-logistics-apps-india-2026",
     title: "Top Freight Logistics Apps India Traders Are Using in 2026",
@@ -10187,7 +10190,7 @@ Several state transport departments now waive registration fees for electric dri
 - Lower insurance premiums if the car is listed under “public carriers”
 - Government-sponsored charging-points near training centers
 
-Trainer tip: Track incentive deadline dates (Telangana: Sept, Delhi: ongoing) and share them with students exploring EV careers.
+Trainer tip: Track incentive deadline dates and share them with students exploring EV careers.
     `,
   },
   {
@@ -10241,7 +10244,7 @@ Frontline fleets now treat fatigue like maintenance: log every driver’s rest b
     content: `
 ## Digital RTO Wins for 2026
 
-- Andhra launches QR vahan + Sarathi data sync.
+- Andhra launches QR Vahan + Sarathi data sync.
 - Maharashtra added e-token entry for learner’s licence slots.
 - Delhi now renews DL via geofenced digital lockers.
 
@@ -10404,7 +10407,7 @@ Upcoming hotspots:
 - Pune’s ITS initiative adds new traffic signal patterns for learners.
 - Surat’s green streets require low-impact braking (use regen on EV trainers).
 
-Plan batch batches near metro-connected hubs to capture commuter searches.
+Plan batches near metro-connected hubs to capture commuter searches.
     `,
   },
   {
@@ -10422,7 +10425,7 @@ Plan batch batches near metro-connected hubs to capture commuter searches.
 Essential habits:
 - Share live location with a trusted contact when heading out at night.
 - Park in well-lit, CCTV-covered locations and back into bays.
-- Keep a pepper spray and car alarm, check out the `112` panic button features.
+- Keep a pepper spray and car alarm, check out the \`112\` panic button features.
 
 Train women drivers on defensive parking and early exits so they feel confident alone.
     `,
@@ -10440,7 +10443,7 @@ Train women drivers on defensive parking and early exits so they feel confident 
 ## Car-Sharing and Driving Lessons
 
 Offer these packages:
-- Express 30-minute confidence booster for car-sharing drivers.
+- Express 30-minute confidence boosters for car-sharing drivers.
 - Partner with sharing apps to offer skill checks before onboarding.
 - Provide refresher rides for weekends when the vehicle is high-demand.
 
@@ -10526,7 +10529,12 @@ Drivers need:
 
 Pair this guide with a quick reference card for each port so you can flash the right checklists during inspections.
     `,
-].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  },
+];
+
+export const blogPosts: BlogPost[] = [...baseBlogPosts, ...additionalBlogPosts].sort(
+  (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+);
 
 export function getBlogPost(slug: string): BlogPost | undefined {
   return blogPosts.find((p) => p.slug === slug);

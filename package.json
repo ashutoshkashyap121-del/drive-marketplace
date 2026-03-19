@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && next build",
+    "build": "cross-env PRISMA_QUERY_ENGINE_TYPE=wasm PRISMA_SCHEMA_ENGINE_TYPE=wasm prisma generate && next build",
     "start": "next start"
   },
   "dependencies": {
@@ -25,6 +25,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "cross-env": "^10.1.0",
     "eslint": "^9",
     "eslint-config-next": "16.1.1",
     "tailwindcss": "^4",

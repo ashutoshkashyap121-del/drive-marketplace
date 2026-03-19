@@ -4,12 +4,19 @@ import { prisma } from "@/lib/prisma";
 import Razorpay from "razorpay";
 import { waBookingCancelledLearner } from "@/lib/whatsapp";
 
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID!,
-  key_secret: process.env.RAZORPAY_KEY_SECRET!,
-});
+function getRazorpayClient(): Razorpay | null {
+  const key_id = process.env.RAZORPAY_KEY_ID;
+  const key_secret = process.env.RAZORPAY_KEY_SECRET;
+  if (!key_id || !key_secret) return null;
+  return new Razorpay({ key_id, key_secret });
+}
 
 export async function POST(req: NextRequest) {
+  const razorpayClient = getRazorpayClient();
+  if (!razorpayClient) {
+    return NextResponse.json({ error: "Payment provider not configured" }, { status: 500 });
+  }
+
   try {
     const { bookingId, mobile } = await req.json();
 
@@ -44,7 +51,7 @@ export async function POST(req: NextRequest) {
     const refundAmount = Math.round((booking.amount * refundPercent) / 100);
 
     // ── 3. Process Razorpay refund ───────────────────────────────────────────
-    const refund = await razorpay.payments.refund(booking.razorpayPaymentId, {
+    const refund = await razorpayClient.payments.refund(booking.razorpayPaymentId, {
       amount: refundAmount * 100,
       notes: {
         reason: "Learner cancellation",

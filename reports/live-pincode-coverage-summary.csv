@@ -1,0 +1,13 @@
+city,live_pincodes,covered_pincodes,uncovered_pincodes,approved_trainers_city_pin_pool
+delhi,92,10,82,10
+mumbai,94,16,78,16
+bangalore,100,12,88,12
+hyderabad,95,10,85,10
+chennai,120,10,110,10
+pune,68,10,58,10
+kolkata,160,10,150,10
+noida,21,10,11,10
+gurgaon,83,10,73,10
+faridabad,40,10,30,10
+jaipur,50,10,40,10
+ahmedabad,124,10,114,10
