@@ -39,6 +39,10 @@ const nextConfig: NextConfig = {
         source: "/driving-schools-in-:city",
         destination: "/city-driving-schools/:city",
       },
+      {
+        source: "/driving-school-fees-in-:city",
+        destination: "/driving-school-fees-in-[city]/:city",
+      },
     ];
   },
   async headers() {

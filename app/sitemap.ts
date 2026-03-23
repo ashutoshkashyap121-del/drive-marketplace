@@ -39,6 +39,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE}/privacy`,                    priority: 0.3, changeFrequency: "yearly",  lastModified: now },
     { url: `${BASE}/terms`,                      priority: 0.3, changeFrequency: "yearly",  lastModified: now },
     { url: `${BASE}/help`,                       priority: 0.5, changeFrequency: "monthly", lastModified: now },
+    { url: `${BASE}/dl-check`,                   priority: 0.9, changeFrequency: "monthly", lastModified: now },
   ];
 
   // ── City landing pages ────────────────────────────────────────────────────
@@ -46,6 +47,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     url:             `${BASE}/driving-schools-in-${city}`,
     priority:        0.9,
     changeFrequency: "daily" as const,
+    lastModified:    now,
+  }));
+
+  const feePages: MetadataRoute.Sitemap = CITY_SLUGS.map((city) => ({
+    url:             `${BASE}/driving-school-fees-in-${city}`,
+    priority:        0.8,
+    changeFrequency: "weekly" as const,
     lastModified:    now,
   }));
 
@@ -75,5 +83,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     console.error("[sitemap] Failed to fetch trainers:", e);
   }
 
-  return [...staticPages, ...cityPages, ...blogPages, ...trainerPages];
+  return [...staticPages, ...feePages, ...cityPages, ...blogPages, ...trainerPages];
 }
