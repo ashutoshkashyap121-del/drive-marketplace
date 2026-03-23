@@ -41,7 +41,7 @@ const nextConfig: NextConfig = {
       // Fees pages
       {
         source: "/driving-school-fees-in-:city",
-        destination: "/driving-school-fees-in-[city]/:city",
+        destination: "/city-fees/:city",
       },
       // Locality pages — catches everything else
       {
