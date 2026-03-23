@@ -23,31 +23,34 @@ const securityHeaders = [
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "X-Frame-Options", value: "DENY" },
-  {
-    key: "Permissions-Policy",
-    value: "camera=(), microphone=(), geolocation=(), browsing-topics=()",
-  },
+  { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), browsing-topics=()" },
   { key: "Cross-Origin-Opener-Policy", value: "same-origin-allow-popups" },
   { key: "Access-Control-Allow-Origin", value: "https://learndrive.in" },
 ];
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
-  async rewrites({
-  source: "/driving-schools-in-:area((?!delhi$|mumbai$|bangalore$|hyderabad$|chennai$|pune$|kolkata$|jaipur$|ahmedabad$|surat$|lucknow$|chandigarh$|bhopal$|indore$|nagpur$|patna$|coimbatore$|kochi$|visakhapatnam$|noida$|gurgaon$|vadodara$|rajkot$|faridabad$).*)",
-  destination: "/locality-schools/:area",
-},) {
+
+  async rewrites() {
     return [
+      // City pages — must come BEFORE locality rule
       {
-        source: "/driving-schools-in-:city",
+        source: "/driving-schools-in-:city(delhi|mumbai|bangalore|hyderabad|chennai|pune|kolkata|jaipur|ahmedabad|surat|lucknow|chandigarh|bhopal|indore|nagpur|patna|coimbatore|kochi|visakhapatnam|noida|gurgaon|vadodara|rajkot|faridabad)",
         destination: "/city-driving-schools/:city",
       },
+      // Fees pages
       {
-  source: "/driving-school-fees-in-:city",
-  destination: "/city-fees/:city",
-},
+        source: "/driving-school-fees-in-:city",
+        destination: "/city-fees/:city",
+      },
+      // Locality pages — catches everything else
+      {
+        source: "/driving-schools-in-:area",
+        destination: "/locality-schools/:area",
+      },
     ];
   },
+
   async headers() {
     return [
       {
