@@ -61,6 +61,15 @@ const STATS = [
   { value: "₹5,500", label: "Starting Price" },
 ];
 
+const FREE_TOOLS = [
+  { icon: "", title: "DL Check",     desc: "Check driving licence validity",     href: "/dl-check" },
+  { icon: "", title: "RC Check",     desc: "Vehicle registration details",       href: "/rc-check" },
+  { icon: "", title: "Challan Check",desc: "Check pending traffic fines",        href: "/challan-check" },
+  { icon: "", title: "RTO Mock Test",desc: "Practice for your RTO exam",         href: "/rto-test/practice" },
+  { icon: "", title: "DL Assistance",desc: "AI-powered DL application help",     href: "/dl-assistance" },
+  { icon: "", title: "Find Schools", desc: "Book a driving school near you",     href: "/trainers" },
+];
+
 const HOW_IT_WORKS = [
   { step: "01", icon: "📍", title: "Pick your city", desc: `Search from ${LIVE_CITY_COUNT} cities across India. We'll show trainers covering your area.` },
   { step: "02", icon: "👤", title: "Choose your trainer", desc: "See experience, areas covered, pricing, and languages. Pick the right fit." },
@@ -374,6 +383,28 @@ export default function HomePage() {
               <div style={{ color: "#64748B", fontSize: 14, marginTop: 2 }}>{s.label}</div>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* ── Free Tools Section ── */}
+      <div style={{ padding: "48px 5%", background: "#fff" }}>
+        <div style={{ maxWidth: 900, margin: "0 auto" }}>
+          <h2 style={{ fontFamily: "'Sora',sans-serif", fontSize: 20, fontWeight: 800, color: "#0F172A", marginBottom: 8, textAlign: "center" }}>
+            Free Vehicle & Licence Tools
+          </h2>
+          <p style={{ color: "#64748B", fontSize: 14, textAlign: "center", marginBottom: 28 }}>
+            Everything you need before and after getting your driving licence
+          </p>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16 }}>
+            {FREE_TOOLS.map((tool) => (
+              <Link key={tool.href} href={tool.href}
+                style={{ background: "#F8F7F4", borderRadius: 16, border: "1px solid #E2E8F0", padding: "20px", textDecoration: "none", display: "block", transition: "all 0.15s" }}>
+                <div style={{ fontSize: 28, marginBottom: 10 }}>{tool.icon}</div>
+                <div style={{ fontWeight: 700, color: "#0F172A", fontSize: 15, marginBottom: 4 }}>{tool.title}</div>
+                <div style={{ fontSize: 12, color: "#64748B" }}>{tool.desc}</div>
+              </Link>
+            ))}
+          </div>
         </div>
       </div>
 
