@@ -3,103 +3,40 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
-
-// ─── Enums ────────────────────────────────────────────────────────────────────
-
-enum VehicleType {
-  CAR
-  BIKE
-  BIKE_GEARED
-  BIKE_NON_GEARED
-}
-
-enum TrainerType {
-  INDEPENDENT
-  DRIVING_SCHOOL
-}
-
-enum TrainerStatus {
-  PENDING
-  APPROVED
-  REJECTED
-  SUSPENDED
-}
-
-enum BookingStatus {
-  PENDING
-  PENDING_COORDINATION  // scraped school — LearnDrive manually coordinates
-  CONFIRMED
-  COMPLETED
-  CANCELLED
-}
-
-enum PaymentStatus {
-  PENDING
-  PAID
-  REFUNDED
-}
-
-enum DriverRequestStatus {
-  PENDING
-  ASSIGNED
-  COMPLETED
-  CANCELLED
-}
-
-enum DriverApplicationStatus {
-  PENDING
-  APPROVED
-  REJECTED
-}
-
-// ─── Models ───────────────────────────────────────────────────────────────────
 
 model Trainer {
-  id             Int           @id @default(autoincrement())
-
-  // Basic info
-  name           String
-  mobile         String        @unique
-  city           String
-  experience     Int
-  licenseNumber  String
-  trainerType    TrainerType   @default(INDEPENDENT)
-  status         TrainerStatus @default(PENDING)
-  rating         Float?        @default(0)
-  basePrice      Int?          // fallback per-session price
-  packagesJson   String?       // JSON: TrainerPackage[] — stores all packages
-  verifiedSchool Boolean       @default(false)
-  createdAt      DateTime      @default(now())
-
-  // Contact & profile
-  email          String?       @unique
-  bio            String?
-  photoUrl       String?
-
-  // Location
-  pincode        String?
-  serviceArea    String[]
-
-  // Expertise
-  languages      String[]
-  vehicleTypes   VehicleType[]
-
-  // Aadhaar (encrypted — AES-256-GCM)
+  id              Int               @id @default(autoincrement())
+  name            String
+  mobile          String            @unique
+  city            String
+  experience      Int
+  licenseNumber   String
+  trainerType     TrainerType       @default(INDEPENDENT)
+  status          TrainerStatus     @default(PENDING)
+  rating          Float?            @default(0)
+  basePrice       Int?
+  verifiedSchool  Boolean           @default(false)
+  createdAt       DateTime          @default(now())
+  email           String?           @unique
+  bio             String?
+  photoUrl        String?
+  pincode         String?
+  serviceArea     String[]
+  languages       String[]
+  vehicleTypes    VehicleType[]
   aadharEncrypted String?
   aadharIV        String?
   aadharAuthTag   String?
-
-  // Admin
-  adminNotes     String?       // also stores scraped GMB metadata as JSON
-
-  // Relations
-  vehicles       Vehicle[]
-  bookings       Booking[]
-  documents      TrainerDocument[]
-  reviews        Review[]
+  adminNotes      String?
+  packagesJson    String?
+  bookings        Booking[]
+  reviews         Review[]
+  documents       TrainerDocument[]
+  vehicles        Vehicle[]
 
   @@index([city])
   @@index([status])
@@ -114,55 +51,47 @@ model Vehicle {
   dualControl         Boolean     @default(false)
   insured             Boolean     @default(false)
   createdAt           DateTime    @default(now())
-
   rcNumber            String?
   vehicleYear         Int?
   insuranceValidUntil DateTime?
-
   trainer             Trainer     @relation(fields: [trainerId], references: [id])
 
   @@index([trainerId])
 }
 
 model TrainerDocument {
-  id          Int      @id @default(autoincrement())
-  trainerId   Int
-  docType     String
-  fileName    String
-  fileUrl     String
-  createdAt   DateTime @default(now())
-
-  trainer     Trainer  @relation(fields: [trainerId], references: [id])
+  id        Int      @id @default(autoincrement())
+  trainerId Int
+  docType   String
+  fileName  String
+  createdAt DateTime @default(now())
+  fileUrl   String
+  trainer   Trainer  @relation(fields: [trainerId], references: [id])
 
   @@index([trainerId])
   @@index([docType])
 }
 
 model Booking {
-  id            Int           @id @default(autoincrement())
-  trainerId     Int
-  packageName   String
-  amount        Int
-  platformFee   Int?
-  trainerPayout Int?
-
-  customerName  String
-  mobile        String
-  city          String
-  address       String
-  pincode       String?
-
-  status        BookingStatus @default(PENDING)
-  paymentStatus PaymentStatus @default(PENDING)
-
-  razorpayOrderId   String?   @unique
-  razorpayPaymentId String?   @unique
-
-  bookingDate   DateTime?
-  createdAt     DateTime      @default(now())
-
-  trainer       Trainer       @relation(fields: [trainerId], references: [id])
-  review        Review?
+  id                Int           @id @default(autoincrement())
+  trainerId         Int
+  packageName       String
+  amount            Int
+  platformFee       Int?
+  trainerPayout     Int?
+  customerName      String
+  mobile            String
+  city              String
+  address           String
+  pincode           String?
+  status            BookingStatus @default(PENDING)
+  paymentStatus     PaymentStatus @default(PENDING)
+  bookingDate       DateTime?
+  createdAt         DateTime      @default(now())
+  razorpayOrderId   String?       @unique
+  razorpayPaymentId String?       @unique
+  trainer           Trainer       @relation(fields: [trainerId], references: [id])
+  review            Review?
 
   @@index([trainerId])
   @@index([status])
@@ -211,51 +140,44 @@ model StudentWaitlist {
 }
 
 model OutreachLead {
-  id               Int       @id @default(autoincrement())
-  name             String
-  phone            String    @unique
-  city             String
-  source           String    @default("manual")
-  outreachStatus   String    @default("PENDING")
-  whatsappSent     Boolean   @default(false)
-  smsSent          Boolean   @default(false)
-  lastContactedAt  DateTime?
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  id              Int       @id @default(autoincrement())
+  name            String
+  phone           String    @unique
+  city            String
+  source          String    @default("manual")
+  outreachStatus  String    @default("PENDING")
+  whatsappSent    Boolean   @default(false)
+  smsSent         Boolean   @default(false)
+  lastContactedAt DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   @@index([outreachStatus])
   @@index([city])
 }
 
-// ─── Reviews ──────────────────────────────────────────────────────────────────
-
 model Review {
   id           Int      @id @default(autoincrement())
   bookingId    Int      @unique
   trainerId    Int
-  rating       Int      // 1–5
+  rating       Int
   comment      String?
   customerName String?
   createdAt    DateTime @default(now())
-
-  trainer      Trainer  @relation(fields: [trainerId], references: [id])
   booking      Booking  @relation(fields: [bookingId], references: [id])
+  trainer      Trainer  @relation(fields: [trainerId], references: [id])
 
   @@index([trainerId])
 }
-
-// ─── DL Renewal Reminders ─────────────────────────────────────────────────────
 
 model DLReminder {
   id           Int      @id @default(autoincrement())
   mobile       String
   dlExpiryDate DateTime
   name         String?
-
   reminded60   Boolean  @default(false)
   reminded30   Boolean  @default(false)
   reminded7    Boolean  @default(false)
-
   active       Boolean  @default(true)
   createdAt    DateTime @default(now())
 
@@ -263,41 +185,28 @@ model DLReminder {
   @@index([active])
 }
 
-// ─── Hire-a-Driver ────────────────────────────────────────────────────────────
-
 model DriverRequest {
-  id               Int                  @id @default(autoincrement())
-
-  // Customer details
+  id               Int                 @id @default(autoincrement())
   customerName     String
   mobile           String
   email            String?
   city             String
-
-  // Trip details
-  tripType         String               // outstation | fullday | wedding | airport | corporate
+  tripType         String
   startDate        DateTime
   endDate          DateTime?
-  days             Int                  @default(1)
+  days             Int                 @default(1)
   pickupAddress    String
   notes            String?
-
-  // Pricing (15% platform fee)
-  estimatedPrice   Float                @default(0)
-  platformFee      Float?               // 15% of estimatedPrice
-  driverPayout     Float?               // 85% of estimatedPrice
-  finalPrice       Float?               // set by admin if different from estimate
-
-  // Status & assignment
-  status           DriverRequestStatus  @default(PENDING)
+  estimatedPrice   Float               @default(0)
+  platformFee      Float?
+  driverPayout     Float?
+  finalPrice       Float?
+  status           DriverRequestStatus @default(PENDING)
   assignedDriverId Int?
-  assignedDriver   DriverApplication?   @relation(fields: [assignedDriverId], references: [id])
-
-  // Admin notes
   adminNotes       String?
-
-  createdAt        DateTime             @default(now())
-  updatedAt        DateTime             @updatedAt
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  assignedDriver   DriverApplication?  @relation(fields: [assignedDriverId], references: [id])
 
   @@index([status])
   @@index([city])
@@ -307,42 +216,73 @@ model DriverRequest {
 
 model DriverApplication {
   id           Int                     @id @default(autoincrement())
-
-  // Personal
   name         String
   mobile       String                  @unique
   email        String?
   city         String
   pincode      String
-
-  // Licence
   licenseNo    String
-  licenseType  String                  // LMV | LMV + HMV | HMV
+  licenseType  String
   yearsExp     Int
-
-  // Skills
-  tripTypes    String                  // JSON: string[]
-  languages    String                  // JSON: string[]
-  availability String                  // JSON: string[]
-
-  // Vehicle
+  tripTypes    String
+  languages    String
+  availability String
   hasOwnCar    Boolean                 @default(false)
   carModel     String?
-
-  // Profile
   about        String?
   photoUrl     String?
-
-  // Status
   status       DriverApplicationStatus @default(PENDING)
   adminNotes   String?
-
-  // Relations
-  requests     DriverRequest[]
-
   createdAt    DateTime                @default(now())
   updatedAt    DateTime                @updatedAt
+  requests     DriverRequest[]
 
   @@index([status])
   @@index([city])
+}
+
+enum VehicleType {
+  CAR
+  BIKE
+  BIKE_GEARED
+  BIKE_NON_GEARED
+}
+
+enum TrainerType {
+  INDEPENDENT
+  DRIVING_SCHOOL
+}
+
+enum TrainerStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SUSPENDED
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+  PENDING_COORDINATION
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  REFUNDED
+}
+
+enum DriverRequestStatus {
+  PENDING
+  ASSIGNED
+  COMPLETED
+  CANCELLED
+}
+
+enum DriverApplicationStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
