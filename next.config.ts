@@ -33,7 +33,10 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
-  async rewrites() {
+  async rewrites({
+  source: "/driving-schools-in-:area((?!delhi$|mumbai$|bangalore$|hyderabad$|chennai$|pune$|kolkata$|jaipur$|ahmedabad$|surat$|lucknow$|chandigarh$|bhopal$|indore$|nagpur$|patna$|coimbatore$|kochi$|visakhapatnam$|noida$|gurgaon$|vadodara$|rajkot$|faridabad$).*)",
+  destination: "/locality-schools/:area",
+},) {
     return [
       {
         source: "/driving-schools-in-:city",
