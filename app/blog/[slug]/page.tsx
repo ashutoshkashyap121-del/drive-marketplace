@@ -14,6 +14,9 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   return {
     title: `${post.title} | LearnDrive Blog`,
     description: post.description,
+    alternates: {
+      canonical: `https://learndrive.in/blog/${post.slug}`,
+    },
     openGraph: {
       title: post.title,
       description: post.description,
@@ -21,6 +24,12 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       publishedTime: post.date,
       authors: [post.author],
       tags: post.tags,
+      url: `https://learndrive.in/blog/${post.slug}`,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: post.title,
+      description: post.description,
     },
   };
 }
