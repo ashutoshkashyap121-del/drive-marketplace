@@ -19,7 +19,7 @@ export const metadata: Metadata = {
   ],
   openGraph: {
     title: "Get Your Driving Licence Without RTO Confusion - Rs499 | LearnDrive",
-    description: `AI fills your forms, books RTO slot, sends document checklist and reminders. 96% success rate. ${LIVE_CITY_COUNT} cities.`,
+    description: `AI fills your Sarathi form in 30 min, books your RTO slot, sends document checklist and reminders. ₹499 all inclusive. ${LIVE_CITY_COUNT} cities.`,
     url: "https://learndrive.in/dl-assistance",
     type: "website",
   },

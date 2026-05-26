@@ -97,3 +97,7 @@ export async function smsLearnerBookingConfirmed({ customerName, customerMobile,
 }) {
   return sendSMS(customerMobile, `Hi ${customerName}! Your driving session with ${trainerName} is CONFIRMED (Ref #${bookingId}). Trainer will call you on ${trainerMobile} to arrange timing. - LearnDrive`);
 }
+
+export async function smsTrainerWelcome({ name, mobile, city }: { name: string; mobile: string; city: string }) {
+  return sendSMS(mobile, `Hi ${name}! Welcome to LearnDrive! Your trainer application for ${city} is received. Our team will review within 24-48 hrs and call you to activate your profile. Questions? Call +91 87008 96528 - LearnDrive`);
+}

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import Razorpay from "razorpay";
 import { Resend } from "resend";
+import { smsTrainerNewBooking, smsLearnerBookingConfirmed, smsAdminNewBooking } from "@/lib/sms";
 
 function getRazorpayClient(): Razorpay | null {
   const key_id = process.env.RAZORPAY_KEY_ID;
@@ -87,6 +88,32 @@ export async function POST(req: NextRequest) {
       razorpayOrderId: order.id,
     },
   });
+
+  // SMS notifications — fire-and-forget, non-blocking
+  Promise.all([
+    smsTrainerNewBooking({
+      trainerName: trainer.name,
+      trainerMobile: trainer.mobile,
+      customerName: studentName,
+      customerMobile: phone,
+      city: trainer.city,
+      packageName: packageName ?? "Package",
+      amount: price,
+    }).catch(() => {}),
+    smsLearnerBookingConfirmed({
+      customerName: studentName,
+      customerMobile: phone,
+      trainerName: trainer.name,
+      trainerMobile: trainer.mobile,
+      bookingId: booking.id,
+    }).catch(() => {}),
+    smsAdminNewBooking({
+      customerName: studentName,
+      trainerName: trainer.name,
+      amount: price,
+      platformFee: Math.round(price * 0.15),
+    }).catch(() => {}),
+  ]);
 
   if (isUnverified) {
     const adminMsg = buildAdminCoordinationMessage({

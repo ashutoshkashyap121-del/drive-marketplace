@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { notifyAdminNewTrainer } from "@/lib/notifications";
-import { smsAdminNewTrainer } from "@/lib/sms";
+import { smsAdminNewTrainer, smsTrainerWelcome } from "@/lib/sms";
 
 const RegisterSchema = z.object({
   name: z.string().min(2),
@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
       return newTrainer;
     });
 
-    // ── Notify admin ───
+    // ── Notify admin + welcome trainer ───
     try {
       await smsAdminNewTrainer({
         name: trainer.name,
@@ -86,6 +86,14 @@ export async function POST(req: NextRequest) {
         city: trainer.city,
       });
     } catch (err) { console.error("[SMS_ADMIN_TRAINER_ERROR]", err); }
+
+    try {
+      await smsTrainerWelcome({
+        name: trainer.name,
+        mobile: trainer.mobile,
+        city: trainer.city,
+      });
+    } catch (err) { console.error("[SMS_TRAINER_WELCOME_ERROR]", err); }
 
     try {
       await notifyAdminNewTrainer({

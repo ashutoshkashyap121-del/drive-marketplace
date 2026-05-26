@@ -103,6 +103,28 @@ export default function SuccessClient() {
           </button>
         </div>
 
+        {/* DL Assistance cross-sell */}
+        <div style={{ background: "linear-gradient(135deg, #1a2540, #2d3f6b)", borderRadius: 20, padding: "24px", marginBottom: 16 }}>
+          <div style={{ display: "flex", gap: 6, alignItems: "center", marginBottom: 12 }}>
+            <span style={{ background: "rgba(245,158,11,0.2)", color: "#F59E0B", fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 99, border: "1px solid rgba(245,158,11,0.3)" }}>Also from LearnDrive</span>
+          </div>
+          <h3 style={{ fontFamily: "'Sora', sans-serif", fontSize: "1rem", fontWeight: 800, color: "#fff", marginBottom: 8, lineHeight: 1.4 }}>
+            Need help getting your Driving Licence?
+          </h3>
+          <p style={{ fontSize: "0.82rem", color: "#94A3B8", marginBottom: 16, lineHeight: 1.6 }}>
+            Our AI fills your Sarathi form, books your RTO slot, and sends reminders till test day. ₹499 — all inclusive.
+          </p>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
+            {["✅ Form filled in 30 min", "📅 RTO slot booked", "📋 Document checklist", "🔔 Test-day reminders"].map((item) => (
+              <span key={item} style={{ fontSize: "0.72rem", color: "#CBD5E1" }}>{item}</span>
+            ))}
+          </div>
+          <button onClick={() => router.push("/dl-assistance")}
+            style={{ width: "100%", padding: "13px", background: "#F59E0B", color: "#1a2540", fontFamily: "'Sora', sans-serif", fontSize: "0.9rem", fontWeight: 800, border: "none", borderRadius: 12, cursor: "pointer" }}>
+            Get DL Assistance — ₹499 →
+          </button>
+        </div>
+
         {/* Cancel / Help links */}
         <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #E2E8F0", padding: "16px 20px" }}>
           <p style={{ fontSize: "0.78rem", color: "#94A3B8", textAlign: "center", marginBottom: 12 }}>Need help with this booking?</p>

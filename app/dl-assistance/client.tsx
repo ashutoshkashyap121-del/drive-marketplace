@@ -191,8 +191,8 @@ export default function DLAssistancePage() {
           {/* Stats */}
           <div className="dl-stats-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, margin: "32px 0", textAlign: "center" }}>
             {[
-              { value: "2,000+", label: "Licences assisted" },
-              { value: "96%", label: "Success rate" },
+              { value: "30 min", label: "Form filled in" },
+              { value: "₹0", label: "Hidden charges" },
               { value: String(LIVE_CITY_COUNT), label: "Cities covered" },
             ].map((s) => (
               <div key={s.label} style={{ background: "white", borderRadius: 16, padding: "24px 16px", border: "1px solid #e5e7eb" }}>

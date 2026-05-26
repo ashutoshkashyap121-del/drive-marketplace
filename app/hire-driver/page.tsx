@@ -194,17 +194,34 @@ export default function HireDriverPage() {
   const todayStr = new Date().toISOString().split("T")[0];
 
   if (submitted) return (
-    <div className="min-h-screen flex items-center justify-center px-4" style={{ background: "#F8F7F4" }}>
-      <div className="max-w-md w-full text-center bg-white rounded-3xl p-10 shadow-sm border border-slate-100">
-        <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 text-4xl" style={{ background: "rgba(245,158,11,0.1)" }}>🎉</div>
-        <h1 style={{ fontFamily: "'Sora', sans-serif", fontSize: "1.6rem", fontWeight: 800, color: "#0F172A", marginBottom: 12 }}>{t.successTitle}</h1>
-        <p style={{ color: "#64748B", marginBottom: 8 }}>{t.successMsg}</p>
-        <p style={{ color: "#94A3B8", fontSize: "0.82rem", marginBottom: 32 }}>
-          {t.successEst}: ₹{estimatedPrice.toLocaleString("en-IN")} — {form.days} {t.successDays}
-        </p>
-        <button onClick={() => router.push("/")} style={{ background: "linear-gradient(135deg,#F59E0B,#D97706)", color: "#fff", border: "none", borderRadius: 12, padding: "12px 32px", fontWeight: 700, cursor: "pointer" }}>
-          {t.backHome}
-        </button>
+    <div className="min-h-screen flex items-center justify-center px-4 py-10" style={{ background: "#F8F7F4" }}>
+      <div className="max-w-md w-full" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        <div className="text-center bg-white rounded-3xl p-10 shadow-sm border border-slate-100">
+          <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 text-4xl" style={{ background: "rgba(245,158,11,0.1)" }}>🎉</div>
+          <h1 style={{ fontFamily: "'Sora', sans-serif", fontSize: "1.6rem", fontWeight: 800, color: "#0F172A", marginBottom: 12 }}>{t.successTitle}</h1>
+          <p style={{ color: "#64748B", marginBottom: 8 }}>{t.successMsg}</p>
+          <p style={{ color: "#94A3B8", fontSize: "0.82rem", marginBottom: 32 }}>
+            {t.successEst}: ₹{estimatedPrice.toLocaleString("en-IN")} — {form.days} {t.successDays}
+          </p>
+          <button onClick={() => router.push("/")} style={{ background: "linear-gradient(135deg,#F59E0B,#D97706)", color: "#fff", border: "none", borderRadius: 12, padding: "12px 32px", fontWeight: 700, cursor: "pointer" }}>
+            {t.backHome}
+          </button>
+        </div>
+
+        {/* DL Assistance cross-sell */}
+        <div style={{ background: "linear-gradient(135deg, #1a2540, #2d3f6b)", borderRadius: 20, padding: "24px" }}>
+          <p style={{ fontSize: "0.72rem", color: "#F59E0B", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", marginBottom: 10 }}>Also from LearnDrive</p>
+          <h3 style={{ fontFamily: "'Sora', sans-serif", fontSize: "1rem", fontWeight: 800, color: "#fff", marginBottom: 8, lineHeight: 1.4 }}>
+            Need help getting your Driving Licence?
+          </h3>
+          <p style={{ fontSize: "0.82rem", color: "#94A3B8", marginBottom: 14, lineHeight: 1.6 }}>
+            AI fills your Sarathi form, books your RTO slot, sends reminders. ₹499 all inclusive.
+          </p>
+          <button onClick={() => router.push("/dl-assistance")}
+            style={{ width: "100%", padding: "12px", background: "#F59E0B", color: "#1a2540", fontFamily: "'Sora', sans-serif", fontSize: "0.88rem", fontWeight: 800, border: "none", borderRadius: 10, cursor: "pointer" }}>
+            Get DL Assistance — ₹499 →
+          </button>
+        </div>
       </div>
     </div>
   );
