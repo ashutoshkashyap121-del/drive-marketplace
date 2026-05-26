@@ -10,8 +10,9 @@ export default function BookingPage() {
 
   const trainerId = params.id as string;
   const trainerName = searchParams.get("trainerName") || "Your Trainer";
-  const city = searchParams.get("city") || "";
-  const amount = Number(searchParams.get("amount") || 0);
+  const city = searchParams.get("trainerCity") || "";
+  const amount = Number(searchParams.get("price") || 0);
+  const packageName = searchParams.get("pkgName") || "Driving Package";
   const platformFee = Math.round(amount * 0.15);
 
   const [form, setForm] = useState({
@@ -60,9 +61,11 @@ export default function BookingPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           trainerId,
-          customerName: form.customerName,
-          mobile: form.mobile,
+          studentName: form.customerName,
+          phone: form.mobile,
           email: form.email,
+          packageName,
+          price: amount,
           city,
           address: form.address,
           pincode: form.pincode,
@@ -76,7 +79,7 @@ export default function BookingPage() {
         return;
       }
 
-      router.push(`/success?id=${data.booking.id}&trainer=${encodeURIComponent(trainerName)}`);
+      router.push(`/success?id=${data.bookingId}&trainer=${encodeURIComponent(trainerName)}&unverified=${data.isUnverified}`);
     } catch {
       setSubmitError("Network error. Please check your connection.");
     } finally {

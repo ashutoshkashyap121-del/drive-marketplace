@@ -62,18 +62,18 @@ const STATS = [
 ];
 
 const FREE_TOOLS = [
-  { icon: "", title: "DL Check",     desc: "Check driving licence validity",     href: "/dl-check" },
-  { icon: "", title: "RC Check",     desc: "Vehicle registration details",       href: "/rc-check" },
-  { icon: "", title: "Challan Check",desc: "Check pending traffic fines",        href: "/challan-check" },
-  { icon: "", title: "RTO Mock Test",desc: "Practice for your RTO exam",         href: "/rto-test/practice" },
-  { icon: "", title: "DL Assistance",desc: "AI-powered DL application help",     href: "/dl-assistance" },
-  { icon: "", title: "Find Schools", desc: "Book a driving school near you",     href: "/trainers" },
+  { icon: "🪪", title: "DL Check",     desc: "Check driving licence validity",     href: "/dl-check" },
+  { icon: "🚗", title: "RC Check",     desc: "Vehicle registration details",       href: "/rc-check" },
+  { icon: "🚦", title: "Challan Check",desc: "Check pending traffic fines",        href: "/challan-check" },
+  { icon: "📝", title: "RTO Mock Test",desc: "Practice for your RTO exam",         href: "/rto-test/practice" },
+  { icon: "🤖", title: "DL Assistance",desc: "AI-powered DL application help",     href: "/dl-assistance" },
+  { icon: "🏫", title: "Find Schools", desc: "Book a driving school near you",     href: "/trainers" },
 ];
 
 const HOW_IT_WORKS = [
   { step: "01", icon: "📍", title: "Pick your city", desc: `Search from ${LIVE_CITY_COUNT} cities across India. We'll show trainers covering your area.` },
   { step: "02", icon: "👤", title: "Choose your trainer", desc: "See experience, areas covered, pricing, and languages. Pick the right fit." },
-  { step: "03", icon: "📅", title: "Book a slot", desc: "Schedule your first session online. Pay securely. Start learning." },
+  { step: "03", icon: "📅", title: "Book a slot", desc: "Schedule your first session online. Confirm your slot in 60 seconds. Start learning." },
 ];
 
 const FEATURES = [
@@ -305,6 +305,11 @@ export default function HomePage() {
               </button>
             ))}
           </div>
+
+          {/* Social proof */}
+          <p style={{ marginTop: 20, fontSize: 13, color: "rgba(255,255,255,0.45)", textAlign: "center" }}>
+            🔒 Free to search · No registration required · 1,000+ schools listed
+          </p>
         </div>
       </div>
 
@@ -511,10 +516,10 @@ export default function HomePage() {
             </Link>
           </div>
           <div style={{ background: "rgba(255,255,255,0.05)", borderRadius: 20, padding: "28px 32px", border: "1px solid rgba(255,255,255,0.1)", minWidth: 200, textAlign: "center" }}>
-            <div style={{ fontSize: 48, fontWeight: 900, color: "#f59e0b" }}>96%</div>
-            <div style={{ color: "#94a3b8", fontSize: 13, marginBottom: 20 }}>Success rate</div>
-            <div style={{ fontSize: 48, fontWeight: 900, color: "#f59e0b" }}>2,000+</div>
-            <div style={{ color: "#94a3b8", fontSize: 13, marginBottom: 20 }}>Licences assisted</div>
+            <div style={{ fontSize: 48, fontWeight: 900, color: "#f59e0b" }}>30</div>
+            <div style={{ color: "#94a3b8", fontSize: 13, marginBottom: 20 }}>Mins to complete form</div>
+            <div style={{ fontSize: 48, fontWeight: 900, color: "#f59e0b" }}>0</div>
+            <div style={{ color: "#94a3b8", fontSize: 13, marginBottom: 20 }}>Hidden charges</div>
             <div style={{ fontSize: 48, fontWeight: 900, color: "#f59e0b" }}>₹499</div>
             <div style={{ color: "#94a3b8", fontSize: 13 }}>All inclusive</div>
           </div>
