@@ -99,7 +99,7 @@ export async function POST(req: NextRequest) {
     // Email to admin
     await resend.emails.send({
       from: process.env.FROM_EMAIL || "LearnDrive <noreply@learndrive.in>",
-      to: process.env.ADMIN_EMAIL || "hello@learndrive.in",
+      to: process.env.ADMIN_EMAIL!,
       subject: `🆕 New DL Assistance — ${name} — ${city} — Order #${orderId}`,
       html: `
         <div style="font-family: system-ui; padding: 24px; max-width: 600px;">
