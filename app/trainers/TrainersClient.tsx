@@ -381,7 +381,47 @@ export default function TrainersClient() {
             </div>
           </div>
         ) : (
-          trainers.map(trainer => {
+          (() => {
+            // Price-tier classification across results
+            const allPrices = trainers
+              .map(t => { const p = parsePackages(t.packagesJson); return p[0]?.price ?? t.basePrice ?? 0; })
+              .filter(p => p > 0)
+              .sort((a, b) => a - b);
+            const p33 = allPrices[Math.floor(allPrices.length * 0.33)] ?? 0;
+            const p66 = allPrices[Math.floor(allPrices.length * 0.66)] ?? 0;
+            const minPrice = allPrices[0] ?? 0;
+            const maxPrice = allPrices[allPrices.length - 1] ?? 0;
+
+            const priceTier = (price: number) => {
+              if (allPrices.length < 3) return null;
+              if (price <= p33) return { label: "Budget-friendly", color: "#16A34A", bg: "#DCFCE7" };
+              if (price <= p66) return { label: "Standard", color: "#1D4ED8", bg: "#DBEAFE" };
+              return { label: "Premium", color: "#9333EA", bg: "#F3E8FF" };
+            };
+
+            const DL_ASSIST_CARD = (
+              <div key="dl-assist-cta" style={{ background: "linear-gradient(135deg, #1a2540, #2d3f6b)", borderRadius: 18, padding: "24px", marginBottom: 16, border: "1px solid rgba(245,158,11,0.2)" }}>
+                <div style={{ display: "flex", alignItems: "flex-start", gap: 16, flexWrap: "wrap" }}>
+                  <div style={{ flex: 1, minWidth: 200 }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: "#F59E0B", textTransform: "uppercase", letterSpacing: "1px" }}>Also from LearnDrive</span>
+                    <h3 style={{ fontFamily: "'Sora',sans-serif", fontSize: "1rem", fontWeight: 800, color: "#fff", margin: "6px 0 8px", lineHeight: 1.4 }}>
+                      Need help getting your Driving Licence too?
+                    </h3>
+                    <p style={{ fontSize: 13, color: "#94A3B8", lineHeight: 1.6, margin: 0 }}>
+                      Our AI fills your Sarathi form, books your RTO slot, and sends reminders till test day. ₹499 — all inclusive.
+                    </p>
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8, alignItems: "flex-end", flexShrink: 0 }}>
+                    <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 22, fontWeight: 800, color: "#F59E0B" }}>₹499</div>
+                    <a href="/dl-assistance" style={{ background: "#F59E0B", color: "#1a2540", padding: "9px 18px", borderRadius: 10, fontWeight: 800, fontSize: 13, textDecoration: "none", whiteSpace: "nowrap" }}>
+                      Get DL Help →
+                    </a>
+                  </div>
+                </div>
+              </div>
+            );
+
+            const cards = trainers.map((trainer, index) => {
             const hasVehicle = trainer.vehicles?.find(v => v.type === vehicle);
             const isDualControl = hasVehicle?.dualControl;
             const isInsured = hasVehicle?.insured;
@@ -394,6 +434,7 @@ export default function TrainersClient() {
             const displayLabel = packages.length > 0
               ? (packages.length === 1 ? packages[0].name : `from ${packages[0].name}`)
               : "starting price";
+            const tier = priceTier(displayPrice);
 
             return (
               <div key={trainer.id} className="trainer-card">
@@ -452,10 +493,15 @@ export default function TrainersClient() {
 
                   {/* Right: price + CTA */}
                   <div className="price-block">
+                    {tier && (
+                      <div style={{ fontSize: "0.7rem", fontWeight: 700, padding: "2px 8px", borderRadius: 99, background: tier.bg, color: tier.color, marginBottom: 4, display: "inline-block" }}>
+                        {tier.label}
+                      </div>
+                    )}
                     <div className="price-amount">
                       ₹{displayPrice.toLocaleString("en-IN")}
                     </div>
-                    <div className="price-note">{displayLabel}</div>
+                    <div className="price-note">{displayLabel}{packages.length > 1 ? ` · ${packages.length} options` : ""}</div>
                     <button className="book-btn" onClick={() => router.push(`/trainers/${trainer.id}`)}>
                       View & Book →
                     </button>
@@ -535,7 +581,25 @@ export default function TrainersClient() {
                 )}
               </div>
             );
-          })
+            }); // end trainers.map
+
+            // Insert DL Assist card after 3rd trainer (or at end if fewer)
+            const insertAt = Math.min(3, cards.length);
+            const result = [...cards.slice(0, insertAt), DL_ASSIST_CARD, ...cards.slice(insertAt)];
+
+            return (
+              <>
+                {/* Market rate banner */}
+                {minPrice > 0 && maxPrice > minPrice && (
+                  <div style={{ background: "#FFFBEB", border: "1px solid #FDE68A", borderRadius: 12, padding: "10px 16px", marginBottom: 16, fontSize: 13, color: "#92400E", display: "flex", alignItems: "center", gap: 8 }}>
+                    <span>💡</span>
+                    <span><strong>{city}</strong> packages range from <strong>₹{minPrice.toLocaleString("en-IN")}</strong> to <strong>₹{maxPrice.toLocaleString("en-IN")}</strong> — cards are tagged Budget / Standard / Premium to help you compare.</span>
+                  </div>
+                )}
+                {result}
+              </>
+            );
+          })()
         )}
       </div>
     </main>
