@@ -279,24 +279,49 @@ export default function TrainerOutreachPage() {
                 </div>
               )}
 
-              {trainers.map((trainer) => (
-                <label key={trainer.id} className="flex cursor-pointer items-start gap-4 rounded-xl border border-slate-200 p-4 hover:bg-slate-50">
-                  <input
-                    type="checkbox"
-                    checked={selectedIds.has(trainer.id)}
-                    onChange={() => toggleSelect(trainer.id)}
-                    className="mt-1 h-4 w-4"
-                  />
-                  <div className="flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <div className="font-semibold text-slate-900">{trainer.name}</div>
-                      <span className="rounded-full bg-slate-100 px-2 py-1 text-xs text-slate-600">{trainer.status}</span>
+              {trainers.map((trainer) => {
+                const msg = encodeURIComponent(
+                  useCustomMessage && customMessage
+                    ? customMessage
+                    : generateMessage(trainer.name, selectedCity, msgLang)
+                );
+                const waUrl = trainer.phone
+                  ? `https://wa.me/91${trainer.phone.replace(/\D/g, "").slice(-10)}?text=${msg}`
+                  : null;
+                return (
+                  <div key={trainer.id} className="flex items-start gap-3 rounded-xl border border-slate-200 p-4 hover:bg-slate-50">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(trainer.id)}
+                      onChange={() => toggleSelect(trainer.id)}
+                      className="mt-1 h-4 w-4 cursor-pointer"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <div className="font-semibold text-slate-900">{trainer.name}</div>
+                        <span className="rounded-full bg-slate-100 px-2 py-1 text-xs text-slate-600">{trainer.status}</span>
+                      </div>
+                      <div className="mt-1 text-sm text-slate-600 truncate">{trainer.address}</div>
+                      <div className="mt-1 text-sm text-slate-500">{trainer.phone || "No phone"}{trainer.rating ? ` • ${trainer.rating} (${trainer.reviewCount})` : ""}</div>
                     </div>
-                    <div className="mt-1 text-sm text-slate-600">{trainer.address}</div>
-                    <div className="mt-1 text-sm text-slate-500">{trainer.phone || "No phone"} {trainer.rating ? `• ${trainer.rating} (${trainer.reviewCount})` : ""}</div>
+                    {waUrl && (
+                      <a
+                        href={waUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={() => {
+                          setTrainers((prev) => prev.map((t) =>
+                            t.id === trainer.id ? { ...t, status: "contacted" } : t
+                          ));
+                        }}
+                        className="flex-shrink-0 rounded-lg bg-green-500 px-3 py-2 text-xs font-bold text-white hover:bg-green-600"
+                      >
+                        WA
+                      </a>
+                    )}
                   </div>
-                </label>
-              ))}
+                );
+              })}
             </div>
           </div>
 
