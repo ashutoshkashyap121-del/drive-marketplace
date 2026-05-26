@@ -42,13 +42,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const meta = CITY_META[citySlug];
   if (!meta) return { title: "Not Found" };
 
-  const title       = `Best Driving Schools in ${meta.display} — Book Online | LearnDrive`;
-  const description = `Find and book the best driving schools in ${meta.display}, ${meta.state}. Compare prices, ratings and reviews. Starting from ₹5,500.`;
+  const title       = `Driving Schools in ${meta.display} 2026 — Fees, Reviews and Booking | LearnDrive`;
+  const description = `Find verified driving schools in ${meta.display}. Compare exact fees, trainer ratings and slot availability. DL package from ₹3,500. Book online instantly — no advance payment needed.`;
 
   return {
     title,
     description,
-    keywords: [`driving school in ${meta.display}`, `driving classes ${meta.display}`, `learn driving ${meta.display}`, `driving licence ${meta.display}`].join(", "),
+    keywords: [`driving school in ${meta.display}`, `driving school fees ${meta.display}`, `driving classes ${meta.display}`, `best driving school ${meta.display} 2026`, `driving licence ${meta.display}`].join(", "),
     openGraph: { title, description, url: `https://learndrive.in/driving-schools-in-${citySlug}`, siteName: "LearnDrive", locale: "en_IN", type: "website" },
     alternates: { canonical: `https://learndrive.in/driving-schools-in-${citySlug}` },
     robots: { index: true, follow: true },

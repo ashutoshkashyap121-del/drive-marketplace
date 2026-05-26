@@ -45,8 +45,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const meta = CITY_META[city?.toLowerCase()];
   if (!meta) return { title: "Not Found" };
 
-  const title       = `Driving School Fees in ${meta.display} 2026 — Compare Prices | LearnDrive`;
-  const description = `Compare driving school fees in ${meta.display}. DL package prices, LL training costs and full driving licence fees at verified schools in ${meta.display}, ${meta.state}. Starting from ₹5,500.`;
+  const title       = `Driving School Fees in ${meta.display} 2026 — Compare All Prices | LearnDrive`;
+  const description = `Exact driving school fees in ${meta.display}. Compare DL package prices, LL training costs and per-class rates at verified schools in ${meta.display}, ${meta.state}. Starting from ₹3,500. No advance payment needed.`;
 
   return {
     title,

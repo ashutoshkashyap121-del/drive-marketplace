@@ -243,9 +243,9 @@ Book your slot on Parivahan.gov.in. Slots fill up 3–4 weeks in advance — pla
   },
   {
     slug: "rto-test-tips-tricks-pass-first-time",
-    title: "RTO Test Tips & Tricks: How to Pass Your Driving Test First Time",
+    title: "RTO Driving Test Tips 2026: Pass First Attempt (What Examiners Check)",
     description:
-      "Insider tips to pass the RTO learner's licence test and driving test on your first attempt — what examiners look for, common mistakes, and practice strategies.",
+      "7 proven tips to pass the RTO learner's licence test first time. Covers exactly what traffic examiners check, the 5 mistakes that fail most candidates, and a 10-day practice plan.",
     category: "RTO Tips",
     readTime: 7,
     date: "2025-03-05",
