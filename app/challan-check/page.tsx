@@ -21,20 +21,77 @@ const CHALLAN_TYPES = [
 ];
 
 type Step = "check" | "claim" | "done";
+type PaymentMethod = "upi" | "credit_card" | "debit_card" | "";
+
+const PAYMENT_CAPS: Record<string, number> = {
+  upi: 75,
+  credit_card: 100,
+  debit_card: 50,
+};
+
+const PAYMENT_OPTIONS = [
+  {
+    id: "upi" as PaymentMethod,
+    label: "UPI",
+    subLabel: "GPay · PhonePe · Paytm · BHIM",
+    cap: 75,
+    color: "#7C3AED",
+    bg: "#F5F3FF",
+    border: "#DDD6FE",
+    badge: "MOST POPULAR",
+    badgeColor: "#7C3AED",
+    icon: "📱",
+  },
+  {
+    id: "credit_card" as PaymentMethod,
+    label: "Credit Card",
+    subLabel: "Visa · Mastercard · RuPay",
+    cap: 100,
+    color: "#0369A1",
+    bg: "#EFF6FF",
+    border: "#BAE6FD",
+    badge: "MAX CASHBACK",
+    badgeColor: "#0369A1",
+    icon: "💳",
+  },
+  {
+    id: "debit_card" as PaymentMethod,
+    label: "Debit Card / Net Banking",
+    subLabel: "All Indian banks",
+    cap: 50,
+    color: "#065F46",
+    bg: "#ECFDF5",
+    border: "#A7F3D0",
+    badge: "",
+    badgeColor: "#065F46",
+    icon: "🏦",
+  },
+];
+
+function calcCashback(amount: string, method: PaymentMethod): number {
+  const amt = parseFloat(amount);
+  if (!amt || amt < 300 || !method) return 0;
+  const raw = Math.round(amt * 0.10);
+  const capped = Math.min(raw, PAYMENT_CAPS[method] || 50);
+  return Math.max(Math.round(capped / 5) * 5, 0);
+}
 
 export default function ChallanCheckPage() {
-  // Check form
-  const [vehicleNo, setVehicleNo]   = useState("");
-  const [state, setState]           = useState("");
-  const [checkError, setCheckError] = useState("");
-  const [step, setStep]             = useState<Step>("check");
+  const [vehicleNo, setVehicleNo]         = useState("");
+  const [state, setState]                 = useState("");
+  const [checkError, setCheckError]       = useState("");
+  const [step, setStep]                   = useState<Step>("check");
 
-  // Claim form
-  const [phone, setPhone]           = useState("");
-  const [upiId, setUpiId]           = useState("");
-  const [claimError, setClaimError] = useState("");
-  const [claiming, setClaiming]     = useState(false);
-  const [promoCode, setPromoCode]   = useState("");
+  const [phone, setPhone]                 = useState("");
+  const [upiId, setUpiId]                 = useState("");
+  const [challanAmount, setChallanAmount] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("");
+  const [claimError, setClaimError]       = useState("");
+  const [claiming, setClaiming]           = useState(false);
+  const [promoCode, setPromoCode]         = useState("");
+  const [cashbackAmt, setCashbackAmt]     = useState(0);
+
+  const liveAmount = challanAmount && paymentMethod ? calcCashback(challanAmount, paymentMethod) : 0;
 
   function handleCheck() {
     const cleaned = vehicleNo.trim().toUpperCase().replace(/\s/g, "");
@@ -52,6 +109,14 @@ export default function ChallanCheckPage() {
       setClaimError("Enter a valid 10-digit mobile number");
       return;
     }
+    if (!challanAmount || parseFloat(challanAmount) < 300) {
+      setClaimError("Enter challan amount (minimum ₹300 to qualify for cashback)");
+      return;
+    }
+    if (!paymentMethod) {
+      setClaimError("Select the payment method you used to pay the challan");
+      return;
+    }
     const cleaned = vehicleNo.trim().toUpperCase().replace(/\s/g, "");
     if (!cleaned || cleaned.length < 4) {
       setClaimError("Vehicle number is required");
@@ -60,11 +125,20 @@ export default function ChallanCheckPage() {
     setClaimError("");
     setClaiming(true);
 
+    const amount = calcCashback(challanAmount, paymentMethod);
+
     try {
       const res = await fetch("/api/challan/claim", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone, vehicleNo: cleaned, upiId: upiId.trim() || null }),
+        body: JSON.stringify({
+          phone,
+          vehicleNo: cleaned,
+          upiId: upiId.trim() || null,
+          challanAmount: parseFloat(challanAmount),
+          paymentMethod,
+          cashbackAmount: amount,
+        }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -72,6 +146,7 @@ export default function ChallanCheckPage() {
         return;
       }
       setPromoCode(data.promoCode);
+      setCashbackAmt(data.cashbackAmt);
       setStep("done");
     } catch {
       setClaimError("Network error. Please try again.");
@@ -91,8 +166,8 @@ export default function ChallanCheckPage() {
             Learn<span style={{ color: "#F59E0B" }}>Drive</span>
           </Link>
           <div style={{ display: "flex", gap: 16 }}>
-            <Link href="/dl-check"        style={{ fontSize: 13, color: "#64748B", textDecoration: "none" }}>DL Check</Link>
-            <Link href="/rc-check"        style={{ fontSize: 13, color: "#64748B", textDecoration: "none" }}>RC Check</Link>
+            <Link href="/dl-check"          style={{ fontSize: 13, color: "#64748B", textDecoration: "none" }}>DL Check</Link>
+            <Link href="/rc-check"          style={{ fontSize: 13, color: "#64748B", textDecoration: "none" }}>RC Check</Link>
             <Link href="/rto-test/practice" style={{ fontSize: 13, color: "#64748B", textDecoration: "none" }}>RTO Test</Link>
           </div>
         </div>
@@ -100,24 +175,47 @@ export default function ChallanCheckPage() {
 
       {/* Hero */}
       <div style={{ background: "linear-gradient(135deg, #0B1437 0%, #1A2B5F 100%)", padding: "48px 24px 56px" }}>
-        <div style={{ maxWidth: 580, margin: "0 auto", textAlign: "center" }}>
+        <div style={{ maxWidth: 600, margin: "0 auto", textAlign: "center" }}>
           <div style={{ fontSize: 40, marginBottom: 12 }}>🚦</div>
           <h1 style={{ fontFamily: "'Sora',sans-serif", fontSize: "clamp(1.6rem,4vw,2.2rem)", fontWeight: 800, color: "#fff", marginBottom: 8 }}>
             Free Traffic Challan Check
           </h1>
-          <p style={{ color: "#94A3B8", fontSize: 15, marginBottom: 8 }}>
+          <p style={{ color: "#94A3B8", fontSize: 15, marginBottom: 6 }}>
             Check pending e-challans from the official Parivahan portal — 100% free.
           </p>
-
-          {/* Cashback pill */}
           <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(52,211,153,0.15)", border: "1px solid rgba(52,211,153,0.4)", borderRadius: 99, padding: "6px 16px", marginBottom: 28 }}>
             <span style={{ fontSize: 14 }}>🎁</span>
-            <span style={{ fontSize: 13, fontWeight: 700, color: "#34D399" }}>Pay your challan and get ₹100 cashback — no booking required</span>
+            <span style={{ fontSize: 13, fontWeight: 700, color: "#34D399" }}>Pay your challan → get up to ₹100 cashback · no booking required</span>
           </div>
+
+          {/* ── Offer Cards (visible on step "check") ── */}
+          {step === "check" && (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10, marginBottom: 24, textAlign: "left" }}>
+              {PAYMENT_OPTIONS.map((opt) => (
+                <div key={opt.id} style={{ background: "#fff", borderRadius: 14, padding: "14px 12px", position: "relative", overflow: "hidden", border: "1px solid #E2E8F0" }}>
+                  {opt.badge && (
+                    <div style={{ position: "absolute", top: 0, right: 0, background: opt.badgeColor, color: "#fff", fontSize: 8, fontWeight: 800, padding: "3px 8px", borderBottomLeftRadius: 8, letterSpacing: "0.05em" }}>
+                      {opt.badge}
+                    </div>
+                  )}
+                  <div style={{ fontSize: 22, marginBottom: 8 }}>{opt.icon}</div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: "#64748B", marginBottom: 2, textTransform: "uppercase", letterSpacing: "0.04em" }}>{opt.label}</div>
+                  <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 20, fontWeight: 800, color: opt.color, marginBottom: 2 }}>
+                    ₹{opt.cap}
+                  </div>
+                  <div style={{ fontSize: 10, color: "#94A3B8", marginBottom: 6 }}>max cashback</div>
+                  <div style={{ fontSize: 10, color: "#64748B", lineHeight: 1.5 }}>{opt.subLabel}</div>
+                  <div style={{ marginTop: 8, background: opt.bg, border: `1px solid ${opt.border}`, borderRadius: 6, padding: "4px 8px" }}>
+                    <span style={{ fontSize: 10, color: opt.color, fontWeight: 700 }}>10% of challan amount</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* ── STEP 1: Check form ── */}
           {step === "check" && (
-            <div style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 16, padding: "24px", maxWidth: 440, margin: "0 auto" }}>
+            <div style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 16, padding: "24px", maxWidth: 480, margin: "0 auto" }}>
               <div style={{ marginBottom: 14 }}>
                 <label style={{ display: "block", fontSize: 11, color: "#94A3B8", marginBottom: 6, textAlign: "left", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em" }}>
                   Vehicle Registration Number
@@ -157,15 +255,79 @@ export default function ChallanCheckPage() {
 
           {/* ── STEP 2: Claim form ── */}
           {step === "claim" && (
-            <div style={{ background: "white", borderRadius: 16, padding: "28px", maxWidth: 440, margin: "0 auto", textAlign: "left" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+            <div style={{ background: "white", borderRadius: 16, padding: "28px", maxWidth: 480, margin: "0 auto", textAlign: "left" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
                 <span style={{ fontSize: 28 }}>🎁</span>
                 <div>
                   <p style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 800, color: "#0F172A", margin: 0 }}>Paid your challan?</p>
-                  <p style={{ fontSize: 12, color: "#64748B", margin: "2px 0 0" }}>Claim your ₹100 cashback — sent to your UPI within 24 hrs</p>
+                  <p style={{ fontSize: 12, color: "#64748B", margin: "2px 0 0" }}>Claim up to ₹100 cashback — sent to your UPI within 24 hrs</p>
                 </div>
               </div>
 
+              {/* Payment method selector */}
+              <div style={{ marginBottom: 14 }}>
+                <label style={{ display: "block", fontSize: 11, color: "#64748B", marginBottom: 8, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>How did you pay? *</label>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8 }}>
+                  {PAYMENT_OPTIONS.map((opt) => {
+                    const selected = paymentMethod === opt.id;
+                    return (
+                      <button
+                        key={opt.id}
+                        onClick={() => setPaymentMethod(opt.id)}
+                        style={{
+                          border: selected ? `2px solid ${opt.color}` : "1.5px solid #E2E8F0",
+                          borderRadius: 10,
+                          padding: "10px 8px",
+                          background: selected ? opt.bg : "#fff",
+                          cursor: "pointer",
+                          textAlign: "center",
+                          transition: "all 0.15s",
+                        }}
+                      >
+                        <div style={{ fontSize: 18, marginBottom: 4 }}>{opt.icon}</div>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: selected ? opt.color : "#64748B", lineHeight: 1.3 }}>{opt.label}</div>
+                        <div style={{ fontSize: 10, color: selected ? opt.color : "#94A3B8", fontWeight: 700, marginTop: 3 }}>up to ₹{opt.cap}</div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Challan amount */}
+              <div style={{ marginBottom: 12 }}>
+                <label style={{ display: "block", fontSize: 11, color: "#64748B", marginBottom: 5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                  Challan Amount (₹) *
+                  <span style={{ color: "#94A3B8", fontWeight: 400, textTransform: "none", letterSpacing: 0 }}> — minimum ₹300</span>
+                </label>
+                <div style={{ position: "relative" }}>
+                  <span style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", fontSize: 15, color: "#64748B", fontWeight: 600 }}>₹</span>
+                  <input
+                    type="number"
+                    value={challanAmount}
+                    onChange={(e) => { setChallanAmount(e.target.value); setClaimError(""); }}
+                    placeholder="e.g. 1000"
+                    min={300}
+                    style={{ width: "100%", padding: "12px 14px 12px 28px", borderRadius: 10, border: "1.5px solid #E2E8F0", fontSize: 15, fontFamily: "inherit", outline: "none", boxSizing: "border-box" }}
+                  />
+                </div>
+                {/* Live cashback indicator */}
+                {liveAmount > 0 && (
+                  <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 8, background: "#F0FDF4", border: "1px solid #BBF7D0", borderRadius: 8, padding: "8px 12px" }}>
+                    <span style={{ fontSize: 14 }}>🎉</span>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: "#16A34A" }}>
+                      You get <span style={{ fontSize: 16 }}>₹{liveAmount}</span> cashback
+                    </span>
+                    <span style={{ fontSize: 11, color: "#64748B", marginLeft: "auto" }}>10% of ₹{challanAmount}</span>
+                  </div>
+                )}
+                {challanAmount && parseFloat(challanAmount) > 0 && parseFloat(challanAmount) < 300 && (
+                  <div style={{ marginTop: 8, background: "#FEF3C7", border: "1px solid #FDE68A", borderRadius: 8, padding: "8px 12px" }}>
+                    <span style={{ fontSize: 12, color: "#92400E" }}>⚠ Minimum challan ₹300 required for cashback</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Phone */}
               <div style={{ marginBottom: 12 }}>
                 <label style={{ display: "block", fontSize: 11, color: "#64748B", marginBottom: 5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>Mobile Number *</label>
                 <input
@@ -179,21 +341,22 @@ export default function ChallanCheckPage() {
                 />
               </div>
 
-              <div style={{ marginBottom: 12 }}>
+              {/* UPI ID */}
+              <div style={{ marginBottom: 14 }}>
                 <label style={{ display: "block", fontSize: 11, color: "#64748B", marginBottom: 5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                  UPI ID <span style={{ color: "#94A3B8", fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>(optional — if blank, we send to your mobile number)</span>
+                  UPI ID <span style={{ color: "#94A3B8", fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>(optional — blank = send to mobile number)</span>
                 </label>
                 <input
                   type="text"
                   value={upiId}
                   onChange={(e) => setUpiId(e.target.value)}
-                  placeholder="yourname@upi or leave blank"
+                  placeholder="yourname@upi"
                   style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: "1.5px solid #E2E8F0", fontSize: 14, fontFamily: "inherit", outline: "none", boxSizing: "border-box" }}
                 />
               </div>
 
               <div style={{ background: "#F8F7F4", borderRadius: 10, padding: "10px 14px", marginBottom: 16, fontSize: 12, color: "#64748B" }}>
-                Vehicle: <strong style={{ color: "#0F172A", fontFamily: "monospace" }}>{vehicleNo.toUpperCase()}</strong> — our team verifies the challan was paid before releasing the cashback.
+                Vehicle: <strong style={{ color: "#0F172A", fontFamily: "monospace" }}>{vehicleNo.toUpperCase()}</strong> — our team verifies the challan was paid before releasing cashback.
               </div>
 
               {claimError && <p style={{ color: "#EF4444", fontSize: 12, marginBottom: 10 }}>⚠ {claimError}</p>}
@@ -201,9 +364,9 @@ export default function ChallanCheckPage() {
               <button
                 onClick={handleClaim}
                 disabled={claiming}
-                style={{ width: "100%", background: "#16A34A", color: "#fff", border: "none", borderRadius: 10, padding: "14px", fontWeight: 800, fontSize: 15, cursor: claiming ? "not-allowed" : "pointer", fontFamily: "'Sora',sans-serif", opacity: claiming ? 0.7 : 1 }}
+                style={{ width: "100%", background: liveAmount > 0 ? "#16A34A" : "#94A3B8", color: "#fff", border: "none", borderRadius: 10, padding: "14px", fontWeight: 800, fontSize: 15, cursor: claiming ? "not-allowed" : "pointer", fontFamily: "'Sora',sans-serif", opacity: claiming ? 0.7 : 1, transition: "background 0.2s" }}
               >
-                {claiming ? "Submitting..." : "Claim ₹100 Cashback →"}
+                {claiming ? "Submitting..." : liveAmount > 0 ? `Claim ₹${liveAmount} Cashback →` : "Claim Cashback →"}
               </button>
 
               <button
@@ -212,16 +375,21 @@ export default function ChallanCheckPage() {
               >
                 ← Check another vehicle
               </button>
+
+              <p style={{ fontSize: 10, color: "#CBD5E1", marginTop: 12, lineHeight: 1.6 }}>
+                T&C: 10% of challan amount, up to ₹75 (UPI) / ₹100 (Credit Card) / ₹50 (Debit/NB). Min challan ₹300. Once per vehicle per 90 days. Subject to verification.
+              </p>
             </div>
           )}
 
           {/* ── STEP 3: Done ── */}
           {step === "done" && (
-            <div style={{ background: "white", borderRadius: 16, padding: "28px", maxWidth: 440, margin: "0 auto", textAlign: "center" }}>
+            <div style={{ background: "white", borderRadius: 16, padding: "28px", maxWidth: 480, margin: "0 auto", textAlign: "center" }}>
               <div style={{ fontSize: 48, marginBottom: 12 }}>✅</div>
               <h2 style={{ fontFamily: "'Sora',sans-serif", fontSize: "1.3rem", fontWeight: 800, color: "#0F172A", marginBottom: 8 }}>Cashback claim submitted!</h2>
               <p style={{ fontSize: 14, color: "#64748B", marginBottom: 16, lineHeight: 1.7 }}>
-                We've sent a confirmation SMS to your mobile. Our team will verify your challan payment and transfer <strong>₹100 to your UPI within 24 hours</strong>.
+                We've sent a confirmation SMS to your mobile. Our team will verify your challan payment and transfer{" "}
+                <strong>₹{cashbackAmt} to your UPI within 24 hours</strong>.
               </p>
               {promoCode && (
                 <div style={{ background: "#F0FDF4", border: "1px solid #BBF7D0", borderRadius: 12, padding: "14px", marginBottom: 16 }}>
@@ -232,7 +400,22 @@ export default function ChallanCheckPage() {
               <p style={{ fontSize: 12, color: "#94A3B8", marginBottom: 20 }}>
                 Questions? WhatsApp us at +91 87008 96528
               </p>
-              <button onClick={() => { setStep("check"); setVehicleNo(""); setPhone(""); setUpiId(""); }}
+
+              {/* DL Assist upsell on success */}
+              <div style={{ background: "linear-gradient(135deg, #1a2540, #2d3f6b)", borderRadius: 16, padding: "20px", marginBottom: 16, textAlign: "left" }}>
+                <p style={{ fontSize: 10, color: "#F59E0B", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", margin: "0 0 8px" }}>Avoid your next challan</p>
+                <p style={{ fontFamily: "'Sora',sans-serif", fontSize: 14, fontWeight: 800, color: "#fff", margin: "0 0 6px" }}>
+                  Make sure your Driving Licence is valid
+                </p>
+                <p style={{ fontSize: 12, color: "#94A3B8", margin: "0 0 14px" }}>
+                  AI fills your Sarathi form + books RTO slot. ₹499 all inclusive.
+                </p>
+                <Link href="/dl-assistance" style={{ display: "inline-block", background: "#F59E0B", color: "#1a2540", padding: "9px 18px", borderRadius: 8, fontWeight: 800, fontSize: 13, textDecoration: "none" }}>
+                  Get DL Assistance — ₹499 →
+                </Link>
+              </div>
+
+              <button onClick={() => { setStep("check"); setVehicleNo(""); setPhone(""); setUpiId(""); setChallanAmount(""); setPaymentMethod(""); }}
                 style={{ background: "#F59E0B", color: "#0F172A", border: "none", borderRadius: 10, padding: "12px 24px", fontWeight: 800, fontSize: 14, cursor: "pointer", fontFamily: "'Sora',sans-serif" }}>
                 Check Another Vehicle
               </button>
@@ -242,16 +425,16 @@ export default function ChallanCheckPage() {
       </div>
 
       {/* Below fold */}
-      <div style={{ maxWidth: 580, margin: "0 auto", padding: "32px 24px" }}>
+      <div style={{ maxWidth: 600, margin: "0 auto", padding: "32px 24px" }}>
 
         {/* How cashback works */}
         <div style={{ background: "#fff", borderRadius: 20, border: "1px solid #E2E8F0", padding: "24px 28px", marginBottom: 20 }}>
-          <h2 style={{ fontFamily: "'Sora',sans-serif", fontSize: "1.1rem", fontWeight: 800, marginBottom: 20, color: "#0F172A" }}>How the ₹100 cashback works</h2>
+          <h2 style={{ fontFamily: "'Sora',sans-serif", fontSize: "1.1rem", fontWeight: 800, marginBottom: 20, color: "#0F172A" }}>How the cashback works</h2>
           {[
             { icon: "🔍", title: "Check your challan", desc: "Enter vehicle number above — opens the official Parivahan e-Challan portal." },
-            { icon: "💳", title: "Pay your challan", desc: "Pay directly on Parivahan. We don't handle your payment — it goes straight to the government." },
-            { icon: "📝", title: "Claim cashback here", desc: "Come back and submit your mobile number + UPI ID. Takes 30 seconds." },
-            { icon: "💸", title: "Get ₹100 in 24 hours", desc: "We verify the challan is cleared and transfer ₹100 to your UPI — no booking required." },
+            { icon: "💳", title: "Pay your challan", desc: "Pay directly on Parivahan via UPI, card, or net banking. We don't handle your payment." },
+            { icon: "📝", title: "Claim cashback here", desc: "Come back, enter challan amount + how you paid. Takes 30 seconds." },
+            { icon: "💸", title: "Get up to ₹100 in 24 hours", desc: "We verify the challan is cleared and transfer 10% of your challan (up to ₹100) to your UPI." },
           ].map((s, i) => (
             <div key={i} style={{ display: "flex", gap: 14, marginBottom: i < 3 ? 16 : 0, alignItems: "flex-start" }}>
               <div style={{ width: 36, height: 36, borderRadius: "50%", background: "#FEF3C7", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>
