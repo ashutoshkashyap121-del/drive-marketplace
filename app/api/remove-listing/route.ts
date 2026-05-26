@@ -2,10 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY!);
-
 // ─── POST /api/remove-listing — school requests removal ───────────────────────
 export async function POST(req: NextRequest) {
+  const resend = new Resend(process.env.RESEND_API_KEY!);
   const { name, mobile, city, reason } = await req.json();
 
   if (!name || !mobile) {
