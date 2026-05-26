@@ -101,3 +101,7 @@ export async function smsLearnerBookingConfirmed({ customerName, customerMobile,
 export async function smsTrainerWelcome({ name, mobile, city }: { name: string; mobile: string; city: string }) {
   return sendSMS(mobile, `Hi ${name}! Welcome to LearnDrive! Your trainer application for ${city} is received. Our team will review within 24-48 hrs and call you to activate your profile. Questions? Call +91 87008 96528 - LearnDrive`);
 }
+
+export async function smsChallanCashbackClaim({ mobile, promoCode, amount }: { mobile: string; promoCode: string; amount: number }) {
+  return sendSMS(mobile, `LearnDrive: Your challan cashback claim is confirmed! Code: ${promoCode}. We will verify your challan and send Rs${amount} to your UPI within 24 hrs. Help? Call +91 87008 96528`);
+}
