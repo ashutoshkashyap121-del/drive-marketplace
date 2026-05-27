@@ -3,15 +3,11 @@
 import { useState } from "react";
 import Link from "next/link";
 
-const COMMON_STATES = [
-  "Delhi", "Maharashtra", "Karnataka", "Tamil Nadu", "Uttar Pradesh",
-  "Rajasthan", "Gujarat", "Haryana", "Punjab", "Telangana",
-  "West Bengal", "Madhya Pradesh", "Bihar", "Odisha", "Kerala",
-  "Andhra Pradesh", "Jharkhand", "Assam", "Himachal Pradesh", "Uttarakhand",
-  "Chandigarh", "Goa",
-];
+const SERVICE_FEE = 49;
 
-const CHALLAN_TYPES = [
+type Step = "form" | "done";
+
+const COMMON_FINES = [
   { icon: "📵", label: "Mobile while driving", fine: "₹1,000–5,000" },
   { icon: "🪑", label: "Seatbelt violation",   fine: "₹1,000" },
   { icon: "🚦", label: "Signal jumping",        fine: "₹1,000–5,000" },
@@ -20,517 +16,363 @@ const CHALLAN_TYPES = [
   { icon: "📄", label: "No RC / DL",            fine: "₹2,000–10,000" },
 ];
 
-type Step = "check" | "claim" | "done";
-type PaymentMethod = "upi" | "credit_card" | "debit_card" | "";
-
-const PAYMENT_CAPS: Record<string, number> = {
-  upi: 75,
-  credit_card: 100,
-  debit_card: 50,
-};
-
-const PAYMENT_OPTIONS = [
-  {
-    id: "upi" as PaymentMethod,
-    label: "UPI",
-    subLabel: "GPay · PhonePe · Paytm · BHIM",
-    cap: 75,
-    color: "#7C3AED",
-    bg: "#F5F3FF",
-    border: "#DDD6FE",
-    badge: "MOST POPULAR",
-    badgeColor: "#7C3AED",
-    icon: "📱",
-  },
-  {
-    id: "credit_card" as PaymentMethod,
-    label: "Credit Card",
-    subLabel: "Visa · Mastercard · RuPay",
-    cap: 100,
-    color: "#0369A1",
-    bg: "#EFF6FF",
-    border: "#BAE6FD",
-    badge: "MAX CASHBACK",
-    badgeColor: "#0369A1",
-    icon: "💳",
-  },
-  {
-    id: "debit_card" as PaymentMethod,
-    label: "Debit Card / Net Banking",
-    subLabel: "All Indian banks",
-    cap: 50,
-    color: "#065F46",
-    bg: "#ECFDF5",
-    border: "#A7F3D0",
-    badge: "",
-    badgeColor: "#065F46",
-    icon: "🏦",
-  },
-];
-
-function calcCashback(amount: string, method: PaymentMethod): number {
-  const amt = parseFloat(amount);
-  if (!amt || amt < 300 || !method) return 0;
-  const raw = Math.round(amt * 0.10);
-  const capped = Math.min(raw, PAYMENT_CAPS[method] || 50);
-  return Math.max(Math.round(capped / 5) * 5, 0);
-}
-
 export default function ChallanCheckPage() {
+  const [step, setStep]                   = useState<Step>("form");
   const [vehicleNo, setVehicleNo]         = useState("");
-  const [state, setState]                 = useState("");
-  const [checkError, setCheckError]       = useState("");
-  const [step, setStep]                   = useState<Step>("check");
-
+  const [name, setName]                   = useState("");
   const [phone, setPhone]                 = useState("");
-  const [upiId, setUpiId]                 = useState("");
   const [challanAmount, setChallanAmount] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("");
-  const [claimError, setClaimError]       = useState("");
-  const [claiming, setClaiming]           = useState(false);
-  const [promoCode, setPromoCode]         = useState("");
-  const [cashbackAmt, setCashbackAmt]     = useState(0);
+  const [error, setError]                 = useState("");
+  const [loading, setLoading]             = useState(false);
+  const [refCode, setRefCode]             = useState("");
 
-  const liveAmount = challanAmount && paymentMethod ? calcCashback(challanAmount, paymentMethod) : 0;
+  const amt   = parseFloat(challanAmount) || 0;
+  const total = amt >= 100 ? amt + SERVICE_FEE : 0;
 
-  function handleCheck() {
+  function openParivahan() {
     const cleaned = vehicleNo.trim().toUpperCase().replace(/\s/g, "");
-    if (!cleaned || cleaned.length < 6) {
-      setCheckError("Enter a valid vehicle registration number (e.g. DL01AB1234)");
-      return;
-    }
-    setCheckError("");
     window.open("https://echallan.parivahan.gov.in/index/accused-challan", "_blank");
-    setStep("claim");
   }
 
-  async function handleClaim() {
-    if (!/^[6-9]\d{9}$/.test(phone)) {
-      setClaimError("Enter a valid 10-digit mobile number");
-      return;
-    }
-    if (!challanAmount || parseFloat(challanAmount) < 300) {
-      setClaimError("Enter challan amount (minimum ₹300 to qualify for cashback)");
-      return;
-    }
-    if (!paymentMethod) {
-      setClaimError("Select the payment method you used to pay the challan");
-      return;
-    }
+  async function handlePay() {
     const cleaned = vehicleNo.trim().toUpperCase().replace(/\s/g, "");
-    if (!cleaned || cleaned.length < 4) {
-      setClaimError("Vehicle number is required");
-      return;
-    }
-    setClaimError("");
-    setClaiming(true);
+    if (!cleaned || cleaned.length < 6) { setError("Enter a valid vehicle registration number"); return; }
+    if (!name.trim() || name.trim().length < 2) { setError("Enter your full name"); return; }
+    if (!/^[6-9]\d{9}$/.test(phone)) { setError("Enter a valid 10-digit mobile number"); return; }
+    if (!amt || amt < 100) { setError("Enter the challan amount (minimum ₹100)"); return; }
 
-    const amount = calcCashback(challanAmount, paymentMethod);
+    setError("");
+    setLoading(true);
 
     try {
-      const res = await fetch("/api/challan/claim", {
+      const res = await fetch("/api/challan/pay-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          phone,
-          vehicleNo: cleaned,
-          upiId: upiId.trim() || null,
-          challanAmount: parseFloat(challanAmount),
-          paymentMethod,
-          cashbackAmount: amount,
-        }),
+        body: JSON.stringify({ vehicleNo: cleaned, challanAmount: amt, name: name.trim(), phone }),
       });
       const data = await res.json();
-      if (!res.ok) {
-        setClaimError(data.error || "Something went wrong. Please try again.");
+      if (!res.ok || !data.orderId) {
+        setError(data.error || "Order creation failed. Please try again.");
+        setLoading(false);
         return;
       }
-      setPromoCode(data.promoCode);
-      setCashbackAmt(data.cashbackAmt);
-      setStep("done");
+
+      const options = {
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+        amount: data.totalAmount * 100,
+        currency: "INR",
+        name: "LearnDrive",
+        description: `Challan for ${cleaned} + ₹${SERVICE_FEE} service fee`,
+        order_id: data.orderId,
+        prefill: { name: name.trim(), contact: phone },
+        theme: { color: "#1a2540" },
+        handler: async (response: any) => {
+          try {
+            const vRes = await fetch("/api/challan/pay-verify", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ ...response, vehicleNo: cleaned, challanAmount: amt, name: name.trim(), phone }),
+            });
+            const vData = await vRes.json();
+            if (vData.success) {
+              setRefCode(vData.refCode);
+              setStep("done");
+            } else {
+              setError(vData.error || "Verification failed. Contact support.");
+            }
+          } catch {
+            setError("Verification failed. Contact support at +91 87008 96528.");
+          } finally {
+            setLoading(false);
+          }
+        },
+        modal: { ondismiss: () => setLoading(false) },
+      };
+
+      const rzp = new (window as any).Razorpay(options);
+      rzp.open();
     } catch {
-      setClaimError("Network error. Please try again.");
-    } finally {
-      setClaiming(false);
+      setError("Something went wrong. Please try again.");
+      setLoading(false);
     }
   }
 
   return (
     <main style={{ minHeight: "100vh", background: "#F8F7F4", fontFamily: "'DM Sans', sans-serif" }}>
+      <script src="https://checkout.razorpay.com/v1/checkout.js" async />
       <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Sora:wght@700;800&display=swap');`}</style>
 
       {/* Nav */}
       <nav style={{ background: "#fff", borderBottom: "1px solid #E2E8F0", padding: "0 5%" }}>
-        <div style={{ maxWidth: 760, margin: "0 auto", height: 56, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ maxWidth: 720, margin: "0 auto", height: 56, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <Link href="/" style={{ textDecoration: "none", fontFamily: "'Sora',sans-serif", fontSize: 18, fontWeight: 800, color: "#0F172A" }}>
             Learn<span style={{ color: "#F59E0B" }}>Drive</span>
           </Link>
           <div style={{ display: "flex", gap: 16 }}>
             <Link href="/dl-check"          style={{ fontSize: 13, color: "#64748B", textDecoration: "none" }}>DL Check</Link>
-            <Link href="/rc-check"          style={{ fontSize: 13, color: "#64748B", textDecoration: "none" }}>RC Check</Link>
             <Link href="/rto-test/practice" style={{ fontSize: 13, color: "#64748B", textDecoration: "none" }}>RTO Test</Link>
+            <Link href="/dl-assistance"     style={{ fontSize: 13, color: "#64748B", textDecoration: "none" }}>DL Help</Link>
           </div>
         </div>
       </nav>
 
       {/* Hero */}
-      <div style={{ background: "linear-gradient(135deg, #0B1437 0%, #1A2B5F 100%)", padding: "48px 24px 56px" }}>
-        <div style={{ maxWidth: 600, margin: "0 auto", textAlign: "center" }}>
-          <div style={{ fontSize: 40, marginBottom: 12 }}>🚦</div>
-          <h1 style={{ fontFamily: "'Sora',sans-serif", fontSize: "clamp(1.6rem,4vw,2.2rem)", fontWeight: 800, color: "#fff", marginBottom: 8 }}>
-            Free Traffic Challan Check
+      <div style={{ background: "linear-gradient(135deg, #0B1437 0%, #1A2B5F 100%)", padding: "44px 24px 52px" }}>
+        <div style={{ maxWidth: 560, margin: "0 auto", textAlign: "center" }}>
+          <div style={{ fontSize: 38, marginBottom: 10 }}>🚦</div>
+          <h1 style={{ fontFamily: "'Sora',sans-serif", fontSize: "clamp(1.6rem,4vw,2.1rem)", fontWeight: 800, color: "#fff", marginBottom: 8 }}>
+            Pay Your Traffic Challan
           </h1>
-          <p style={{ color: "#94A3B8", fontSize: 15, marginBottom: 6 }}>
-            Check pending e-challans from the official Parivahan portal — 100% free.
+          <p style={{ color: "#94A3B8", fontSize: 14, marginBottom: 0 }}>
+            Check your fine on Parivahan, then pay right here. We clear it within 4 hours.
           </p>
-          <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(52,211,153,0.15)", border: "1px solid rgba(52,211,153,0.4)", borderRadius: 99, padding: "6px 16px", marginBottom: 28 }}>
-            <span style={{ fontSize: 14 }}>🎁</span>
-            <span style={{ fontSize: 13, fontWeight: 700, color: "#34D399" }}>Pay your challan → get up to ₹100 cashback · no booking required</span>
-          </div>
+        </div>
+      </div>
 
-          {/* ── Offer Cards (visible on step "check") ── */}
-          {step === "check" && (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10, marginBottom: 24, textAlign: "left" }}>
-              {PAYMENT_OPTIONS.map((opt) => (
-                <div key={opt.id} style={{ background: "#fff", borderRadius: 14, padding: "14px 12px", position: "relative", overflow: "hidden", border: "1px solid #E2E8F0" }}>
-                  {opt.badge && (
-                    <div style={{ position: "absolute", top: 0, right: 0, background: opt.badgeColor, color: "#fff", fontSize: 8, fontWeight: 800, padding: "3px 8px", borderBottomLeftRadius: 8, letterSpacing: "0.05em" }}>
-                      {opt.badge}
-                    </div>
-                  )}
-                  <div style={{ fontSize: 22, marginBottom: 8 }}>{opt.icon}</div>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: "#64748B", marginBottom: 2, textTransform: "uppercase", letterSpacing: "0.04em" }}>{opt.label}</div>
-                  <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 20, fontWeight: 800, color: opt.color, marginBottom: 2 }}>
-                    ₹{opt.cap}
-                  </div>
-                  <div style={{ fontSize: 10, color: "#94A3B8", marginBottom: 6 }}>max cashback</div>
-                  <div style={{ fontSize: 10, color: "#64748B", lineHeight: 1.5 }}>{opt.subLabel}</div>
-                  <div style={{ marginTop: 8, background: opt.bg, border: `1px solid ${opt.border}`, borderRadius: 6, padding: "4px 8px" }}>
-                    <span style={{ fontSize: 10, color: opt.color, fontWeight: 700 }}>10% of challan amount</span>
-                  </div>
+      <div style={{ maxWidth: 560, margin: "0 auto", padding: "28px 20px 48px" }}>
+
+        {/* ── FORM STEP ── */}
+        {step === "form" && (
+          <>
+            {/* Step guide */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10, marginBottom: 24 }}>
+              {[
+                { n: "1", icon: "🔍", label: "Check on Parivahan" },
+                { n: "2", icon: "📝", label: "Enter amount here" },
+                { n: "3", icon: "✅", label: "We clear in 4 hrs" },
+              ].map((s) => (
+                <div key={s.n} style={{ background: "#fff", borderRadius: 14, padding: "14px 10px", textAlign: "center", border: "1px solid #E2E8F0" }}>
+                  <div style={{ fontSize: 20, marginBottom: 6 }}>{s.icon}</div>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: "#64748B", lineHeight: 1.4 }}>{s.label}</div>
                 </div>
               ))}
             </div>
-          )}
 
-          {/* ── STEP 1: Check form ── */}
-          {step === "check" && (
-            <div style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 16, padding: "24px", maxWidth: 480, margin: "0 auto" }}>
-              <div style={{ marginBottom: 14 }}>
-                <label style={{ display: "block", fontSize: 11, color: "#94A3B8", marginBottom: 6, textAlign: "left", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                  Vehicle Registration Number
+            {/* Main card */}
+            <div style={{ background: "#fff", borderRadius: 20, border: "1px solid #E2E8F0", padding: "28px" }}>
+
+              {/* Vehicle number + Parivahan check */}
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ display: "block", fontSize: 11, color: "#64748B", marginBottom: 5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                  Vehicle Registration Number *
                 </label>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <input
+                    type="text"
+                    value={vehicleNo}
+                    onChange={(e) => { setVehicleNo(e.target.value.toUpperCase()); setError(""); }}
+                    placeholder="e.g. DL01AB1234"
+                    maxLength={12}
+                    style={{ flex: 1, padding: "12px 14px", borderRadius: 10, border: "1.5px solid #E2E8F0", fontSize: 15, fontFamily: "monospace", letterSpacing: 2, outline: "none", boxSizing: "border-box" }}
+                  />
+                  <button
+                    onClick={openParivahan}
+                    style={{ background: "#F8F7F4", border: "1.5px solid #E2E8F0", borderRadius: 10, padding: "0 14px", fontSize: 12, fontWeight: 700, color: "#0F172A", cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0 }}
+                  >
+                    Check ↗
+                  </button>
+                </div>
+                <p style={{ fontSize: 11, color: "#94A3B8", marginTop: 6 }}>
+                  "Check ↗" opens Parivahan in a new tab — note your challan amount, then come back here.
+                </p>
+              </div>
+
+              {/* Name */}
+              <div style={{ marginBottom: 14 }}>
+                <label style={{ display: "block", fontSize: 11, color: "#64748B", marginBottom: 5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>Your Name *</label>
                 <input
                   type="text"
-                  value={vehicleNo}
-                  onChange={(e) => { setVehicleNo(e.target.value.toUpperCase()); setCheckError(""); }}
-                  placeholder="e.g. DL01AB1234"
-                  maxLength={12}
-                  style={{ width: "100%", padding: "13px 16px", borderRadius: 10, border: "none", fontSize: 15, fontFamily: "monospace", outline: "none", letterSpacing: 2, boxSizing: "border-box" }}
+                  value={name}
+                  onChange={(e) => { setName(e.target.value); setError(""); }}
+                  placeholder="Full name"
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: "1.5px solid #E2E8F0", fontSize: 14, fontFamily: "inherit", outline: "none", boxSizing: "border-box" }}
                 />
-              </div>
-              <div style={{ marginBottom: 18 }}>
-                <label style={{ display: "block", fontSize: 11, color: "#94A3B8", marginBottom: 6, textAlign: "left", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                  State (optional)
-                </label>
-                <select
-                  value={state}
-                  onChange={(e) => setState(e.target.value)}
-                  style={{ width: "100%", padding: "13px 16px", borderRadius: 10, border: "none", fontSize: 14, fontFamily: "inherit", outline: "none", boxSizing: "border-box" }}
-                >
-                  <option value="">Select your state</option>
-                  {COMMON_STATES.map((s) => <option key={s} value={s}>{s}</option>)}
-                </select>
-              </div>
-              {checkError && <p style={{ color: "#FCA5A5", fontSize: 12, marginBottom: 10, textAlign: "left" }}>⚠ {checkError}</p>}
-              <button
-                onClick={handleCheck}
-                style={{ width: "100%", background: "#F59E0B", color: "#0F172A", border: "none", borderRadius: 10, padding: "14px", fontWeight: 800, fontSize: 15, cursor: "pointer", fontFamily: "'Sora',sans-serif" }}
-              >
-                Check Challans on Parivahan →
-              </button>
-              <p style={{ color: "#475569", fontSize: 11, marginTop: 10 }}>Opens official government portal in a new tab · 100% free</p>
-            </div>
-          )}
-
-          {/* ── STEP 2: Claim form ── */}
-          {step === "claim" && (
-            <div style={{ background: "white", borderRadius: 16, padding: "28px", maxWidth: 480, margin: "0 auto", textAlign: "left" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
-                <span style={{ fontSize: 28 }}>🎁</span>
-                <div>
-                  <p style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 800, color: "#0F172A", margin: 0 }}>Paid your challan?</p>
-                  <p style={{ fontSize: 12, color: "#64748B", margin: "2px 0 0" }}>Claim up to ₹100 cashback — sent to your UPI within 24 hrs</p>
-                </div>
-              </div>
-
-              {/* Payment method selector */}
-              <div style={{ marginBottom: 14 }}>
-                <label style={{ display: "block", fontSize: 11, color: "#64748B", marginBottom: 8, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>How did you pay? *</label>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8 }}>
-                  {PAYMENT_OPTIONS.map((opt) => {
-                    const selected = paymentMethod === opt.id;
-                    return (
-                      <button
-                        key={opt.id}
-                        onClick={() => setPaymentMethod(opt.id)}
-                        style={{
-                          border: selected ? `2px solid ${opt.color}` : "1.5px solid #E2E8F0",
-                          borderRadius: 10,
-                          padding: "10px 8px",
-                          background: selected ? opt.bg : "#fff",
-                          cursor: "pointer",
-                          textAlign: "center",
-                          transition: "all 0.15s",
-                        }}
-                      >
-                        <div style={{ fontSize: 18, marginBottom: 4 }}>{opt.icon}</div>
-                        <div style={{ fontSize: 11, fontWeight: 700, color: selected ? opt.color : "#64748B", lineHeight: 1.3 }}>{opt.label}</div>
-                        <div style={{ fontSize: 10, color: selected ? opt.color : "#94A3B8", fontWeight: 700, marginTop: 3 }}>up to ₹{opt.cap}</div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Challan amount */}
-              <div style={{ marginBottom: 12 }}>
-                <label style={{ display: "block", fontSize: 11, color: "#64748B", marginBottom: 5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                  Challan Amount (₹) *
-                  <span style={{ color: "#94A3B8", fontWeight: 400, textTransform: "none", letterSpacing: 0 }}> — minimum ₹300</span>
-                </label>
-                <div style={{ position: "relative" }}>
-                  <span style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", fontSize: 15, color: "#64748B", fontWeight: 600 }}>₹</span>
-                  <input
-                    type="number"
-                    value={challanAmount}
-                    onChange={(e) => { setChallanAmount(e.target.value); setClaimError(""); }}
-                    placeholder="e.g. 1000"
-                    min={300}
-                    style={{ width: "100%", padding: "12px 14px 12px 28px", borderRadius: 10, border: "1.5px solid #E2E8F0", fontSize: 15, fontFamily: "inherit", outline: "none", boxSizing: "border-box" }}
-                  />
-                </div>
-                {/* Live cashback indicator */}
-                {liveAmount > 0 && (
-                  <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 8, background: "#F0FDF4", border: "1px solid #BBF7D0", borderRadius: 8, padding: "8px 12px" }}>
-                    <span style={{ fontSize: 14 }}>🎉</span>
-                    <span style={{ fontSize: 13, fontWeight: 700, color: "#16A34A" }}>
-                      You get <span style={{ fontSize: 16 }}>₹{liveAmount}</span> cashback
-                    </span>
-                    <span style={{ fontSize: 11, color: "#64748B", marginLeft: "auto" }}>10% of ₹{challanAmount}</span>
-                  </div>
-                )}
-                {challanAmount && parseFloat(challanAmount) > 0 && parseFloat(challanAmount) < 300 && (
-                  <div style={{ marginTop: 8, background: "#FEF3C7", border: "1px solid #FDE68A", borderRadius: 8, padding: "8px 12px" }}>
-                    <span style={{ fontSize: 12, color: "#92400E" }}>⚠ Minimum challan ₹300 required for cashback</span>
-                  </div>
-                )}
               </div>
 
               {/* Phone */}
-              <div style={{ marginBottom: 12 }}>
+              <div style={{ marginBottom: 14 }}>
                 <label style={{ display: "block", fontSize: 11, color: "#64748B", marginBottom: 5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>Mobile Number *</label>
                 <input
                   type="tel"
                   value={phone}
-                  onChange={(e) => { setPhone(e.target.value.replace(/\D/g, "").slice(0, 10)); setClaimError(""); }}
-                  placeholder="10-digit mobile number"
+                  onChange={(e) => { setPhone(e.target.value.replace(/\D/g, "").slice(0, 10)); setError(""); }}
+                  placeholder="10-digit number"
                   inputMode="numeric"
                   maxLength={10}
                   style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: "1.5px solid #E2E8F0", fontSize: 14, fontFamily: "inherit", outline: "none", boxSizing: "border-box" }}
                 />
               </div>
 
-              {/* UPI ID */}
-              <div style={{ marginBottom: 14 }}>
+              {/* Challan amount */}
+              <div style={{ marginBottom: 20 }}>
                 <label style={{ display: "block", fontSize: 11, color: "#64748B", marginBottom: 5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                  UPI ID <span style={{ color: "#94A3B8", fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>(optional — blank = send to mobile number)</span>
+                  Challan Amount * <span style={{ color: "#94A3B8", fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>from Parivahan</span>
                 </label>
-                <input
-                  type="text"
-                  value={upiId}
-                  onChange={(e) => setUpiId(e.target.value)}
-                  placeholder="yourname@upi"
-                  style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: "1.5px solid #E2E8F0", fontSize: 14, fontFamily: "inherit", outline: "none", boxSizing: "border-box" }}
-                />
+                <div style={{ position: "relative" }}>
+                  <span style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "#64748B", fontWeight: 600 }}>₹</span>
+                  <input
+                    type="number"
+                    value={challanAmount}
+                    onChange={(e) => { setChallanAmount(e.target.value); setError(""); }}
+                    placeholder="e.g. 1000"
+                    min={100}
+                    style={{ width: "100%", padding: "12px 14px 12px 28px", borderRadius: 10, border: "1.5px solid #E2E8F0", fontSize: 15, fontFamily: "inherit", outline: "none", boxSizing: "border-box" }}
+                  />
+                </div>
               </div>
 
-              <div style={{ background: "#F8F7F4", borderRadius: 10, padding: "10px 14px", marginBottom: 16, fontSize: 12, color: "#64748B" }}>
-                Vehicle: <strong style={{ color: "#0F172A", fontFamily: "monospace" }}>{vehicleNo.toUpperCase()}</strong> — our team verifies the challan was paid before releasing cashback.
-              </div>
-
-              {claimError && <p style={{ color: "#EF4444", fontSize: 12, marginBottom: 10 }}>⚠ {claimError}</p>}
-
-              <button
-                onClick={handleClaim}
-                disabled={claiming}
-                style={{ width: "100%", background: liveAmount > 0 ? "#16A34A" : "#94A3B8", color: "#fff", border: "none", borderRadius: 10, padding: "14px", fontWeight: 800, fontSize: 15, cursor: claiming ? "not-allowed" : "pointer", fontFamily: "'Sora',sans-serif", opacity: claiming ? 0.7 : 1, transition: "background 0.2s" }}
-              >
-                {claiming ? "Submitting..." : liveAmount > 0 ? `Claim ₹${liveAmount} Cashback →` : "Claim Cashback →"}
-              </button>
-
-              <button
-                onClick={() => setStep("check")}
-                style={{ width: "100%", marginTop: 10, background: "none", border: "none", color: "#94A3B8", fontSize: 13, cursor: "pointer", textDecoration: "underline" }}
-              >
-                ← Check another vehicle
-              </button>
-
-              <p style={{ fontSize: 10, color: "#CBD5E1", marginTop: 12, lineHeight: 1.6 }}>
-                T&C: 10% of challan amount, up to ₹75 (UPI) / ₹100 (Credit Card) / ₹50 (Debit/NB). Min challan ₹300. Once per vehicle per 90 days. Subject to verification.
-              </p>
-            </div>
-          )}
-
-          {/* ── STEP 3: Done ── */}
-          {step === "done" && (
-            <div style={{ background: "white", borderRadius: 16, padding: "28px", maxWidth: 480, margin: "0 auto", textAlign: "center" }}>
-              <div style={{ fontSize: 48, marginBottom: 12 }}>✅</div>
-              <h2 style={{ fontFamily: "'Sora',sans-serif", fontSize: "1.3rem", fontWeight: 800, color: "#0F172A", marginBottom: 8 }}>Cashback claim submitted!</h2>
-              <p style={{ fontSize: 14, color: "#64748B", marginBottom: 16, lineHeight: 1.7 }}>
-                We've sent a confirmation SMS to your mobile. Our team will verify your challan payment and transfer{" "}
-                <strong>₹{cashbackAmt} to your UPI within 24 hours</strong>.
-              </p>
-              {promoCode && (
-                <div style={{ background: "#F0FDF4", border: "1px solid #BBF7D0", borderRadius: 12, padding: "14px", marginBottom: 16 }}>
-                  <p style={{ fontSize: 11, fontWeight: 700, color: "#166534", textTransform: "uppercase", letterSpacing: "1px", margin: "0 0 6px" }}>Your claim reference</p>
-                  <p style={{ fontFamily: "monospace", fontSize: 18, fontWeight: 800, color: "#16A34A", margin: 0, letterSpacing: 2 }}>{promoCode}</p>
+              {/* Fee breakdown */}
+              {amt >= 100 && (
+                <div style={{ background: "#F8F7F4", borderRadius: 12, padding: "14px 16px", marginBottom: 18 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#64748B", marginBottom: 6 }}>
+                    <span>Challan amount</span>
+                    <span>₹{amt.toLocaleString("en-IN")}</span>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#64748B", marginBottom: 8 }}>
+                    <span>LearnDrive service fee</span>
+                    <span>₹{SERVICE_FEE}</span>
+                  </div>
+                  <div style={{ borderTop: "1px solid #E2E8F0", paddingTop: 8, display: "flex", justifyContent: "space-between", fontSize: 15, fontWeight: 800, color: "#0F172A" }}>
+                    <span>Total</span>
+                    <span>₹{total.toLocaleString("en-IN")}</span>
+                  </div>
                 </div>
               )}
-              <p style={{ fontSize: 12, color: "#94A3B8", marginBottom: 20 }}>
-                Questions? WhatsApp us at +91 87008 96528
-              </p>
 
-              {/* Insurance affiliate card */}
-              <div style={{ background: "linear-gradient(135deg, #7F1D1D, #B91C1C)", borderRadius: 16, padding: "20px", marginBottom: 12, textAlign: "left" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-                  <span style={{ fontSize: 20 }}>🛡️</span>
-                  <span style={{ fontSize: 10, fontWeight: 800, color: "#FCA5A5", textTransform: "uppercase", letterSpacing: "1px" }}>Important</span>
-                </div>
-                <p style={{ fontFamily: "'Sora',sans-serif", fontSize: 14, fontWeight: 800, color: "#fff", margin: "0 0 6px", lineHeight: 1.4 }}>
-                  Is your vehicle insurance still valid?
-                </p>
-                <p style={{ fontSize: 12, color: "#FECACA", margin: "0 0 14px", lineHeight: 1.6 }}>
-                  Driving without valid insurance is a ₹2,000 fine — and risky. Check your policy in 2 minutes, free.
-                </p>
-                <a
-                  href="/go/insurance?src=challan-success"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{ display: "inline-block", background: "#fff", color: "#B91C1C", padding: "9px 18px", borderRadius: 8, fontWeight: 800, fontSize: 13, textDecoration: "none" }}
-                >
-                  Check / Renew Insurance →
-                </a>
-                <p style={{ fontSize: 10, color: "#FCA5A5", margin: "8px 0 0" }}>Compares ACKO, Digit, Bajaj Allianz & more</p>
-              </div>
+              {error && <p style={{ color: "#EF4444", fontSize: 12, marginBottom: 12 }}>⚠ {error}</p>}
 
-              {/* DL Assist upsell on success */}
-              <div style={{ background: "linear-gradient(135deg, #1a2540, #2d3f6b)", borderRadius: 16, padding: "20px", marginBottom: 16, textAlign: "left" }}>
-                <p style={{ fontSize: 10, color: "#F59E0B", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", margin: "0 0 8px" }}>Avoid your next challan</p>
-                <p style={{ fontFamily: "'Sora',sans-serif", fontSize: 14, fontWeight: 800, color: "#fff", margin: "0 0 6px" }}>
-                  Make sure your Driving Licence is valid
-                </p>
-                <p style={{ fontSize: 12, color: "#94A3B8", margin: "0 0 14px" }}>
-                  AI fills your Sarathi form + books RTO slot. ₹499 all inclusive.
-                </p>
-                <Link href="/dl-assistance" style={{ display: "inline-block", background: "#F59E0B", color: "#1a2540", padding: "9px 18px", borderRadius: 8, fontWeight: 800, fontSize: 13, textDecoration: "none" }}>
-                  Get DL Assistance — ₹499 →
-                </Link>
-              </div>
-
-              <button onClick={() => { setStep("check"); setVehicleNo(""); setPhone(""); setUpiId(""); setChallanAmount(""); setPaymentMethod(""); }}
-                style={{ background: "#F59E0B", color: "#0F172A", border: "none", borderRadius: 10, padding: "12px 24px", fontWeight: 800, fontSize: 14, cursor: "pointer", fontFamily: "'Sora',sans-serif" }}>
-                Check Another Vehicle
+              <button
+                onClick={handlePay}
+                disabled={loading}
+                style={{
+                  width: "100%",
+                  background: "#1a2540",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: 10,
+                  padding: "15px",
+                  fontWeight: 800,
+                  fontSize: 15,
+                  cursor: loading ? "not-allowed" : "pointer",
+                  fontFamily: "'Sora',sans-serif",
+                  opacity: loading ? 0.7 : 1,
+                }}
+              >
+                {loading
+                  ? "Processing..."
+                  : total > 0
+                  ? `Pay ₹${total.toLocaleString("en-IN")} →`
+                  : "Pay Securely →"}
               </button>
-            </div>
-          )}
-        </div>
-      </div>
 
-      {/* Below fold */}
-      <div style={{ maxWidth: 600, margin: "0 auto", padding: "32px 24px" }}>
-
-        {/* How cashback works */}
-        <div style={{ background: "#fff", borderRadius: 20, border: "1px solid #E2E8F0", padding: "24px 28px", marginBottom: 20 }}>
-          <h2 style={{ fontFamily: "'Sora',sans-serif", fontSize: "1.1rem", fontWeight: 800, marginBottom: 20, color: "#0F172A" }}>How the cashback works</h2>
-          {[
-            { icon: "🔍", title: "Check your challan", desc: "Enter vehicle number above — opens the official Parivahan e-Challan portal." },
-            { icon: "💳", title: "Pay your challan", desc: "Pay directly on Parivahan via UPI, card, or net banking. We don't handle your payment." },
-            { icon: "📝", title: "Claim cashback here", desc: "Come back, enter challan amount + how you paid. Takes 30 seconds." },
-            { icon: "💸", title: "Get up to ₹100 in 24 hours", desc: "We verify the challan is cleared and transfer 10% of your challan (up to ₹100) to your UPI." },
-          ].map((s, i) => (
-            <div key={i} style={{ display: "flex", gap: 14, marginBottom: i < 3 ? 16 : 0, alignItems: "flex-start" }}>
-              <div style={{ width: 36, height: 36, borderRadius: "50%", background: "#FEF3C7", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>
-                {s.icon}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 10 }}>
+                <span style={{ fontSize: 11 }}>🔒</span>
+                <span style={{ fontSize: 11, color: "#94A3B8" }}>Secured by Razorpay · UPI · Cards · Net Banking</span>
               </div>
-              <div>
-                <p style={{ fontWeight: 700, color: "#0F172A", fontSize: 14, margin: "0 0 3px" }}>{s.title}</p>
-                <p style={{ color: "#64748B", fontSize: 13, margin: 0, lineHeight: 1.6 }}>{s.desc}</p>
-              </div>
+
+              <p style={{ fontSize: 11, color: "#CBD5E1", marginTop: 14, lineHeight: 1.6, textAlign: "center" }}>
+                We pay your challan on Parivahan.gov.in within 4 hours. If we can't clear it, you get a full refund — including the service fee.
+              </p>
             </div>
-          ))}
-        </div>
 
-        {/* DL Assistance cross-sell */}
-        <div style={{ background: "linear-gradient(135deg, #1a2540, #2d3f6b)", borderRadius: 20, padding: "24px 28px", marginBottom: 20 }}>
-          <p style={{ fontSize: 11, fontWeight: 700, color: "#F59E0B", textTransform: "uppercase", letterSpacing: "1px", marginBottom: 10 }}>Also from LearnDrive</p>
-          <h3 style={{ fontFamily: "'Sora',sans-serif", fontSize: "1.05rem", fontWeight: 800, color: "#fff", marginBottom: 8, lineHeight: 1.4 }}>
-            Get your Driving Licence — without the RTO confusion
-          </h3>
-          <p style={{ fontSize: 13, color: "#94A3B8", marginBottom: 16, lineHeight: 1.7 }}>
-            AI fills your Sarathi form, books your RTO slot, sends reminders till test day. ₹499 all inclusive.
-          </p>
-          <Link href="/dl-assistance" style={{ display: "inline-block", background: "#F59E0B", color: "#1a2540", padding: "11px 20px", borderRadius: 10, fontWeight: 800, fontSize: 14, textDecoration: "none" }}>
-            Get DL Assistance — ₹499 →
-          </Link>
-        </div>
-
-        {/* Common fines */}
-        <div style={{ background: "#fff", borderRadius: 20, border: "1px solid #E2E8F0", padding: "24px 28px", marginBottom: 20 }}>
-          <h2 style={{ fontFamily: "'Sora',sans-serif", fontSize: "1.05rem", fontWeight: 800, marginBottom: 6, color: "#0F172A" }}>Common traffic violations & fines</h2>
-          <p style={{ fontSize: 12, color: "#64748B", marginBottom: 18 }}>Motor Vehicles Act 2019 revised penalties</p>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 10 }}>
-            {CHALLAN_TYPES.map((c) => (
-              <div key={c.label} style={{ background: "#F8F7F4", borderRadius: 12, padding: "12px 14px", display: "flex", alignItems: "center", gap: 10 }}>
-                <span style={{ fontSize: 20 }}>{c.icon}</span>
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: "#0F172A" }}>{c.label}</div>
-                  <div style={{ fontSize: 12, color: "#EF4444", fontWeight: 700, marginTop: 2 }}>{c.fine}</div>
+            {/* Trust strip */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10, marginTop: 16 }}>
+              {[
+                { icon: "⏱️", label: "4-hr turnaround" },
+                { icon: "📱", label: "SMS when done" },
+                { icon: "↩️", label: "Full refund if failed" },
+              ].map((t) => (
+                <div key={t.label} style={{ background: "#fff", borderRadius: 12, padding: "12px 10px", textAlign: "center", border: "1px solid #E2E8F0" }}>
+                  <div style={{ fontSize: 20, marginBottom: 4 }}>{t.icon}</div>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: "#64748B" }}>{t.label}</div>
                 </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Pay via LearnDrive CTA */}
-        <div style={{ background: "#fff", borderRadius: 20, border: "2px solid #1a2540", padding: "24px 28px", marginBottom: 20 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-            <span style={{ fontSize: 24 }}>⚡</span>
-            <div>
-              <h3 style={{ fontFamily: "'Sora',sans-serif", fontSize: "1rem", fontWeight: 800, color: "#0F172A", margin: 0 }}>Don't want to deal with Parivahan?</h3>
-              <p style={{ fontSize: 12, color: "#64748B", margin: "3px 0 0" }}>We'll pay it for you within 4 hours</p>
+              ))}
             </div>
-          </div>
-          <div style={{ display: "flex", gap: 16, fontSize: 12, color: "#64748B", marginBottom: 16 }}>
-            <span>✅ Just ₹49 service fee</span>
-            <span>✅ SMS confirmation</span>
-            <span>✅ Full refund if failed</span>
-          </div>
-          <Link href="/challan-pay" style={{ display: "inline-block", background: "#1a2540", color: "#fff", padding: "11px 20px", borderRadius: 10, fontWeight: 800, fontSize: 14, textDecoration: "none" }}>
-            Pay My Challan — ₹49 fee →
-          </Link>
-        </div>
 
-        {/* Trainer CTA */}
-        <div style={{ background: "linear-gradient(135deg, #0B1437, #1A2B5F)", borderRadius: 20, padding: "24px 28px", color: "#fff" }}>
-          <p style={{ fontSize: 12, color: "#94A3B8", marginBottom: 6 }}>Prevent future fines</p>
-          <h3 style={{ fontFamily: "'Sora',sans-serif", fontSize: "1.05rem", fontWeight: 800, marginBottom: 8, lineHeight: 1.3 }}>Book a verified driving school — from ₹3,500</h3>
-          <p style={{ color: "#CBD5E1", fontSize: 13, marginBottom: 16 }}>Better skills = fewer challans. 1,000+ verified schools across India.</p>
-          <Link href="/trainers" style={{ background: "#F59E0B", color: "#0B1437", padding: "11px 20px", borderRadius: 10, fontWeight: 800, textDecoration: "none", fontSize: 13, display: "inline-block" }}>
-            Find Trainers Near Me →
-          </Link>
-        </div>
+            {/* Common fines */}
+            <div style={{ background: "#fff", borderRadius: 20, border: "1px solid #E2E8F0", padding: "24px", marginTop: 20 }}>
+              <h2 style={{ fontFamily: "'Sora',sans-serif", fontSize: "1rem", fontWeight: 800, color: "#0F172A", marginBottom: 4 }}>Common traffic fines</h2>
+              <p style={{ fontSize: 12, color: "#64748B", marginBottom: 16 }}>Motor Vehicles Act 2019</p>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 8 }}>
+                {COMMON_FINES.map((c) => (
+                  <div key={c.label} style={{ background: "#F8F7F4", borderRadius: 10, padding: "10px 12px", display: "flex", alignItems: "center", gap: 10 }}>
+                    <span style={{ fontSize: 18 }}>{c.icon}</span>
+                    <div>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: "#0F172A" }}>{c.label}</div>
+                      <div style={{ fontSize: 11, color: "#EF4444", fontWeight: 700, marginTop: 2 }}>{c.fine}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
 
+            {/* DL Assistance CTA */}
+            <div style={{ background: "linear-gradient(135deg, #1a2540, #2d3f6b)", borderRadius: 20, padding: "24px", marginTop: 16 }}>
+              <p style={{ fontSize: 11, fontWeight: 700, color: "#F59E0B", textTransform: "uppercase", letterSpacing: "1px", marginBottom: 8 }}>Prevent future challans</p>
+              <h3 style={{ fontFamily: "'Sora',sans-serif", fontSize: "1rem", fontWeight: 800, color: "#fff", marginBottom: 8 }}>
+                Is your Driving Licence valid?
+              </h3>
+              <p style={{ fontSize: 13, color: "#94A3B8", marginBottom: 14 }}>AI fills your Sarathi form + books RTO slot. ₹499 all inclusive.</p>
+              <Link href="/dl-assistance" style={{ display: "inline-block", background: "#F59E0B", color: "#1a2540", padding: "10px 18px", borderRadius: 8, fontWeight: 800, fontSize: 13, textDecoration: "none" }}>
+                Get DL Assistance — ₹499 →
+              </Link>
+            </div>
+          </>
+        )}
+
+        {/* ── SUCCESS STEP ── */}
+        {step === "done" && (
+          <div style={{ background: "#fff", borderRadius: 20, border: "1px solid #E2E8F0", padding: "32px 28px", textAlign: "center" }}>
+            <div style={{ fontSize: 52, marginBottom: 12 }}>✅</div>
+            <h2 style={{ fontFamily: "'Sora',sans-serif", fontSize: "1.3rem", fontWeight: 800, color: "#0F172A", marginBottom: 8 }}>
+              Payment received!
+            </h2>
+            <p style={{ fontSize: 14, color: "#64748B", marginBottom: 20, lineHeight: 1.7 }}>
+              We'll clear the challan for{" "}
+              <strong style={{ fontFamily: "monospace" }}>{vehicleNo.trim().toUpperCase()}</strong>{" "}
+              on Parivahan within <strong>4 hours</strong>. You'll get an SMS confirmation once done.
+            </p>
+
+            {refCode && (
+              <div style={{ background: "#F0FDF4", border: "1px solid #BBF7D0", borderRadius: 12, padding: "16px", marginBottom: 24 }}>
+                <p style={{ fontSize: 11, fontWeight: 700, color: "#166534", textTransform: "uppercase", letterSpacing: "1px", margin: "0 0 6px" }}>Reference number</p>
+                <p style={{ fontFamily: "monospace", fontSize: 22, fontWeight: 800, color: "#16A34A", margin: 0, letterSpacing: 3 }}>{refCode}</p>
+                <p style={{ fontSize: 11, color: "#64748B", margin: "6px 0 0" }}>WhatsApp us at +91 87008 96528 with this if you have questions</p>
+              </div>
+            )}
+
+            {/* Insurance upsell */}
+            <div style={{ background: "linear-gradient(135deg, #7F1D1D, #B91C1C)", borderRadius: 16, padding: "20px", marginBottom: 12, textAlign: "left" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                <span style={{ fontSize: 18 }}>🛡️</span>
+                <span style={{ fontSize: 10, fontWeight: 800, color: "#FCA5A5", textTransform: "uppercase", letterSpacing: "1px" }}>Important</span>
+              </div>
+              <p style={{ fontFamily: "'Sora',sans-serif", fontSize: 14, fontWeight: 800, color: "#fff", margin: "0 0 6px" }}>Is your vehicle insurance still valid?</p>
+              <p style={{ fontSize: 12, color: "#FECACA", margin: "0 0 12px" }}>Driving without insurance = ₹2,000 fine. Check in 2 minutes, free.</p>
+              <a href="/go/insurance?src=challan-success" target="_blank" rel="noopener noreferrer"
+                style={{ display: "inline-block", background: "#fff", color: "#B91C1C", padding: "8px 16px", borderRadius: 8, fontWeight: 800, fontSize: 13, textDecoration: "none" }}>
+                Check / Renew Insurance →
+              </a>
+            </div>
+
+            {/* DL Assistance upsell */}
+            <div style={{ background: "linear-gradient(135deg, #1a2540, #2d3f6b)", borderRadius: 16, padding: "20px", marginBottom: 20, textAlign: "left" }}>
+              <p style={{ fontSize: 10, color: "#F59E0B", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", margin: "0 0 8px" }}>Avoid your next challan</p>
+              <p style={{ fontFamily: "'Sora',sans-serif", fontSize: 14, fontWeight: 800, color: "#fff", margin: "0 0 6px" }}>Renew your Driving Licence — ₹499</p>
+              <p style={{ fontSize: 12, color: "#94A3B8", margin: "0 0 12px" }}>AI fills your Sarathi form + books RTO slot. All inclusive.</p>
+              <Link href="/dl-assistance" style={{ display: "inline-block", background: "#F59E0B", color: "#1a2540", padding: "8px 16px", borderRadius: 8, fontWeight: 800, fontSize: 13, textDecoration: "none" }}>
+                Get DL Assistance →
+              </Link>
+            </div>
+
+            <button
+              onClick={() => { setStep("form"); setVehicleNo(""); setName(""); setPhone(""); setChallanAmount(""); setRefCode(""); }}
+              style={{ background: "none", border: "1.5px solid #E2E8F0", borderRadius: 10, padding: "11px 24px", fontWeight: 700, fontSize: 14, cursor: "pointer", color: "#64748B" }}
+            >
+              Pay another challan
+            </button>
+          </div>
+        )}
       </div>
     </main>
   );
