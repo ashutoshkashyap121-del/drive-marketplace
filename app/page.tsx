@@ -64,7 +64,7 @@ const STATS = [
 const FREE_TOOLS = [
   { icon: "🪪", title: "DL Check",     desc: "Check driving licence validity",     href: "/dl-check" },
   { icon: "🚗", title: "RC Check",     desc: "Vehicle registration details",       href: "/rc-check" },
-  { icon: "🚦", title: "Challan Check",desc: "Check pending traffic fines",        href: "/challan-check" },
+  { icon: "🚦", title: "Challan Check",desc: "Check fines free · ₹100 cashback",   href: "/challan-check" },
   { icon: "📝", title: "RTO Mock Test",desc: "Practice for your RTO exam",         href: "/rto-test/practice" },
   { icon: "🤖", title: "DL Assistance",desc: "AI-powered DL application help",     href: "/dl-assistance" },
   { icon: "🏫", title: "Find Schools", desc: "Book a driving school near you",     href: "/trainers" },
@@ -522,6 +522,63 @@ export default function HomePage() {
             <div style={{ color: "#94a3b8", fontSize: 13, marginBottom: 20 }}>Hidden charges</div>
             <div style={{ fontSize: 48, fontWeight: 900, color: "#f59e0b" }}>₹499</div>
             <div style={{ color: "#94a3b8", fontSize: 13 }}>All inclusive</div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── CHALLAN BANNER ── */}
+      <div style={{ background: "#F8F7F4", padding: "56px 5%", borderTop: "1px solid #E2E8F0" }}>
+        <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+          <div style={{ textAlign: "center", marginBottom: 32 }}>
+            <div style={{ display: "inline-block", background: "#FEF3C7", color: "#B45309", padding: "4px 14px", borderRadius: 20, fontSize: 12, fontWeight: 700, marginBottom: 12, border: "1px solid #FDE68A" }}>
+              🚦 Traffic Challan Services
+            </div>
+            <h2 style={{ fontFamily: "'Sora',sans-serif", fontSize: "clamp(1.4rem,3vw,2rem)", fontWeight: 800, color: "#0F172A", marginBottom: 8 }}>
+              Got a traffic challan?
+            </h2>
+            <p style={{ color: "#64748B", fontSize: 15 }}>Check for free, claim cashback, or let us pay it for you</p>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 20 }}>
+            {/* Check + Cashback */}
+            <div style={{ background: "#fff", borderRadius: 20, border: "1px solid #E2E8F0", padding: "28px", display: "flex", flexDirection: "column" }}>
+              <div style={{ fontSize: 36, marginBottom: 14 }}>🔍</div>
+              <div style={{ display: "inline-block", background: "#DCFCE7", color: "#166534", fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 99, marginBottom: 12, width: "fit-content" }}>FREE</div>
+              <h3 style={{ fontFamily: "'Sora',sans-serif", fontSize: "1.05rem", fontWeight: 800, color: "#0F172A", marginBottom: 8, lineHeight: 1.4 }}>
+                Check pending challans
+              </h3>
+              <p style={{ color: "#64748B", fontSize: 13, lineHeight: 1.7, marginBottom: 16, flex: 1 }}>
+                Instantly check all pending e-challans on your vehicle via the official Parivahan portal. Pay your challan and get <strong>up to ₹100 cashback</strong> back to your UPI.
+              </p>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 20 }}>
+                {["✅ 100% free to check", "🎁 Up to ₹100 UPI cashback", "💳 UPI · Cards · Net Banking"].map((f) => (
+                  <span key={f} style={{ fontSize: 12, color: "#64748B" }}>{f}</span>
+                ))}
+              </div>
+              <Link href="/challan-check" style={{ display: "block", textAlign: "center", background: "#0F172A", color: "#fff", padding: "12px", borderRadius: 10, fontWeight: 800, fontSize: 14, textDecoration: "none" }}>
+                Check Challans Free →
+              </Link>
+            </div>
+
+            {/* Pay via LearnDrive */}
+            <div style={{ background: "linear-gradient(135deg, #0B1437 0%, #1A2B5F 100%)", borderRadius: 20, padding: "28px", display: "flex", flexDirection: "column" }}>
+              <div style={{ fontSize: 36, marginBottom: 14 }}>⚡</div>
+              <div style={{ display: "inline-block", background: "rgba(245,158,11,0.2)", color: "#F59E0B", fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 99, marginBottom: 12, width: "fit-content", border: "1px solid rgba(245,158,11,0.3)" }}>₹49 SERVICE FEE</div>
+              <h3 style={{ fontFamily: "'Sora',sans-serif", fontSize: "1.05rem", fontWeight: 800, color: "#fff", marginBottom: 8, lineHeight: 1.4 }}>
+                We pay it for you
+              </h3>
+              <p style={{ color: "#94A3B8", fontSize: 13, lineHeight: 1.7, marginBottom: 16, flex: 1 }}>
+                Skip the Parivahan portal entirely. Give us your challan amount and we'll clear it within <strong style={{ color: "#fff" }}>4 hours</strong>. SMS confirmation sent the moment it's done.
+              </p>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 20 }}>
+                {["⏱️ Cleared within 4 hours", "📱 SMS when done", "↩️ Full refund if we can't clear it"].map((f) => (
+                  <span key={f} style={{ fontSize: 12, color: "#CBD5E1" }}>{f}</span>
+                ))}
+              </div>
+              <Link href="/challan-pay" style={{ display: "block", textAlign: "center", background: "#F59E0B", color: "#0B1437", padding: "12px", borderRadius: 10, fontWeight: 800, fontSize: 14, textDecoration: "none" }}>
+                Pay My Challan — ₹49 fee →
+              </Link>
+            </div>
           </div>
         </div>
       </div>
