@@ -185,8 +185,8 @@ export default function HomePage() {
           <div className="nav-links">
             <Link href="/blog" style={{ color: "#64748B", textDecoration: "none", fontSize: 14, fontWeight: 500, padding: "6px 12px" }}>Blog</Link>
             <Link href="/rto-test/practice" style={{ color: "#64748B", textDecoration: "none", fontSize: 14, fontWeight: 500, padding: "6px 12px" }}>RTO Test</Link>
+            <Link href="/challan-check" style={{ color: "#64748B", textDecoration: "none", fontSize: 14, fontWeight: 500, padding: "6px 12px" }}>🚦 Challan</Link>
             <Link href="/dl-assistance" style={{ color: "#64748B", textDecoration: "none", fontSize: 14, fontWeight: 500, padding: "6px 12px" }}>DL Assistance</Link>
-            {/* ── NEW: Hire a Driver link ── */}
             <Link href="/hire-driver" className="hire-driver-link" style={{ color: "#64748B", textDecoration: "none", fontSize: 14, fontWeight: 500, padding: "6px 12px", display: "flex", alignItems: "center", gap: 4 }}>
               🚗 Hire a Driver
             </Link>

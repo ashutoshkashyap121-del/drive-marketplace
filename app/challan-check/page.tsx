@@ -5,7 +5,28 @@ import Link from "next/link";
 
 const SERVICE_FEE = 49;
 
-type Step = "form" | "done";
+type Step = "form" | "lookup" | "done";
+
+// Decode state from Indian vehicle number prefix
+const STATE_CODES: Record<string, string> = {
+  AN:"Andaman & Nicobar",AP:"Andhra Pradesh",AR:"Arunachal Pradesh",AS:"Assam",
+  BR:"Bihar",CG:"Chhattisgarh",CH:"Chandigarh",DD:"Daman & Diu",DL:"Delhi",
+  DN:"Dadra & Nagar Haveli",GA:"Goa",GJ:"Gujarat",HP:"Himachal Pradesh",
+  HR:"Haryana",JH:"Jharkhand",JK:"Jammu & Kashmir",KA:"Karnataka",KL:"Kerala",
+  LA:"Ladakh",LD:"Lakshadweep",MH:"Maharashtra",ML:"Meghalaya",MN:"Manipur",
+  MP:"Madhya Pradesh",MZ:"Mizoram",NL:"Nagaland",OD:"Odisha",PB:"Punjab",
+  PY:"Puducherry",RJ:"Rajasthan",SK:"Sikkim",TN:"Tamil Nadu",TR:"Tripura",
+  TS:"Telangana",UK:"Uttarakhand",UP:"Uttar Pradesh",WB:"West Bengal",
+};
+
+function decodeVehicle(vehicleNo: string): { state: string; valid: boolean } {
+  const cleaned = vehicleNo.trim().toUpperCase().replace(/\s/g, "");
+  if (cleaned.length < 4) return { state: "", valid: false };
+  const code = cleaned.slice(0, 2);
+  const state = STATE_CODES[code] || "";
+  const valid = cleaned.length >= 6;
+  return { state, valid };
+}
 
 const COMMON_FINES = [
   { icon: "📵", label: "Mobile while driving", fine: "₹1,000–5,000" },
@@ -25,13 +46,23 @@ export default function ChallanCheckPage() {
   const [error, setError]                 = useState("");
   const [loading, setLoading]             = useState(false);
   const [refCode, setRefCode]             = useState("");
+  const [checking, setChecking]           = useState(false);
 
   const amt   = parseFloat(challanAmount) || 0;
   const total = amt >= 100 ? amt + SERVICE_FEE : 0;
+  const decoded = decodeVehicle(vehicleNo);
 
-  function openParivahan() {
+  function handleCheckChallan() {
     const cleaned = vehicleNo.trim().toUpperCase().replace(/\s/g, "");
+    if (!cleaned || cleaned.length < 6) {
+      setError("Enter a valid vehicle registration number (e.g. DL01AB1234)");
+      return;
+    }
+    setError("");
+    setChecking(true);
+    // Open Parivahan in background, show guided step
     window.open("https://echallan.parivahan.gov.in/index/accused-challan", "_blank");
+    setTimeout(() => { setChecking(false); setStep("lookup"); }, 1200);
   }
 
   async function handlePay() {
@@ -131,93 +162,119 @@ export default function ChallanCheckPage() {
 
       <div style={{ maxWidth: 560, margin: "0 auto", padding: "28px 20px 48px" }}>
 
-        {/* ── FORM STEP ── */}
+        {/* ── STEP 1: Vehicle number entry ── */}
         {step === "form" && (
           <>
-            {/* Step guide */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10, marginBottom: 24 }}>
-              {[
-                { n: "1", icon: "🔍", label: "Check on Parivahan" },
-                { n: "2", icon: "📝", label: "Enter amount here" },
-                { n: "3", icon: "✅", label: "We clear in 4 hrs" },
-              ].map((s) => (
-                <div key={s.n} style={{ background: "#fff", borderRadius: 14, padding: "14px 10px", textAlign: "center", border: "1px solid #E2E8F0" }}>
-                  <div style={{ fontSize: 20, marginBottom: 6 }}>{s.icon}</div>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: "#64748B", lineHeight: 1.4 }}>{s.label}</div>
-                </div>
-              ))}
-            </div>
-
-            {/* Main card */}
             <div style={{ background: "#fff", borderRadius: 20, border: "1px solid #E2E8F0", padding: "28px" }}>
+              <h2 style={{ fontFamily: "'Sora',sans-serif", fontSize: "1rem", fontWeight: 800, color: "#0F172A", marginBottom: 4 }}>Enter your vehicle number</h2>
+              <p style={{ fontSize: 13, color: "#64748B", marginBottom: 20 }}>We'll look up pending challans and let you pay right here.</p>
 
-              {/* Vehicle number + Parivahan check */}
-              <div style={{ marginBottom: 16 }}>
+              <div style={{ marginBottom: 8 }}>
                 <label style={{ display: "block", fontSize: 11, color: "#64748B", marginBottom: 5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>
                   Vehicle Registration Number *
                 </label>
-                <div style={{ display: "flex", gap: 8 }}>
-                  <input
-                    type="text"
-                    value={vehicleNo}
-                    onChange={(e) => { setVehicleNo(e.target.value.toUpperCase()); setError(""); }}
-                    placeholder="e.g. DL01AB1234"
-                    maxLength={12}
-                    style={{ flex: 1, padding: "12px 14px", borderRadius: 10, border: "1.5px solid #E2E8F0", fontSize: 15, fontFamily: "monospace", letterSpacing: 2, outline: "none", boxSizing: "border-box" }}
-                  />
-                  <button
-                    onClick={openParivahan}
-                    style={{ background: "#F8F7F4", border: "1.5px solid #E2E8F0", borderRadius: 10, padding: "0 14px", fontSize: 12, fontWeight: 700, color: "#0F172A", cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0 }}
-                  >
-                    Check ↗
-                  </button>
-                </div>
-                <p style={{ fontSize: 11, color: "#94A3B8", marginTop: 6 }}>
-                  "Check ↗" opens Parivahan in a new tab — note your challan amount, then come back here.
-                </p>
-              </div>
-
-              {/* Name */}
-              <div style={{ marginBottom: 14 }}>
-                <label style={{ display: "block", fontSize: 11, color: "#64748B", marginBottom: 5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>Your Name *</label>
                 <input
                   type="text"
-                  value={name}
-                  onChange={(e) => { setName(e.target.value); setError(""); }}
-                  placeholder="Full name"
-                  style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: "1.5px solid #E2E8F0", fontSize: 14, fontFamily: "inherit", outline: "none", boxSizing: "border-box" }}
+                  value={vehicleNo}
+                  onChange={(e) => { setVehicleNo(e.target.value.toUpperCase()); setError(""); }}
+                  placeholder="e.g. DL01AB1234"
+                  maxLength={12}
+                  style={{ width: "100%", padding: "14px 16px", borderRadius: 10, border: "1.5px solid #E2E8F0", fontSize: 16, fontFamily: "monospace", letterSpacing: 3, outline: "none", boxSizing: "border-box" }}
                 />
               </div>
 
-              {/* Phone */}
+              {/* Live vehicle decode */}
+              {decoded.state && (
+                <div style={{ display: "flex", alignItems: "center", gap: 8, background: "#F0FDF4", border: "1px solid #BBF7D0", borderRadius: 8, padding: "8px 12px", marginBottom: 16 }}>
+                  <span style={{ fontSize: 14 }}>✅</span>
+                  <span style={{ fontSize: 13, color: "#166534", fontWeight: 600 }}>
+                    Vehicle registered in <strong>{decoded.state}</strong>
+                  </span>
+                </div>
+              )}
+              {vehicleNo.length >= 2 && !decoded.state && (
+                <div style={{ background: "#FEF3C7", border: "1px solid #FDE68A", borderRadius: 8, padding: "8px 12px", marginBottom: 16 }}>
+                  <span style={{ fontSize: 12, color: "#92400E" }}>⚠ Unrecognised state code — double-check your vehicle number</span>
+                </div>
+              )}
+
+              {error && <p style={{ color: "#EF4444", fontSize: 12, marginBottom: 12 }}>⚠ {error}</p>}
+
+              <button
+                onClick={handleCheckChallan}
+                disabled={checking}
+                style={{ width: "100%", background: "#F59E0B", color: "#0F172A", border: "none", borderRadius: 10, padding: "15px", fontWeight: 800, fontSize: 15, cursor: checking ? "not-allowed" : "pointer", fontFamily: "'Sora',sans-serif", opacity: checking ? 0.8 : 1 }}
+              >
+                {checking ? "🔍 Checking challans…" : "Check Challans →"}
+              </button>
+              <p style={{ fontSize: 11, color: "#94A3B8", marginTop: 8, textAlign: "center" }}>Free to check · Pay only if you want us to clear it</p>
+            </div>
+
+          </>
+        )}
+
+        {/* ── STEP 2: Lookup result + payment form ── */}
+        {step === "lookup" && (
+          <>
+            {/* Result banner */}
+            <div style={{ background: "#fff", borderRadius: 20, border: "2px solid #1a2540", padding: "20px 24px", marginBottom: 16 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <div style={{ width: 44, height: 44, borderRadius: 12, background: "#F0FDF4", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}>🚗</div>
+                <div>
+                  <p style={{ fontFamily: "monospace", fontSize: 17, fontWeight: 800, color: "#0F172A", margin: 0, letterSpacing: 2 }}>{vehicleNo.trim().toUpperCase()}</p>
+                  {decoded.state && <p style={{ fontSize: 12, color: "#64748B", margin: "3px 0 0" }}>Registered in {decoded.state}</p>}
+                </div>
+                <button onClick={() => { setStep("form"); setVehicleNo(""); setChallanAmount(""); setError(""); }}
+                  style={{ marginLeft: "auto", background: "none", border: "1px solid #E2E8F0", borderRadius: 8, padding: "5px 12px", fontSize: 12, color: "#64748B", cursor: "pointer" }}>
+                  Change
+                </button>
+              </div>
+            </div>
+
+            {/* Parivahan notice */}
+            <div style={{ background: "#FEF3C7", border: "1px solid #FDE68A", borderRadius: 14, padding: "16px 20px", marginBottom: 20 }}>
+              <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+                <span style={{ fontSize: 20 }}>📋</span>
+                <div>
+                  <p style={{ fontWeight: 700, color: "#92400E", fontSize: 13, margin: "0 0 4px" }}>Challan details opened on Parivahan</p>
+                  <p style={{ color: "#78350F", fontSize: 12, margin: "0 0 10px", lineHeight: 1.6 }}>
+                    A Parivahan tab opened in the background. Note the challan amount shown there, then enter it below to pay right here — without going back to the government site.
+                  </p>
+                  <a href="https://echallan.parivahan.gov.in/index/accused-challan" target="_blank" rel="noopener noreferrer"
+                    style={{ fontSize: 12, color: "#B45309", fontWeight: 700, textDecoration: "underline" }}>
+                    Open Parivahan again ↗
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            {/* Payment form */}
+            <div style={{ background: "#fff", borderRadius: 20, border: "1px solid #E2E8F0", padding: "28px" }}>
+              <h2 style={{ fontFamily: "'Sora',sans-serif", fontSize: "1rem", fontWeight: 800, color: "#0F172A", marginBottom: 20 }}>Pay your challan here</h2>
+
+              <div style={{ marginBottom: 14 }}>
+                <label style={{ display: "block", fontSize: 11, color: "#64748B", marginBottom: 5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>Your Name *</label>
+                <input type="text" value={name} onChange={(e) => { setName(e.target.value); setError(""); }}
+                  placeholder="Full name"
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: "1.5px solid #E2E8F0", fontSize: 14, fontFamily: "inherit", outline: "none", boxSizing: "border-box" }} />
+              </div>
+
               <div style={{ marginBottom: 14 }}>
                 <label style={{ display: "block", fontSize: 11, color: "#64748B", marginBottom: 5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>Mobile Number *</label>
-                <input
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => { setPhone(e.target.value.replace(/\D/g, "").slice(0, 10)); setError(""); }}
-                  placeholder="10-digit number"
-                  inputMode="numeric"
-                  maxLength={10}
-                  style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: "1.5px solid #E2E8F0", fontSize: 14, fontFamily: "inherit", outline: "none", boxSizing: "border-box" }}
-                />
+                <input type="tel" value={phone} onChange={(e) => { setPhone(e.target.value.replace(/\D/g, "").slice(0, 10)); setError(""); }}
+                  placeholder="10-digit number" inputMode="numeric" maxLength={10}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: "1.5px solid #E2E8F0", fontSize: 14, fontFamily: "inherit", outline: "none", boxSizing: "border-box" }} />
               </div>
 
-              {/* Challan amount */}
               <div style={{ marginBottom: 20 }}>
                 <label style={{ display: "block", fontSize: 11, color: "#64748B", marginBottom: 5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                  Challan Amount * <span style={{ color: "#94A3B8", fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>from Parivahan</span>
+                  Challan Amount * <span style={{ color: "#94A3B8", fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>— from Parivahan</span>
                 </label>
                 <div style={{ position: "relative" }}>
                   <span style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "#64748B", fontWeight: 600 }}>₹</span>
-                  <input
-                    type="number"
-                    value={challanAmount}
-                    onChange={(e) => { setChallanAmount(e.target.value); setError(""); }}
-                    placeholder="e.g. 1000"
-                    min={100}
-                    style={{ width: "100%", padding: "12px 14px 12px 28px", borderRadius: 10, border: "1.5px solid #E2E8F0", fontSize: 15, fontFamily: "inherit", outline: "none", boxSizing: "border-box" }}
-                  />
+                  <input type="number" value={challanAmount} onChange={(e) => { setChallanAmount(e.target.value); setError(""); }}
+                    placeholder="e.g. 1000" min={100}
+                    style={{ width: "100%", padding: "12px 14px 12px 28px", borderRadius: 10, border: "1.5px solid #E2E8F0", fontSize: 15, fontFamily: "inherit", outline: "none", boxSizing: "border-box" }} />
                 </div>
               </div>
 
@@ -225,53 +282,30 @@ export default function ChallanCheckPage() {
               {amt >= 100 && (
                 <div style={{ background: "#F8F7F4", borderRadius: 12, padding: "14px 16px", marginBottom: 18 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#64748B", marginBottom: 6 }}>
-                    <span>Challan amount</span>
-                    <span>₹{amt.toLocaleString("en-IN")}</span>
+                    <span>Challan amount</span><span>₹{amt.toLocaleString("en-IN")}</span>
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#64748B", marginBottom: 8 }}>
-                    <span>LearnDrive service fee</span>
-                    <span>₹{SERVICE_FEE}</span>
+                    <span>LearnDrive service fee</span><span>₹{SERVICE_FEE}</span>
                   </div>
                   <div style={{ borderTop: "1px solid #E2E8F0", paddingTop: 8, display: "flex", justifyContent: "space-between", fontSize: 15, fontWeight: 800, color: "#0F172A" }}>
-                    <span>Total</span>
-                    <span>₹{total.toLocaleString("en-IN")}</span>
+                    <span>Total</span><span>₹{total.toLocaleString("en-IN")}</span>
                   </div>
                 </div>
               )}
 
               {error && <p style={{ color: "#EF4444", fontSize: 12, marginBottom: 12 }}>⚠ {error}</p>}
 
-              <button
-                onClick={handlePay}
-                disabled={loading}
-                style={{
-                  width: "100%",
-                  background: "#1a2540",
-                  color: "#fff",
-                  border: "none",
-                  borderRadius: 10,
-                  padding: "15px",
-                  fontWeight: 800,
-                  fontSize: 15,
-                  cursor: loading ? "not-allowed" : "pointer",
-                  fontFamily: "'Sora',sans-serif",
-                  opacity: loading ? 0.7 : 1,
-                }}
-              >
-                {loading
-                  ? "Processing..."
-                  : total > 0
-                  ? `Pay ₹${total.toLocaleString("en-IN")} →`
-                  : "Pay Securely →"}
+              <button onClick={handlePay} disabled={loading}
+                style={{ width: "100%", background: "#1a2540", color: "#fff", border: "none", borderRadius: 10, padding: "15px", fontWeight: 800, fontSize: 15, cursor: loading ? "not-allowed" : "pointer", fontFamily: "'Sora',sans-serif", opacity: loading ? 0.7 : 1 }}>
+                {loading ? "Processing..." : total > 0 ? `Pay ₹${total.toLocaleString("en-IN")} →` : "Pay Securely →"}
               </button>
 
               <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 10 }}>
                 <span style={{ fontSize: 11 }}>🔒</span>
                 <span style={{ fontSize: 11, color: "#94A3B8" }}>Secured by Razorpay · UPI · Cards · Net Banking</span>
               </div>
-
-              <p style={{ fontSize: 11, color: "#CBD5E1", marginTop: 14, lineHeight: 1.6, textAlign: "center" }}>
-                We pay your challan on Parivahan.gov.in within 4 hours. If we can't clear it, you get a full refund — including the service fee.
+              <p style={{ fontSize: 11, color: "#CBD5E1", marginTop: 12, lineHeight: 1.6, textAlign: "center" }}>
+                We pay your challan on Parivahan.gov.in within 4 hours. Full refund if we can't clear it.
               </p>
             </div>
 

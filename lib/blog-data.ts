@@ -17,6 +17,7 @@ export const categories = [
   "Driving Basics",
   "Trainer Tips",
   "Traffic Rules",
+  "Traffic Challan",
 ];
 
 
@@ -17052,7 +17053,9 @@ Questions? [support@learndrive.in](mailto:support@learndrive.in)
 
 ];
 
-export const blogPosts: BlogPost[] = [...baseBlogPosts, ...additionalBlogPosts].sort(
+import { challanBlogPosts } from "./blog-data-challan";
+
+export const blogPosts: BlogPost[] = [...baseBlogPosts, ...additionalBlogPosts, ...challanBlogPosts].sort(
   (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
 );
 
