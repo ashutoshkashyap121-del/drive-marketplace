@@ -401,6 +401,29 @@ export default function ChallanCheckPage() {
                 Questions? WhatsApp us at +91 87008 96528
               </p>
 
+              {/* Insurance affiliate card */}
+              <div style={{ background: "linear-gradient(135deg, #7F1D1D, #B91C1C)", borderRadius: 16, padding: "20px", marginBottom: 12, textAlign: "left" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                  <span style={{ fontSize: 20 }}>🛡️</span>
+                  <span style={{ fontSize: 10, fontWeight: 800, color: "#FCA5A5", textTransform: "uppercase", letterSpacing: "1px" }}>Important</span>
+                </div>
+                <p style={{ fontFamily: "'Sora',sans-serif", fontSize: 14, fontWeight: 800, color: "#fff", margin: "0 0 6px", lineHeight: 1.4 }}>
+                  Is your vehicle insurance still valid?
+                </p>
+                <p style={{ fontSize: 12, color: "#FECACA", margin: "0 0 14px", lineHeight: 1.6 }}>
+                  Driving without valid insurance is a ₹2,000 fine — and risky. Check your policy in 2 minutes, free.
+                </p>
+                <a
+                  href="/go/insurance?src=challan-success"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ display: "inline-block", background: "#fff", color: "#B91C1C", padding: "9px 18px", borderRadius: 8, fontWeight: 800, fontSize: 13, textDecoration: "none" }}
+                >
+                  Check / Renew Insurance →
+                </a>
+                <p style={{ fontSize: 10, color: "#FCA5A5", margin: "8px 0 0" }}>Compares ACKO, Digit, Bajaj Allianz & more</p>
+              </div>
+
               {/* DL Assist upsell on success */}
               <div style={{ background: "linear-gradient(135deg, #1a2540, #2d3f6b)", borderRadius: 16, padding: "20px", marginBottom: 16, textAlign: "left" }}>
                 <p style={{ fontSize: 10, color: "#F59E0B", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", margin: "0 0 8px" }}>Avoid your next challan</p>
