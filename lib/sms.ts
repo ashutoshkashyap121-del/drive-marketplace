@@ -105,3 +105,7 @@ export async function smsTrainerWelcome({ name, mobile, city }: { name: string; 
 export async function smsChallanCashbackClaim({ mobile, promoCode, amount }: { mobile: string; promoCode: string; amount: number }) {
   return sendSMS(mobile, `LearnDrive: Your challan cashback claim is confirmed! Code: ${promoCode}. We will verify your challan and send Rs${amount} to your UPI within 24 hrs. Help? Call +91 87008 96528`);
 }
+
+export async function sendChallanPayConfirmation({ mobile, vehicleNo, refCode, totalPaid }: { mobile: string; vehicleNo: string; refCode: string; totalPaid: number }) {
+  return sendSMS(mobile, `LearnDrive: Payment of Rs${totalPaid} received for vehicle ${vehicleNo}. Ref: ${refCode}. We will pay your challan within 4 hrs and confirm via SMS. Help? +91 87008 96528`);
+}

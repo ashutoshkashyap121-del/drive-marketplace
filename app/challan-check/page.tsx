@@ -502,6 +502,25 @@ export default function ChallanCheckPage() {
           </div>
         </div>
 
+        {/* Pay via LearnDrive CTA */}
+        <div style={{ background: "#fff", borderRadius: 20, border: "2px solid #1a2540", padding: "24px 28px", marginBottom: 20 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+            <span style={{ fontSize: 24 }}>⚡</span>
+            <div>
+              <h3 style={{ fontFamily: "'Sora',sans-serif", fontSize: "1rem", fontWeight: 800, color: "#0F172A", margin: 0 }}>Don't want to deal with Parivahan?</h3>
+              <p style={{ fontSize: 12, color: "#64748B", margin: "3px 0 0" }}>We'll pay it for you within 4 hours</p>
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: 16, fontSize: 12, color: "#64748B", marginBottom: 16 }}>
+            <span>✅ Just ₹49 service fee</span>
+            <span>✅ SMS confirmation</span>
+            <span>✅ Full refund if failed</span>
+          </div>
+          <Link href="/challan-pay" style={{ display: "inline-block", background: "#1a2540", color: "#fff", padding: "11px 20px", borderRadius: 10, fontWeight: 800, fontSize: 14, textDecoration: "none" }}>
+            Pay My Challan — ₹49 fee →
+          </Link>
+        </div>
+
         {/* Trainer CTA */}
         <div style={{ background: "linear-gradient(135deg, #0B1437, #1A2B5F)", borderRadius: 20, padding: "24px 28px", color: "#fff" }}>
           <p style={{ fontSize: 12, color: "#94A3B8", marginBottom: 6 }}>Prevent future fines</p>
