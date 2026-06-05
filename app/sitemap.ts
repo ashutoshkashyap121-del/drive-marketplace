@@ -34,6 +34,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE}/how-it-works-for-trainers`, priority: 0.9, changeFrequency: "monthly", lastModified: now },
     { url: `${BASE}/hire-a-driver`,             priority: 0.9, changeFrequency: "monthly", lastModified: now },
     { url: `${BASE}/corporate-training`,        priority: 0.8, changeFrequency: "monthly", lastModified: now },
+    { url: `${BASE}/match`,                     priority: 0.8, changeFrequency: "monthly", lastModified: now },
     { url: `${BASE}/about`,                     priority: 0.4, changeFrequency: "monthly", lastModified: now },
     { url: `${BASE}/careers`,                   priority: 0.4, changeFrequency: "monthly", lastModified: now },
     { url: `${BASE}/contact`,                   priority: 0.4, changeFrequency: "monthly", lastModified: now },

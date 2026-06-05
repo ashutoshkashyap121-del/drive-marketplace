@@ -67,6 +67,7 @@ export default function Footer() {
           <h4 style={{ color: "#FFFFFF", fontSize: 13, fontWeight: 700, letterSpacing: "0.8px", textTransform: "uppercase", marginBottom: 16 }}>Services</h4>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             <Link href="/trainers" className="footer-link">Find a Driving Trainer</Link>
+            <Link href="/match" className="footer-link">Find My Trainer (AI Match)</Link>
             <Link href="/hire-driver" className="footer-link">Hire a Driver</Link>
             <Link href="/hire-driver/onboard" className="footer-link">Become a Driver</Link>
             <Link href="/dl-assistance" className="footer-link">DL Assistance</Link>
