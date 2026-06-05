@@ -32,6 +32,7 @@ export default async function AdminDashboardPage() {
       bio: true,
       status: true,
       basePrice: true,
+      packagesJson: true,
       rating: true,
       createdAt: true,
       vehicles: {

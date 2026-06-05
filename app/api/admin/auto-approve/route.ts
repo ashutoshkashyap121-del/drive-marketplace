@@ -22,14 +22,14 @@ TRAINER APPLICATION:
 - Experience: ${trainer.experience} years
 - Vehicle Types: ${JSON.stringify(trainer.vehicleTypes)}
 - Languages: ${JSON.stringify(trainer.languages)}
-- Base Price: Rs ${trainer.basePrice}/hr
+- Starting Package Price: Rs ${trainer.basePrice ?? "not set"} (this is a full course/package price, NOT hourly)
 - Licence Number: ${trainer.licenseNumber || "Not provided"}
 - Service Pincodes: ${JSON.stringify(trainer.serviceArea || [])}
 - Applied at: ${trainer.createdAt}
 
 APPROVAL CRITERIA:
-- APPROVE if: experience >= 3 years, licence number provided (10+ chars), at least 1 vehicle type, at least 1 pincode, price between Rs 200-Rs 3000
-- REJECT if: experience < 1 year, no licence number, price > Rs 5000 or < Rs 100, clearly fake data (e.g. name is "test", "asd")
+- APPROVE if: experience >= 3 years, licence number provided (10+ chars), at least 1 vehicle type, at least 1 pincode, package price between Rs 2000-Rs 15000
+- REJECT if: experience < 1 year, no licence number, package price > Rs 30000 or < Rs 500, clearly fake data (e.g. name is "test", "asd")
 - FLAG if: borderline (2 years exp, missing pincode, unusual price, incomplete info)
 
 Respond ONLY in this JSON format (no markdown):

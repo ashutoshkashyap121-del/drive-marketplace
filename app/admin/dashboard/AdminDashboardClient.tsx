@@ -37,6 +37,24 @@ type Vehicle = {
   insuranceValidUntil: string | null;
 };
 
+// Price label from the first package (name + price/range), falling back to basePrice.
+// Replaces the old hard-coded "₹{basePrice}/hr" which was wrong — pricing is per-package, not hourly.
+function priceLabel(packagesJson: string | null, basePrice: number | null): string | null {
+  let pkgs: { name?: string; price?: number; priceMax?: number }[] = [];
+  if (packagesJson) {
+    try { pkgs = JSON.parse(packagesJson); } catch { pkgs = []; }
+  }
+  const p = Array.isArray(pkgs) ? pkgs[0] : undefined;
+  if (p && typeof p.price === "number") {
+    const price = p.priceMax && p.priceMax > p.price
+      ? `₹${p.price.toLocaleString("en-IN")}–${p.priceMax.toLocaleString("en-IN")}`
+      : `₹${p.price.toLocaleString("en-IN")}`;
+    return p.name ? `${price} · ${p.name}` : price;
+  }
+  if (basePrice) return `₹${basePrice.toLocaleString("en-IN")}`;
+  return null;
+}
+
 type Trainer = {
   id: number;
   name: string;
@@ -50,6 +68,7 @@ type Trainer = {
   status: string;
   rating: number | null;
   basePrice: number | null;
+  packagesJson: string | null;
   licenseNumber: string;
   bio: string | null;
   vehicleTypes: string[];
@@ -295,7 +314,10 @@ export default function AdminDashboardClient({
                               <span key={i} style={{ background: "#F1F5F9", padding: "2px 8px", borderRadius: 4, fontSize: "0.7rem", fontWeight: 600 }}>{v}</span>
                             ))}
                           </div>
-                          {t.basePrice && <div style={{ fontWeight: 700, color: "#F59E0B", fontSize: "0.85rem" }}>₹{t.basePrice}/hr</div>}
+                          {(() => {
+                            const label = priceLabel(t.packagesJson, t.basePrice);
+                            return label ? <div style={{ fontWeight: 700, color: "#F59E0B", fontSize: "0.85rem" }}>{label}</div> : null;
+                          })()}
                         </td>
                         <td>
                           <span style={{ background: STATUS_BG[t.status] || "#F1F5F9", color: STATUS_TEXT[t.status] || "#475569", padding: "3px 10px", borderRadius: 100, fontSize: "0.72rem", fontWeight: 700 }}>
