@@ -6,6 +6,7 @@ import { authorizeAdminRequest } from "@/lib/admin";
 import { logAdminAction } from "@/lib/audit";
 import { notifyTrainerApproved, notifyTrainerRejected } from "@/lib/notifications";
 import { smsTrainerApproved, smsTrainerRejected } from "@/lib/sms";
+import { fetchTrainerGoogleRating } from "@/lib/google-places";
 
 const VALID_ACTIONS = ["APPROVED", "REJECTED", "SUSPENDED"];
 
@@ -28,7 +29,7 @@ export async function POST(req: Request) {
 
     const existing = await prisma.trainer.findUnique({
       where: { id: trainerId },
-      select: { status: true, name: true, email: true, mobile: true, city: true },
+      select: { status: true, name: true, email: true, mobile: true, city: true, trainerType: true },
     });
 
     if (!existing) {
@@ -69,6 +70,26 @@ export async function POST(req: Request) {
         }
       } catch (err) {
         console.error("[EMAIL_APPROVED_ERROR]", err);
+      }
+
+      // Seed the profile with a real Google/GMB rating. Schools only — individual
+      // trainers rarely have a Google Business listing, and the name-match guard in
+      // fetchTrainerGoogleRating prevents stamping a wrong rating.
+      if (existing.trainerType === "DRIVING_SCHOOL") {
+        try {
+          const g = await fetchTrainerGoogleRating(existing.name, existing.city);
+          if (g) {
+            await prisma.trainer.update({
+              where: { id: trainerId },
+              data: { rating: g.rating },
+            });
+            console.log(
+              `[GMB_RATING] ${existing.name} → ${g.rating}★ (${g.reviewCount} reviews), matched "${g.matchedName}"`,
+            );
+          }
+        } catch (err) {
+          console.error("[GMB_RATING_ERROR]", err);
+        }
       }
     }
 

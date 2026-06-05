@@ -2,8 +2,23 @@ import { NextRequest, NextResponse } from "next/server";
 import { TrainerStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { authorizeAdminRequest } from "@/lib/admin";
+import { fetchTrainerGoogleRating } from "@/lib/google-places";
 
 const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY!;
+
+// On approval, seed a school's profile with its real Google/GMB rating (schools only).
+async function applyGoogleRating(trainer: { id: number; name: string; city: string; trainerType: string }) {
+  if (trainer.trainerType !== "DRIVING_SCHOOL") return;
+  try {
+    const g = await fetchTrainerGoogleRating(trainer.name, trainer.city);
+    if (g) {
+      await prisma.trainer.update({ where: { id: trainer.id }, data: { rating: g.rating } });
+      console.log(`[GMB_RATING] ${trainer.name} → ${g.rating}★ (${g.reviewCount} reviews), matched "${g.matchedName}"`);
+    }
+  } catch (err) {
+    console.error("[GMB_RATING_ERROR]", err);
+  }
+}
 const FAST2SMS_KEY = process.env.FAST2SMS_API_KEY!;
 const WA_PHONE_ID = process.env.WHATSAPP_PHONE_NUMBER_ID || "1025099124020438";
 
@@ -121,6 +136,8 @@ export async function POST(req: NextRequest) {
       await sendApprovalWhatsApp(trainer.mobile, trainer.name, review.decision === "APPROVE");
     }
 
+    if (review.decision === "APPROVE") await applyGoogleRating(trainer);
+
     return NextResponse.json({ trainerId, ...review, status: newStatus });
   }
 
@@ -158,6 +175,8 @@ export async function POST(req: NextRequest) {
       if (review.decision !== "FLAG" && trainer.mobile) {
         await sendApprovalWhatsApp(trainer.mobile, trainer.name, review.decision === "APPROVE");
       }
+
+      if (review.decision === "APPROVE") await applyGoogleRating(trainer);
 
       results.details.push({
         id: trainer.id,
