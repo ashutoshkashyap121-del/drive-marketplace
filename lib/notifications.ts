@@ -454,3 +454,46 @@ export async function notifyAdminNewBooking(booking: {
     html,
   });
 }
+
+export async function notifyAdminCorporateInquiry(lead: {
+  company: string;
+  contactName: string;
+  email: string;
+  phone: string;
+  city: string;
+  teamSize: string;
+  message: string;
+}) {
+  const esc = (s: string) =>
+    s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  const row = (label: string, value: string) =>
+    value
+      ? `<tr><td style="padding:6px 12px 6px 0;color:#6b7280;font-size:14px;width:120px;vertical-align:top;">${label}</td><td style="padding:6px 0;color:#111827;font-size:14px;font-weight:600;">${esc(value)}</td></tr>`
+      : "";
+
+  const html = baseTemplate(`
+    <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:20px;margin-bottom:24px;">
+      <p style="margin:0;font-size:15px;font-weight:700;color:#1e3a8a;">🏢 New Corporate Training Inquiry</p>
+    </div>
+    <table style="width:100%;border-collapse:collapse;">
+      ${row("Company", lead.company)}
+      ${row("Contact", lead.contactName)}
+      ${row("Email", lead.email)}
+      ${row("Phone", lead.phone)}
+      ${row("City", lead.city)}
+      ${row("Team size", lead.teamSize)}
+    </table>
+    ${
+      lead.message
+        ? `<p style="color:#374151;font-size:14px;margin-top:16px;white-space:pre-wrap;"><strong>Message:</strong><br/>${esc(lead.message)}</p>`
+        : ""
+    }
+    <p style="color:#6b7280;font-size:13px;margin-top:16px;">Reply to <a href="mailto:${esc(lead.email)}">${esc(lead.email)}</a> or call ${esc(lead.phone)}.</p>
+  `);
+
+  return sendEmail({
+    to: ADMIN_EMAIL,
+    subject: `🏢 Corporate inquiry — ${lead.company} (${lead.teamSize || "team"})`,
+    html,
+  });
+}

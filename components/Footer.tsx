@@ -70,6 +70,7 @@ export default function Footer() {
             <Link href="/hire-driver" className="footer-link">Hire a Driver</Link>
             <Link href="/hire-driver/onboard" className="footer-link">Become a Driver</Link>
             <Link href="/dl-assistance" className="footer-link">DL Assistance</Link>
+            <Link href="/corporate-training" className="footer-link">Corporate Training</Link>
             <Link href="/rto-test/practice" className="footer-link">RTO Practice Test</Link>
             <Link href="/trainers/register" className="footer-link">Register as Trainer</Link>
           </div>
